@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono, Newsreader } from "next/font/google";
+import { PixelCompanion, PixelProvider } from "@/components/pixel";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -21,8 +22,8 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "Portfolio",
-  description: "My portfolio website",
+  title: "Portfolio — Under Construction",
+  description: "My portfolio website is currently under construction.",
 };
 
 export default function RootLayout({
@@ -35,7 +36,17 @@ export default function RootLayout({
       lang="en"
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${newsreader.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {/*
+          Pixel is mounted here rather than per-page so it survives client-side
+          navigation — the sprite keeps its idle timer, gaze and blink across
+          route changes instead of remounting cold on every link.
+        */}
+        <PixelProvider>
+          {children}
+          <PixelCompanion />
+        </PixelProvider>
+      </body>
     </html>
   );
 }

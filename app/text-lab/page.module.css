@@ -1,0 +1,78 @@
+.page {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 8rem;
+}
+
+.header {
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-size: 2rem;
+}
+
+.subheading {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.8125rem;
+  color: #8a8578;
+  margin-top: 0.5rem;
+}
+
+.section {
+  margin-bottom: 3.5rem;
+}
+
+.section h2 {
+  font-size: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.modeToggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+  background: var(--color-white);
+  border: 1px solid #e4e0d6;
+  border-radius: 0.75rem;
+  padding: 2rem;
+}
+
+.stageText {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  color: var(--color-accent);
+  line-height: 1.15;
+}
+
+.lineList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #c9c3b4;
+  border-radius: 999px;
+  background: transparent;
+  color: #5c5747;
+  cursor: pointer;
+}
+
+.chipActive {
+  background: var(--color-charcoal);
+  border-color: var(--color-charcoal);
+  color: var(--color-bg);
+}

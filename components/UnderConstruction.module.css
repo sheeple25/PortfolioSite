@@ -1,0 +1,153 @@
+.page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  width: 240px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mote {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+.heart {
+  position: absolute;
+  top: 26%;
+  /* The `left` inline style positions the left edge, so pull back by half. */
+  margin-left: -9px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.petButton {
+  position: relative;
+  display: block;
+  padding: 0.5rem;
+  border-radius: 12px;
+  /* The bob translates upward, so leave room instead of clipping it. */
+  padding-top: 1rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.petButton:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+/*
+ * A styled tooltip rather than the native `title` attribute: the browser's own
+ * tooltip waits about a second before appearing, which is long enough that the
+ * affordance goes unnoticed on a page a visitor only glances at.
+ */
+.tip {
+  position: absolute;
+  bottom: calc(100% - 0.25rem);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--color-charcoal);
+  color: var(--color-white);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.petButton:hover .tip,
+.petButton:focus-visible .tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.petCount {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--color-charcoal);
+  opacity: 0.45;
+  /* Reserve the line so revealing the count doesn't nudge the page. */
+  min-height: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 0.75rem;
+}
+
+.heading {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 5vw, 3.25rem);
+  color: var(--color-charcoal);
+  margin-bottom: 0.75rem;
+  line-height: 1.15;
+}
+
+.heading span {
+  color: var(--color-accent);
+}
+
+.subtext {
+  font-family: var(--font-newsreader);
+  font-size: 1.1rem;
+  color: var(--color-charcoal);
+  opacity: 0.7;
+  max-width: 32rem;
+  margin-bottom: 2rem;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.95rem;
+  color: var(--color-charcoal);
+  min-height: 1.5rem;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.statusText {
+  min-width: 1px;
+}
+
+@media (max-width: 640px) {
+  .stage {
+    width: 200px;
+    height: 172px;
+  }
+}

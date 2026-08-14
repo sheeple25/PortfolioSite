@@ -1,0 +1,30 @@
+.companion {
+  position: fixed;
+  right: calc(1.5rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 50;
+  /* Only the sprite itself is clickable — the wrapper must not eat page clicks. */
+  pointer-events: none;
+}
+
+.hitArea {
+  pointer-events: auto;
+  cursor: pointer;
+  /* The bob translates upward, so leave room instead of clipping it. */
+  padding-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .companion {
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    transform: scale(0.72);
+    transform-origin: bottom right;
+  }
+}
+
+@media print {
+  .companion {
+    display: none;
+  }
+}

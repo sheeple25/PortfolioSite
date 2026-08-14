@@ -1,0 +1,38 @@
+.root {
+  /* One grid cell in screen px — the unit every motion below is quantised to. */
+  --pixel-unit: calc(var(--pixel-size, 120px) / 24);
+
+  display: inline-block;
+  line-height: 0;
+}
+
+.sprite {
+  display: block;
+}
+
+/*
+ * The bob steps between whole cells instead of gliding. Sub-pixel motion is the
+ * other thing that quietly softens pixel art: the sprite itself is crisp, but a
+ * silhouette sliding through fractional offsets reads as smooth anyway.
+ */
+.bob {
+  animation: pixelBob 2.4s steps(1, end) infinite;
+}
+
+@keyframes pixelBob {
+  0% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(calc(var(--pixel-unit) * -1));
+  }
+  50% {
+    transform: translateY(calc(var(--pixel-unit) * -2));
+  }
+  75% {
+    transform: translateY(calc(var(--pixel-unit) * -1));
+  }
+  100% {
+    transform: translateY(0);
+  }
+}

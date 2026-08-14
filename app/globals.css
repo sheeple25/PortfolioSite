@@ -1,3 +1,11 @@
+:root {
+  --color-accent: #ffa554;
+  --color-bg: #f7f7f7;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-charcoal: #1e1e1e;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -12,8 +20,8 @@ body {
   font-family: var(--font-newsreader);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(to bottom, #0f172a, #020617);
-  color: #e2e8f0;
+  background: var(--color-bg);
+  color: var(--color-charcoal);
   min-height: 100vh;
 }
 
