@@ -1,0 +1,105 @@
+.page {
+  padding-bottom: clamp(4rem, 10vw, 8rem);
+}
+
+/* Same three-column frame as a document — see the note in [slug]/page.module.css. */
+.shell {
+  display: grid;
+  grid-template-columns:
+    var(--rail-width)
+    minmax(0, var(--measure))
+    var(--notes-width);
+  column-gap: var(--notes-gap);
+  justify-content: space-between;
+  width: min(var(--shell-max), 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding-top: clamp(2rem, 5vw, 4.5rem);
+}
+
+/* Held open, not filled: it keeps the reading column where a document has it. */
+.rail {
+  min-width: 0;
+}
+
+.column {
+  min-width: 0;
+}
+
+.header {
+  padding-bottom: clamp(3rem, 7vw, 5.5rem);
+  max-width: 40rem;
+}
+
+.title {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 5.5vw, 4.1rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.intro {
+  margin-top: 1.1rem;
+  font-family: var(--font-newsreader);
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  line-height: 1.45;
+  color: var(--color-muted);
+  text-wrap: pretty;
+}
+
+.list {
+  list-style: none;
+}
+
+.empty {
+  padding: 3rem 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 1rem;
+}
+
+.empty code {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+}
+
+/*
+ * Sits exactly where a document's annotation panel does — same tokens, same
+ * corner — so the mascot's voice arrives in one place across the whole section.
+ * See `.panel` in components/writing/notes/notes.module.css.
+ */
+.cornerNote {
+  position: fixed;
+  right: calc(var(--shell-inset) + env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--corner-inset-block) + var(--corner-lift, 0px) + var(--companion-size) +
+      2.5rem + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: 45;
+  width: var(--notes-width);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--color-charcoal);
+}
+
+@media (max-width: 1280px) {
+  .shell {
+    display: block;
+  }
+
+  .rail {
+    display: none;
+  }
+}
+
+/* No margin left to sit in at this width — the list is the page. */
+@media (max-width: 1080px) {
+  .cornerNote {
+    display: none;
+  }
+}

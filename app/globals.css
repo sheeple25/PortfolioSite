@@ -1,9 +1,60 @@
+@import "tailwindcss";
+
 :root {
   --color-accent: #ffa554;
   --color-bg: #f7f7f7;
   --color-white: #ffffff;
-  --color-black: #000000;
   --color-charcoal: #1e1e1e;
+
+  /* Warm greys, lightest to darkest. */
+  --color-border: #e4e0d6;
+  --color-border-strong: #c9c3b4;
+  --color-muted: #8a8578;
+  --color-ink-soft: #5c5747;
+
+  /*
+   * Layout constants shared by the chrome and every page inside it. The sticky
+   * navbar and the sticky contents bar on `/writing` stack against each other,
+   * so the height has to be a value both can read rather than a magic number
+   * repeated in two stylesheets.
+   */
+  --nav-height: 5rem;
+  --page-max: 76rem;
+  --page-gutter: clamp(1.25rem, 5vw, 4rem);
+
+  /*
+   * The three-column reading layout on `/writing`: contents, the reading
+   * measure, and the annotation column. The tracks are fixed and the leftover
+   * space is dealt out between them, which is what pins the rail to the left
+   * margin and the annotations to the right one at any window width.
+   */
+  --shell-max: 104rem;
+  --rail-width: 15rem;
+  --measure: 42rem;
+  --notes-width: 14.5rem;
+  /** Floor under the space-between gaps, for windows too narrow to have slack. */
+  --notes-gap: clamp(2rem, 3.5vw, 4rem);
+
+  /*
+   * Distance from the viewport edge to the shell. Anything positioned `fixed`
+   * — the mascot, and the annotation panel that opens above it — uses this so
+   * it lands on the page's own margin instead of jammed into the corner.
+   */
+  --shell-inset: max(
+    var(--page-gutter),
+    calc((100vw - var(--shell-max)) / 2)
+  );
+
+  /*
+   * The vertical half of that corner, which is deliberately NOT `--shell-inset`:
+   * that value is a horizontal centring offset and grows with window width, so
+   * using it for `bottom` lifts the mascot further and further off the floor the
+   * wider the window gets. This is a plain margin.
+   */
+  --corner-inset-block: clamp(1.5rem, 7vh, 5.5rem);
+
+  /** Keep in step with the `size` prop `PixelCompanion` is mounted with. */
+  --companion-size: 5.5rem;
 }
 
 * {
@@ -14,6 +65,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Anchor jumps land below the sticky header rather than under it. */
+  scroll-padding-top: calc(var(--nav-height) + 1.5rem);
 }
 
 body {
@@ -22,7 +75,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: var(--color-bg);
   color: var(--color-charcoal);
-  min-height: 100vh;
+  /* Column layout is what pins the footer to the bottom of a short page. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+/* The routable area between the header and the footer. */
+.appMain {
+  flex: 1;
 }
 
 h1,
@@ -33,16 +94,6 @@ h5,
 h6 {
   font-family: var(--font-space-grotesk);
   font-weight: 600;
-}
-
-.subheading {
-  font-family: var(--font-jetbrains-mono);
-  font-style: italic;
-}
-
-.caption {
-  font-family: var(--font-jetbrains-mono);
-  font-size: 0.875rem;
 }
 
 a {
@@ -61,5 +112,13 @@ button {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /*
+   * Smooth scrolling is motion too — without this, every sidebar jump still
+   * animates the whole viewport for a reader who asked it not to.
+   */
+  html {
+    scroll-behavior: auto;
   }
 }

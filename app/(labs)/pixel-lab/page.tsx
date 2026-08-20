@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { EXPRESSIONS, Pixel, usePixel, type Expression } from "@/components/pixel";
+import lab from "../lab.module.css";
 import styles from "./page.module.css";
 
 const GAZE: Array<{ x: number; y: number; label: string }> = [
@@ -28,15 +29,15 @@ export default function PixelLab() {
   const [hero, setHero] = useState<Expression>("default");
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
+    <main className={lab.page}>
+      <header className={lab.header}>
         <h1>Pixel</h1>
-        <p className={styles.subheading}>
+        <p className={lab.subheading}>
           24&times;24 hand-authored grid &middot; one path per layer &middot; crispEdges
         </p>
       </header>
 
-      <section className={styles.section}>
+      <section className={lab.section}>
         <h2>Expressions</h2>
         <div className={styles.grid}>
           {EXPRESSIONS.map((expression) => (
@@ -54,7 +55,7 @@ export default function PixelLab() {
         </div>
       </section>
 
-      <section className={styles.section}>
+      <section className={lab.section}>
         <h2>Gaze &mdash; {hero}</h2>
         <div className={styles.gazeGrid}>
           {GAZE.map((cell) => (
@@ -66,7 +67,7 @@ export default function PixelLab() {
         </div>
       </section>
 
-      <section className={styles.section}>
+      <section className={lab.section}>
         <h2>Scale</h2>
         <div className={styles.ramp}>
           {SIZES.map((size) => (
@@ -78,15 +79,15 @@ export default function PixelLab() {
         </div>
       </section>
 
-      <section className={styles.section}>
+      <section className={lab.section}>
         <h2>Companion override</h2>
         <p className={styles.note}>
-          Pins the corner mascot&apos;s mood, the same call a 404 page would make via{" "}
+          Pins the corner mascot&apos;s mood, the same call the 404 page makes via{" "}
           <code>usePixelMood(&quot;dead&quot;)</code>.
         </p>
         <div className={styles.chips}>
           <button
-            className={mood === null ? `${styles.chip} ${styles.chipActive}` : styles.chip}
+            className={mood === null ? `${lab.chip} ${lab.chipActive}` : lab.chip}
             onClick={() => setMood(null)}
           >
             auto
@@ -95,7 +96,7 @@ export default function PixelLab() {
             <button
               key={expression}
               className={
-                mood === expression ? `${styles.chip} ${styles.chipActive}` : styles.chip
+                mood === expression ? `${lab.chip} ${lab.chipActive}` : lab.chip
               }
               onClick={() => setMood(expression)}
             >

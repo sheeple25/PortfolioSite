@@ -1,0 +1,48 @@
+/*
+ * A soft edge on the bottom of the viewport while there is still page below it.
+ * Two layers because the blur and the colour need different falloffs: masking
+ * the wash as well would fade the page out twice and leave a grey band.
+ */
+.edge {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(3.5rem, 8vh, 6.5rem);
+  /* Above the page, below the navbar, the mascot and its annotations. */
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* Clears once you reach the end, so the footer is never behind frosted glass. */
+.visible {
+  opacity: 1;
+}
+
+.blur,
+.wash {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * The mask is what makes this a fade rather than a frosted strip: the blur is
+ * full strength along the bottom edge and gone by the top of the band.
+ */
+.blur {
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  mask-image: linear-gradient(to top, #000 0%, #000 22%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 22%, transparent 100%);
+}
+
+.wash {
+  background: linear-gradient(
+    to top,
+    var(--color-bg) 0%,
+    color-mix(in srgb, var(--color-bg) 72%, transparent) 45%,
+    transparent 100%
+  );
+}

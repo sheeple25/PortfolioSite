@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Pixel,
   rowsToRuns,
@@ -10,8 +10,8 @@ import {
   useFlash,
   useGaze,
   usePixel,
-  usePrefersReducedMotion,
 } from "@/components/pixel";
+import { useCompactViewport, usePrefersReducedMotion } from "@/lib/hooks";
 import styles from "./UnderConstruction.module.css";
 
 const STATUS_PHRASES = [
@@ -51,20 +51,6 @@ const HERO_SIZE_COMPACT = 96;
 
 /** Every fifth pet lands differently — enough attention to get flustered. */
 const BASHFUL_EVERY = 5;
-
-function useCompactViewport(): boolean {
-  const [compact, setCompact] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 640px)");
-    const update = () => setCompact(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-
-  return compact;
-}
 
 export default function UnderConstruction({
   heading = "Portfolio",

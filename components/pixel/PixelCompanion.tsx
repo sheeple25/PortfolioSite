@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import Pixel from "./Pixel";
 import { usePixel } from "./PixelContext";
-import { useBlink, useFlash, useGaze, usePrefersReducedMotion } from "./hooks";
+import { usePrefersReducedMotion } from "@/lib/hooks";
+import { useBlink, useFlash, useGaze } from "./hooks";
 import type { Expression } from "./sprites";
 import styles from "./PixelCompanion.module.css";
 

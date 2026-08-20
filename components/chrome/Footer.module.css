@@ -1,0 +1,214 @@
+.footer {
+  margin-top: auto;
+  padding: 0 var(--page-gutter) 1.75rem;
+}
+
+/*
+ * A full-bleed rule sitting well above the footer content, as in the mockup —
+ * it separates the page from the colophon rather than boxing the colophon in.
+ */
+.rule {
+  height: 1px;
+  background: var(--color-charcoal);
+  opacity: 0.85;
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 3rem 4rem;
+  padding-top: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.75rem;
+}
+
+.identityLogo {
+  /* Optically aligns the mark's top edge with the wordmark's cap height. */
+  margin-top: 0.15rem;
+}
+
+.identityText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.name {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.designation {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+}
+
+.email {
+  margin-top: 0.35rem;
+  align-self: flex-start;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  color: var(--color-charcoal);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+  transition: color 0.18s ease, text-decoration-color 0.18s ease;
+}
+
+.email:hover,
+.email:focus-visible {
+  color: var(--color-accent);
+  text-decoration-color: var(--color-accent);
+}
+
+.columns {
+  display: flex;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  min-width: 5.5rem;
+}
+
+.columnTitle {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.columnList,
+.documentList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.columnLink {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  transition: color 0.18s ease;
+}
+
+.columnLink:hover,
+.columnLink:focus-visible {
+  color: var(--color-accent);
+}
+
+/* Dev-only: a link whose URL hasn't been filled in yet. */
+.pending {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  color: var(--color-border-strong);
+  text-decoration: line-through;
+  cursor: help;
+}
+
+.document {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 3px;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-charcoal);
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.document:hover,
+.document:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.document[aria-disabled="true"] {
+  color: var(--color-border-strong);
+  border-style: dashed;
+  pointer-events: none;
+}
+
+.documentArrow {
+  color: var(--color-accent);
+}
+
+.document[aria-disabled="true"] .documentArrow {
+  color: inherit;
+}
+
+.baseline {
+  margin-top: clamp(3rem, 6vw, 5rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.top {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: color 0.18s ease;
+}
+
+.top:hover,
+.top:focus-visible {
+  color: var(--color-charcoal);
+}
+
+.topArrow {
+  color: var(--color-accent);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.top:hover .topArrow,
+.top:focus-visible .topArrow {
+  transform: translateY(-3px);
+}
+
+@media (max-width: 860px) {
+  .inner {
+    flex-direction: column;
+  }
+
+  .columns {
+    flex-wrap: wrap;
+    gap: 2rem 3rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .identity {
+    gap: 1.15rem;
+  }
+
+  .name {
+    font-size: 1.35rem;
+  }
+}

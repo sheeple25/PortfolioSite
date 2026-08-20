@@ -1,0 +1,145 @@
+/* ------------------------------------------------------- the bold triggers */
+
+/*
+ * A bold word that carries a note. It stays a `<strong>` inside the button so
+ * the emphasis the markdown asked for survives even here, and the affordance is
+ * added around it rather than replacing it.
+ */
+.ref {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--color-accent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.22em;
+  transition: color 0.18s ease;
+}
+
+.ref:hover,
+.ref:focus-visible {
+  color: var(--color-accent);
+}
+
+.ref:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.refActive {
+  color: var(--color-accent);
+}
+
+/* The little raised query mark that marks a word as askable. */
+.refMark {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.58em;
+  font-weight: 500;
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 0.12em;
+  color: var(--color-accent);
+}
+
+/* ----------------------------------------------------- the annotation panel */
+
+/*
+ * Pinned above the mascot in the bottom-right corner. Both take their `right`
+ * from `--shell-inset`, which is the page's own margin, so the panel lines up
+ * with the annotation column without measuring anything.
+ *
+ * The offset below is the mascot's own margin plus its height plus a gap, so
+ * the note always clears the sprite instead of crowding it. No frame or fill:
+ * it is handwriting in the margin of the page, not a dialog on top of it.
+ */
+.panel {
+  position: fixed;
+  right: calc(var(--shell-inset) + env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--corner-inset-block) + var(--corner-lift, 0px) + var(--companion-size) +
+      2.5rem + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: 45;
+  width: var(--notes-width, 14.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.panelText {
+  font-family: var(--font-waiting-for-the-sunrise), var(--font-newsreader), cursive;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+}
+
+.panelClose {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-border-strong);
+  transition: color 0.18s ease;
+}
+
+.panelClose:hover,
+.panelClose:focus-visible {
+  color: var(--color-accent);
+}
+
+/*
+ * Narrow windows have no margin to sit in, so the panel becomes a strip across
+ * the foot of the screen — still beside the mascot, which is in that corner.
+ */
+@media (max-width: 1080px) {
+  .panel {
+    right: var(--page-gutter);
+    left: var(--page-gutter);
+    bottom: calc(
+      var(--corner-inset-block) + var(--corner-lift, 0px) + var(--companion-size) +
+        2rem + env(safe-area-inset-bottom, 0px)
+    );
+    width: auto;
+    max-width: 28rem;
+    margin-left: auto;
+    padding: 1rem 1.15rem;
+    background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+  }
+}
+
+/* ------------------------------------------------ notes with no bold word */
+
+/*
+ * `[NOTE: …]` with no anchors. Nothing can open it, so it sets inline, in the
+ * flow, where it was written. A `span`, not an `aside`: this renders inside a
+ * `<p>`, where a block element would make the browser close the paragraph early
+ * and split it in two.
+ */
+.standalone {
+  display: flex;
+  gap: 0.85rem;
+  margin-block: 1.5rem;
+  max-width: 34rem;
+}
+
+.standaloneRule {
+  flex-shrink: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+.standaloneText {
+  font-family: var(--font-waiting-for-the-sunrise), var(--font-newsreader), cursive;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+}

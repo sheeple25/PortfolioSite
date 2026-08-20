@@ -1,0 +1,114 @@
+/*
+ * Shared chrome for the inline SVG diagrams.
+ *
+ * Both are drawn on a 960x480 viewBox so their coordinates read straight off
+ * the source artwork. Strokes use `vector-effect: non-scaling-stroke` so
+ * hairlines stay hairlines as that box scales down on a phone, and every label
+ * takes its colour from a custom property rather than a hard-coded fill.
+ */
+
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.stroke {
+  fill: none;
+  stroke: var(--color-charcoal);
+  stroke-width: 2.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The feedback half of the loop, and the stage boundaries. */
+.dashed {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+  stroke-dasharray: 9 8;
+  stroke-linecap: butt;
+  vector-effect: non-scaling-stroke;
+}
+
+/* A dashed line that is structure rather than feedback — the diamond midlines. */
+.dashedInk {
+  fill: none;
+  stroke: var(--color-charcoal);
+  stroke-width: 2;
+  stroke-dasharray: 9 8;
+  stroke-linecap: butt;
+  vector-effect: non-scaling-stroke;
+}
+
+.arrow {
+  fill: none;
+  stroke: var(--color-charcoal);
+  stroke-width: 2.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+
+.arrowAccent {
+  composes: arrow;
+  stroke: var(--color-accent);
+}
+
+.node {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  fill: var(--color-charcoal);
+}
+
+/* The quiet annotations: `intention`, `design`, `diverge`, `converge`. */
+.edgeLabel {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  fill: var(--color-muted);
+}
+
+.stageLabel {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  fill: var(--color-charcoal);
+}
+
+.phaseLabel {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  fill: var(--color-charcoal);
+}
+
+.dot {
+  fill: var(--color-charcoal);
+}
+
+.dotAccent {
+  fill: var(--color-accent);
+}
+
+/* Labels have to hold their own as the viewBox shrinks under a phone's width. */
+@media (max-width: 760px) {
+  .node {
+    font-size: 26px;
+  }
+
+  .edgeLabel,
+  .stageLabel {
+    font-size: 20px;
+  }
+
+  .phaseLabel {
+    font-size: 22px;
+  }
+}

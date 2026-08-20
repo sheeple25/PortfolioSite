@@ -1,15 +1,11 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useFlash } from "./hooks";
 import type { Expression } from "./sprites";
+
+/** Reactions raised through the context linger slightly longer than a local flash. */
+const REACTION_MS = 900;
 
 type PixelContextValue = {
   /** Explicit override from a page. `null` hands control back to the companion. */
@@ -26,21 +22,8 @@ const PixelContext = createContext<PixelContextValue | null>(null);
 
 export function PixelProvider({ children }: { children: React.ReactNode }) {
   const [mood, setMood] = useState<Expression | null>(null);
-  const [reaction, setReaction] = useState<Expression | null>(null);
-  const reactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hidden, setHidden] = useState(false);
-
-  const react = useCallback((expression: Expression, ms = 900) => {
-    if (reactionTimer.current) clearTimeout(reactionTimer.current);
-    setReaction(expression);
-    reactionTimer.current = setTimeout(() => setReaction(null), ms);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (reactionTimer.current) clearTimeout(reactionTimer.current);
-    };
-  }, []);
+  const [reaction, react] = useFlash(REACTION_MS);
 
   const value = useMemo(
     () => ({ mood, setMood, reaction, react, hidden, setHidden }),
@@ -60,7 +43,7 @@ export function usePixel(): PixelContextValue {
 
 /**
  * Pin Pixel to a mood for as long as this component is mounted, then release it.
- * Handy for a 404 page: `usePixelMood("dead")`.
+ * Used by the 404 page as `usePixelMood("dead")`.
  */
 export function usePixelMood(expression: Expression | null) {
   const { setMood } = usePixel();

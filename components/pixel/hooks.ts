@@ -11,20 +11,6 @@ const GAZE_THRESHOLD = 0.38;
 const quantise = (n: number) =>
   n > GAZE_THRESHOLD ? 1 : n < -GAZE_THRESHOLD ? -1 : 0;
 
-export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-
-  return reduced;
-}
-
 /**
  * Snaps the cursor's direction from `ref`'s centre onto the nine gaze cells.
  * rAF-throttled, and the setter bails when the cell hasn't changed — the
@@ -77,10 +63,7 @@ export function useBlink(enabled: boolean): boolean {
   const [blinking, setBlinking] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
-      setBlinking(false);
-      return;
-    }
+    if (!enabled) return;
 
     let openTimer: ReturnType<typeof setTimeout>;
     let closeTimer: ReturnType<typeof setTimeout>;
@@ -100,6 +83,10 @@ export function useBlink(enabled: boolean): boolean {
     return () => {
       clearTimeout(openTimer);
       clearTimeout(closeTimer);
+      // Teardown can land inside the 110ms shut window — Pixel falling asleep
+      // disables blinking. Without this the eyes would still be closed when it
+      // wakes, and stay that way until the next blink cycle came round.
+      setBlinking(false);
     };
   }, [enabled]);
 
@@ -107,18 +94,21 @@ export function useBlink(enabled: boolean): boolean {
 }
 
 /** A short-lived expression that reverts on its own. */
-export function useFlash(): [
+export function useFlash(defaultMs = 700): [
   Expression | null,
   (expression: Expression, ms?: number) => void,
 ] {
   const [flashed, setFlashed] = useState<Expression | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flash = useCallback((expression: Expression, ms = 700) => {
-    if (timer.current) clearTimeout(timer.current);
-    setFlashed(expression);
-    timer.current = setTimeout(() => setFlashed(null), ms);
-  }, []);
+  const flash = useCallback(
+    (expression: Expression, ms = defaultMs) => {
+      if (timer.current) clearTimeout(timer.current);
+      setFlashed(expression);
+      timer.current = setTimeout(() => setFlashed(null), ms);
+    },
+    [defaultMs],
+  );
 
   useEffect(() => {
     return () => {

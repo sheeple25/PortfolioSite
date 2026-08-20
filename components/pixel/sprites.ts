@@ -32,12 +32,12 @@ const FULL = "#".repeat(GRID);
  * gives the hem enough depth to read as a wave rather than a nibbled edge.
  */
 export const BODY: readonly string[] = [
-  "....################....",
   "..####################..",
   ".######################.",
   ".######################.",
+  "########################",
   ...(Array<string>(16).fill(FULL) as string[]), // rows 4-19, full width
-  "####..#####..#####..####",
+  "########################",
   "####..#####..#####..####",
   "###....###....###....###",
   "###....###....###....###",

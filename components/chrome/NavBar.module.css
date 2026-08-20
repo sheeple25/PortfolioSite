@@ -1,0 +1,167 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  /* `--nav-height` is declared in globals.css; the TOC bar stacks below it. */
+  height: var(--nav-height);
+  background: transparent;
+  transition: background 0.25s ease, border-color 0.25s ease;
+  border-bottom: 1px solid transparent;
+}
+
+/*
+ * Only once the page has actually moved. At rest the bar is invisible chrome
+ * over the hero; the moment text starts passing under it, it earns a surface.
+ */
+.scrolled {
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom-color: var(--color-border);
+}
+
+.nav {
+  height: 100%;
+  padding-inline: var(--page-gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: var(--color-charcoal);
+}
+
+.wordmarkText {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: -0.025em;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 2.25rem;
+  list-style: none;
+}
+
+.link {
+  display: block;
+  padding: 0.35rem 0;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  color: var(--color-muted);
+  /* The underline grows from the left rather than fading in. */
+  background-image: linear-gradient(var(--color-accent), var(--color-accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1.5px;
+  transition: color 0.18s ease, background-size 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.link:hover,
+.link:focus-visible {
+  color: var(--color-charcoal);
+  background-size: 100% 1.5px;
+}
+
+.linkCurrent {
+  color: var(--color-charcoal);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------ narrow screens */
+
+.menuButton {
+  display: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-right: -0.5rem;
+}
+
+.bar {
+  display: block;
+  width: 20px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--color-charcoal);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The two rules cross the bars into an X without a third element. */
+.barTop {
+  transform: translateY(3.25px) rotate(45deg);
+}
+
+.barBottom {
+  transform: translateY(-3.25px) rotate(-45deg);
+}
+
+.sheet {
+  position: fixed;
+  inset: var(--nav-height) 0 0;
+  z-index: 39;
+  background: color-mix(in srgb, var(--color-bg) 96%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  padding: 2rem var(--page-gutter);
+  overflow-y: auto;
+}
+
+.sheetLinks {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sheetLink {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-space-grotesk);
+  font-weight: 500;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: var(--color-muted);
+  transition: color 0.18s ease;
+}
+
+.sheetLink:hover,
+.sheetLink:focus-visible,
+.sheetLinkCurrent {
+  color: var(--color-charcoal);
+}
+
+.sheetIndex {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+}
+
+@media (max-width: 860px) {
+  .links {
+    display: none;
+  }
+
+  .menuButton {
+    display: flex;
+  }
+
+  .wordmarkText {
+    font-size: 1.15rem;
+  }
+}

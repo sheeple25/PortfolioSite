@@ -1,0 +1,151 @@
+/*
+ * No rule between sections. Each one already announces itself with an ordinal,
+ * a heading and its own expand control; a divider on top of that chopped the
+ * essay into cards and broke the read straight through it.
+ */
+.section {
+  position: relative;
+  padding-block: clamp(1.75rem, 3vw, 2.5rem);
+  /* Clears the sticky navbar when a sidebar jump lands here. */
+  scroll-margin-top: 6rem;
+}
+
+.section:first-child {
+  padding-top: 0;
+}
+
+/*
+ * Ordinal, title, then the toggle pushed to the far edge of the reading column.
+ * `align-items: baseline` is what keeps the mono ordinal, the serif title and
+ * the mono toggle sitting on one line rather than three optical centres.
+ */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.ordinal {
+  flex-shrink: 0;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+/*
+ * Set in the serif, not the display sans. The section headings sit inside the
+ * reading column and are read as part of the prose; the sans is reserved for
+ * the document title, which is chrome above it.
+ */
+.title {
+  font-family: var(--font-newsreader);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 1.9vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+.privateTag {
+  flex-shrink: 0;
+  align-self: center;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 3px;
+  color: var(--color-muted);
+}
+
+/*
+ * No border, no fill. The control belongs to the heading line, so it is set in
+ * the same quiet mono as the rest of the margins and takes its emphasis from
+ * the accent chevron alone.
+ */
+.toggle {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.15rem 0;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+  transition: color 0.18s ease;
+}
+
+.toggle:hover,
+.toggle:focus-visible {
+  color: var(--color-charcoal);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/*
+ * "Expand Section" and "Collapse Section" are different widths. Reserving the
+ * wider of the two keeps the chevron — and so the right edge of every heading
+ * row — fixed as the label swaps.
+ */
+.toggleLabel {
+  display: inline-block;
+  min-width: 7.5rem;
+  text-align: right;
+}
+
+.chevron {
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+.preview {
+  color: var(--color-charcoal);
+}
+
+/*
+ * No `overflow` here: it's set inline by the component, which drops the clip
+ * once the height transition settles. See the note in SectionCard.tsx.
+ */
+.bodyClip {
+  display: flow-root;
+}
+
+.body {
+  padding-top: 1.15em;
+}
+
+@media (max-width: 640px) {
+  .header {
+    gap: 0.6rem 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .title {
+    /* Take the rest of the row so the toggle wraps to its own line under it. */
+    flex: 1 1 100%;
+    order: 1;
+  }
+
+  .ordinal {
+    order: 0;
+  }
+
+  .toggle {
+    order: 2;
+    margin-left: 0;
+  }
+
+  .toggleLabel {
+    min-width: 0;
+    text-align: left;
+  }
+}

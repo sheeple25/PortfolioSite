@@ -1,0 +1,78 @@
+/*
+ * Shared by not-found.tsx, error.tsx and loading.tsx — the three states that
+ * are a single centred message rather than a real page. Pixel itself stays in
+ * the corner on all of them, pinned to a fitting mood.
+ */
+
+.page {
+  /* Fills what is left of the viewport under the sticky navbar. */
+  min-height: calc(100svh - var(--nav-height));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.code {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.heading {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 5vw, 3.25rem);
+  line-height: 1.15;
+}
+
+.message {
+  font-size: 1.1rem;
+  color: var(--color-charcoal);
+  opacity: 0.7;
+  max-width: 32rem;
+}
+
+.action {
+  margin-top: 1rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-ink-soft);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.action:hover,
+.action:focus-visible {
+  border-color: var(--color-charcoal);
+  color: var(--color-charcoal);
+}
+
+/* Reserve the same centred box while a route segment streams in. */
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  animation: statusPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.4);
+  }
+}

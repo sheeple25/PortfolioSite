@@ -1,7 +1,16 @@
+/*
+ * `--shell-inset` (globals.css) is the page's own margin, so the mascot sits on
+ * the same line as the content rather than jammed into the corner — and the
+ * annotation panel on `/writing`, which opens directly above it, lands on that
+ * margin too without either having to know about the other.
+ */
 .companion {
   position: fixed;
-  right: calc(1.5rem + env(safe-area-inset-right, 0px));
-  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  right: calc(var(--shell-inset) + env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--corner-inset-block) + var(--corner-lift, 0px) +
+      env(safe-area-inset-bottom, 0px)
+  );
   z-index: 50;
   /* Only the sprite itself is clickable — the wrapper must not eat page clicks. */
   pointer-events: none;
@@ -14,10 +23,14 @@
   padding-top: 0.5rem;
 }
 
+/* 640px mirrors COMPACT_MAX_WIDTH in lib/breakpoints.ts — change both together. */
 @media (max-width: 640px) {
   .companion {
-    right: calc(1rem + env(safe-area-inset-right, 0px));
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    right: calc(var(--page-gutter) + env(safe-area-inset-right, 0px));
+    bottom: calc(
+    var(--corner-inset-block) + var(--corner-lift, 0px) +
+      env(safe-area-inset-bottom, 0px)
+  );
     transform: scale(0.72);
     transform-origin: bottom right;
   }

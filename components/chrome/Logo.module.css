@@ -1,0 +1,62 @@
+/*
+ * The box is sized to the artwork, not to the asset. The loader file is a
+ * 512x512 square with the triangles occupying x 54..457, y 104..455 of it, so
+ * the animation is scaled up and pulled back by exactly that inset and the
+ * padding is clipped away. Every percentage below is that measurement:
+ *
+ *   width   512 / 404 = 126.7327%      left   -54 / 404 = -13.3663%
+ *   height  512 / 352 = 145.4545%      top   -104 / 352 = -29.5455%
+ *
+ * The two axes resolve against the box's own width and height, so the crop
+ * holds at any size without the aspect ratio being restated.
+ */
+.frame {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.mark,
+.loop {
+  position: absolute;
+  inset: 0;
+}
+
+.mark {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 0.12s ease;
+}
+
+/* Applied once the animation has actually painted a frame, so the static mark
+   never shows through the moving artwork underneath it. */
+.markHidden {
+  opacity: 0;
+}
+
+.loop {
+  width: 126.7327%;
+  height: 145.4545%;
+  left: -13.3663%;
+  top: -29.5455%;
+  /* The box is narrower than the asset; nothing here may be shrunk to fit. */
+  max-width: none;
+  inset-inline-end: auto;
+  inset-block-end: auto;
+}
+
+/*
+ * Each triangle is stroked in its own fill with a round join, which rounds the
+ * three corners without a single arc in the path data. `paint-order: stroke`
+ * puts that stroke behind the fill so the shape doesn't grow visibly heavier —
+ * it just loses its points.
+ */
+.triangle {
+  fill: var(--color-accent);
+  stroke: var(--color-accent);
+  stroke-width: 10;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
