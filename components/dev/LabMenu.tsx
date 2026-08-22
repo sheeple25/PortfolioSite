@@ -21,6 +21,7 @@ import styles from "./LabMenu.module.css";
 const LABS = [
   { href: "/pixel-lab", label: "Pixel" },
   { href: "/text-lab", label: "Text" },
+  { href: "/effects-lab", label: "Effects" },
 ];
 
 export default function LabMenu() {
