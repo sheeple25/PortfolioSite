@@ -11,8 +11,37 @@ import {
   useGaze,
   usePixel,
 } from "@/components/pixel";
+import { ShimmeringText } from "@/components/shimmering-text";
 import { useCompactViewport, usePrefersReducedMotion } from "@/lib/hooks";
 import styles from "./UnderConstruction.module.css";
+
+/**
+ * Splits on spaces and shimmers each word independently, rather than one
+ * shimmer spanning the whole string — `ShimmeringText`'s wrapper is an
+ * `inline-flex` box that won't itself wrap, so a full sentence in one
+ * instance would refuse to break across lines.
+ */
+function ShimmerWords({
+  text,
+  className,
+  duration,
+}: {
+  text: string;
+  className?: string;
+  duration?: number;
+}) {
+  const words = text.split(" ");
+  return (
+    <>
+      {words.map((word, i) => (
+        <span key={i}>
+          <ShimmeringText text={word} duration={duration} className={className} />
+          {i < words.length - 1 ? " " : null}
+        </span>
+      ))}
+    </>
+  );
+}
 
 const STATUS_PHRASES = [
   "Sketching wireframes",
@@ -180,11 +209,13 @@ export default function UnderConstruction({
         {pets === 0 ? "" : pets === 1 ? "petted once" : `petted ${pets} times`}
       </p>
 
-      <p className={styles.eyebrow}>work in progress</p>
       <h1 className={styles.heading}>
-        {heading} <span>{accent}</span>
+        <ShimmerWords text={heading} className={styles.headingWord} duration={1.6} />{" "}
+        <ShimmerWords text={accent} className={styles.accentWord} duration={1.6} />
       </h1>
-      <p className={styles.subtext}>{subtext}</p>
+      <p className={styles.subtext}>
+        <ShimmerWords text={subtext} className={styles.subtextWord} duration={1.8} />
+      </p>
 
       <div className={styles.statusRow}>
         <motion.span
@@ -201,7 +232,11 @@ export default function UnderConstruction({
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.3 }}
           >
-            {STATUS_PHRASES[phraseIndex]}…
+            <ShimmerWords
+              text={`${STATUS_PHRASES[phraseIndex]}…`}
+              className={styles.statusWord}
+              duration={1.2}
+            />
           </motion.span>
         </AnimatePresence>
       </div>
