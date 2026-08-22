@@ -9,7 +9,8 @@ import AnnotationPanel from "@/components/writing/notes/AnnotationPanel";
 import { NotesProvider } from "@/components/writing/notes/NotesContext";
 import prose from "@/components/writing/prose.module.css";
 import { getWritingDocument, getWritingSlugs } from "@/lib/writing";
-import { cn, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/format";
 import styles from "./page.module.css";
 
 type PageProps = { params: Promise<{ slug: string }> };

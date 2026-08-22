@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import NumberFlow from "@number-flow/react";
 import {
   Pixel,
   rowsToRuns,
@@ -11,17 +12,103 @@ import {
   useGaze,
   usePixel,
 } from "@/components/pixel";
+import { ShimmeringText } from "@/components/shimmering-text";
+import { TextScramble } from "@/components/motion-primitives/text-scramble";
+import { TextRoll } from "@/components/motion-primitives/text-roll";
+import { TextEffect } from "@/components/motion-primitives/text-effect";
+import { TextShimmer } from "@/components/motion-primitives/text-shimmer";
+import { TextShimmerWave } from "@/components/motion-primitives/text-shimmer-wave";
 import { useCompactViewport, usePrefersReducedMotion } from "@/lib/hooks";
 import styles from "./UnderConstruction.module.css";
 
+/**
+ * Splits on spaces and shimmers each word independently, rather than one
+ * shimmer spanning the whole string — `ShimmeringText`'s wrapper is an
+ * `inline-flex` box that won't itself wrap, so a full sentence in one
+ * instance would refuse to break across lines.
+ */
+function ShimmerWords({
+  text,
+  className,
+  duration,
+}: {
+  text: string;
+  className?: string;
+  duration?: number;
+}) {
+  const words = text.split(" ");
+  return (
+    <>
+      {words.map((word, i) => (
+        <span key={i}>
+          <ShimmeringText text={word} duration={duration} className={className} />
+          {i < words.length - 1 ? " " : null}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/** Each status phrase gets its own text effect, rather than one repeated
+ * across all six — the rotation is as much a showcase as a loading gag. */
 const STATUS_PHRASES = [
-  "Sketching wireframes",
-  "Hammering pixels into place",
-  "Bribing the CSS gremlins",
-  "Measuring twice, cutting once",
-  "Stacking components",
-  "Polishing the finer details",
-];
+  { text: "Sketching wireframes", effect: "scramble" },
+  { text: "Hammering pixels into place", effect: "roll" },
+  { text: "Bribing the CSS gremlins", effect: "blur" },
+  { text: "Measuring twice, cutting once", effect: "wave" },
+  { text: "Stacking components", effect: "shimmerWords" },
+  { text: "Polishing the finer details", effect: "shimmer" },
+] as const;
+
+function StatusPhrase({ phrase }: { phrase: (typeof STATUS_PHRASES)[number] }) {
+  const text = `${phrase.text}…`;
+
+  switch (phrase.effect) {
+    case "scramble":
+      return (
+        <TextScramble as="span" className={styles.statusScramble}>
+          {text}
+        </TextScramble>
+      );
+    case "roll":
+      return (
+        <TextRoll
+          className={styles.statusRoll}
+          duration={0.35}
+          getEnterDelay={(i) => i * 0.025}
+          getExitDelay={(i) => i * 0.025 + 0.15}
+        >
+          {text}
+        </TextRoll>
+      );
+    case "blur":
+      return (
+        <TextEffect
+          as="span"
+          per="char"
+          preset="fade-in-blur"
+          speedReveal={2.5}
+          className={styles.statusEffect}
+        >
+          {text}
+        </TextEffect>
+      );
+    case "wave":
+      return (
+        <TextShimmerWave as="span" duration={1} className={styles.statusWave}>
+          {text}
+        </TextShimmerWave>
+      );
+    case "shimmerWords":
+      return <ShimmerWords text={text} className={styles.statusWord} duration={1.2} />;
+    case "shimmer":
+      return (
+        <TextShimmer as="span" duration={1.6} className={styles.statusShimmer}>
+          {text}
+        </TextShimmer>
+      );
+  }
+}
 
 const MOTES = [
   { top: "10%", left: "6%", size: 6, delay: 0 },
@@ -177,14 +264,22 @@ export default function UnderConstruction({
       </div>
 
       <p className={styles.petCount} aria-hidden="true">
-        {pets === 0 ? "" : pets === 1 ? "petted once" : `petted ${pets} times`}
+        {pets === 0 ? null : pets === 1 ? (
+          "petted once"
+        ) : (
+          <>
+            petted <NumberFlow value={pets} /> times
+          </>
+        )}
       </p>
 
-      <p className={styles.eyebrow}>work in progress</p>
       <h1 className={styles.heading}>
-        {heading} <span>{accent}</span>
+        <ShimmerWords text={heading} className={styles.headingWord} duration={1.6} />{" "}
+        <ShimmerWords text={accent} className={styles.accentWord} duration={1.6} />
       </h1>
-      <p className={styles.subtext}>{subtext}</p>
+      <p className={styles.subtext}>
+        <ShimmerWords text={subtext} className={styles.subtextWord} duration={1.8} />
+      </p>
 
       <div className={styles.statusRow}>
         <motion.span
@@ -201,7 +296,7 @@ export default function UnderConstruction({
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.3 }}
           >
-            {STATUS_PHRASES[phraseIndex]}…
+            <StatusPhrase phrase={STATUS_PHRASES[phraseIndex]} />
           </motion.span>
         </AnimatePresence>
       </div>

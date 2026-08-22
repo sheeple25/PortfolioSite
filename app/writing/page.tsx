@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import IndexCard from "@/components/writing/IndexCard";
 import { getWritingSummaries } from "@/lib/writing";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/format";
 import styles from "./page.module.css";
 
 const TITLE = "Writing.";

@@ -71,7 +71,8 @@ Open <http://localhost:3000>.
 │   ├── writing/             # Markdown -> section tree, and the doc registry
 │   ├── breakpoints.ts       # Breakpoints needed in JS as well as CSS
 │   ├── hooks.ts             # useMediaQuery and friends
-│   ├── utils.ts             # cn() and formatDate()
+│   ├── utils.ts             # cn() — owned by the shadcn CLI, gets overwritten on `add`
+│   ├── format.ts            # formatDate()
 │   └── site.ts              # Site URL, nav links, socials, contact, route list
 ├── public/
 │   └── site-loader.webp     # The loading animation; also the logo's hover state
