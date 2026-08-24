@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useScroll } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { TocEntry } from "@/lib/writing/types";
@@ -127,6 +127,19 @@ export default function Toc({ toc }: { toc: TocEntry[] }) {
   const { scrollYProgress } = useScroll();
 
   const current = toc.find((entry) => entry.id === activeId);
+
+  // The sheet covers the text it is opened over, so it needs the escape every
+  // other overlay has — the toggle is the only other way back out.
+  useEffect(() => {
+    if (!sheetOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSheetOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [sheetOpen]);
 
   return (
     <>
