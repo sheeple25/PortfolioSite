@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 function parseVersion(filename) {
-  const match = filename.match(/CV_V([\d.]+)\.pdf/i);
+  const match = filename.match(/^v([\d.]+)\.pdf$/i);
   if (!match) return null;
   const version = match[1];
   const parts = version.split(".").map(Number);
