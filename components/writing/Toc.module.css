@@ -189,8 +189,25 @@
   color: var(--color-accent);
 }
 
+/*
+ * The sheet hangs below the bar instead of sitting inside its flow.
+ *
+ * In flow it set the height of everything above the article, and a row click
+ * starts the jump and closes the sheet in the same tick — so the smooth scroll
+ * was still travelling towards an offset the collapse had just pulled ~380px
+ * up the page, and every jump overshot into the following section. Out of
+ * flow the document never moves and the jump lands where it was aimed.
+ */
 .sheet {
   overflow: hidden;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sheetInner {
@@ -200,6 +217,12 @@
   gap: 1rem;
   padding: 0.25rem var(--page-gutter) 1rem;
   border-top: 1px solid var(--color-border);
+  /*
+   * Overlaying means the page can no longer be scrolled to reach the bottom of
+   * a long contents list, so the list carries its own scroll instead.
+   */
+  max-height: calc(100svh - var(--nav-height) - 7rem);
+  overflow-y: auto;
 }
 
 .barProgress {

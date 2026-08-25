@@ -39,7 +39,8 @@ Open <http://localhost:3000>.
 │   │   └── text-lab/        #   /text-lab  — text-morph transition candidates
 │   ├── about/               # /about
 │   ├── contact/             # /contact
-│   ├── projects/            # /projects
+│   ├── projects/            # /projects — the index, labelled "Work" in the nav
+│   │   └── [slug]/          #   /projects/… — one project, statically generated
 │   ├── writing/             # /writing — the index
 │   │   └── [slug]/          #   /writing/… — one document, statically generated
 │   ├── layout.tsx           # Root layout: fonts, metadata, NavBar/Footer, Pixel
@@ -62,12 +63,14 @@ Open <http://localhost:3000>.
 │   │   ├── ReaderContext.tsx#   which sections are open + which is being read
 │   │   ├── SectionCard.tsx  #   heading, preview, expandable body
 │   │   └── Toc.tsx          #   contents rail on wide screens, sheet on narrow
-│   ├── motion-primitives/   # Reusable text animations
+│   ├── motion-primitives/   # Reusable text animations, incl. particle-text
 │   ├── dev/                 # Dev-only UI (LabMenu), never shipped to production
 │   └── UnderConstruction.tsx# The placeholder page shared by the unbuilt routes
 ├── content/
+│   ├── projects/            # The work — one .md file each
 │   └── writing/             # The documents themselves — one .md file each
 ├── lib/
+│   ├── projects/            # The project registry, on the same loader
 │   ├── writing/             # Markdown -> section tree, and the doc registry
 │   ├── breakpoints.ts       # Breakpoints needed in JS as well as CSS
 │   ├── hooks.ts             # useMediaQuery and friends
@@ -92,12 +95,14 @@ Open <http://localhost:3000>.
 Note that `next build` does **not** run ESLint — `next lint` was removed in
 Next.js 16, so linting and type-checking are separate steps.
 
-## Writing
+## Writing and Work
 
-Adding a document is one step: drop a `.md` file into `content/writing/`. The
-filename becomes the slug, and the index, the sitemap, the metadata, the
-contents rail and Pixel's notes all derive from the file — there is no list to
-keep in step.
+`/writing` and `/projects` are the same reader pointed at two folders. Adding to
+either is one step: drop a `.md` file into `content/writing/` or
+`content/projects/`. The filename becomes the slug, and the index, the sitemap,
+the metadata, the contents rail and Pixel's notes all derive from the file —
+there is no list to keep in step. The loading rules live once in
+`lib/writing/collection.ts`, and the two registries are thin wrappers over it.
 
 ```markdown
 ---
@@ -148,15 +153,23 @@ inline where it was written instead — the one case that shows unprompted. A
 `**bold**` word that names no note simply stays bold.
 
 **Figures.** `[FIGURE key: caption]` renders a diagram from the registry in
-`components/writing/figures/index.ts`. Standalone markdown images work too:
+`components/writing/figures/index.ts`. Standalone markdown images work too, and
+`[PLACEHOLDER file: caption]` holds a slot open for artwork that doesn't exist
+yet — it renders a dashed frame naming the file it is waiting for, so a document
+can be written around its diagrams before they are drawn:
 
 ```markdown
 [FIGURE design-loop: The relationship between client, designer and user]
 ![alt text](/writing/plan.png?w=1600&h=900 "caption")
+[PLACEHOLDER fig-2-3-1.svg: What the drawing will show]
 ```
 
 The `w`/`h` query is how a raster image tells `next/image` its aspect ratio —
 without it the figure falls back to a plain `<img>`.
+
+**Titles.** A document's `<h1>` fades in a word at a time. A project can opt
+into a particle build-up instead — `titleEffect="particles"` on `DocumentHeader`
+— which samples the heading's own glyphs and only suits a short, single word.
 
 **Private sections.** `<!-- private -->` on the line after a heading keeps that
 section out of production. It still renders in `npm run dev`, badged, so you can

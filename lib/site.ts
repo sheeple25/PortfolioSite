@@ -16,7 +16,7 @@ export const SITE_NAME = "Vidush Gupta";
 export const WORDMARK = "Vidush Gupta.";
 
 /** Sits under the wordmark in the footer. Placeholder from the mockup. */
-export const SITE_DESIGNATION = "[Design Designation]";
+export const SITE_DESIGNATION = "Design Strategist + Researcher";
 
 export const CONTACT_EMAIL = "vidush.gupta25@gmail.com";
 
@@ -26,12 +26,18 @@ export const CONTACT_EMAIL = "vidush.gupta25@gmail.com";
  */
 export const NAV_LINKS = [
   { href: "/projects", label: "Work" },
+  { href: "/archive", label: "Archive" },
   { href: "/writing", label: "Writing" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
-export type ExternalLink = { label: string; href: string };
+export type ExternalLink = {
+  label: string;
+  href: string;
+  /** Filename the browser saves the download as, if it should differ from the source file's name. */
+  downloadAs?: string;
+};
 
 /**
  * Profiles linked from the footer.
@@ -41,8 +47,8 @@ export type ExternalLink = { label: string; href: string };
  * it from the production build entirely. Fill the URLs in and they go live.
  */
 export const SOCIAL_LINKS: ReadonlyArray<ExternalLink> = [
-  { label: "LinkedIn", href: "" },
-  { label: "Behance", href: "" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/vidushgupta/" },
+  { label: "Behance", href: "https://www.behance.net/vidushgupta" },
   { label: "Instagram", href: "" },
 ];
 
@@ -53,7 +59,7 @@ export const SOCIAL_LINKS: ReadonlyArray<ExternalLink> = [
  */
 export const DOCUMENT_LINKS: ReadonlyArray<ExternalLink> = [
   { label: "Portfolio", href: "" },
-  { label: "Resume", href: "" },
+  { label: "Resume", href: "", downloadAs: "Vidush Gupta CV.pdf" },
 ];
 
 /**
@@ -64,6 +70,7 @@ export const DOCUMENT_LINKS: ReadonlyArray<ExternalLink> = [
 export const ROUTES = [
   "/",
   "/projects",
+  "/archive",
   "/writing",
   "/about",
   "/contact",

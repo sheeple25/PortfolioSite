@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { AnimatePresence, motion, useScroll } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { TocEntry } from "@/lib/writing/types";
 import { useReader } from "./ReaderContext";
@@ -124,9 +124,52 @@ function List({
 export default function Toc({ toc }: { toc: TocEntry[] }) {
   const { activeId } = useReader();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const { scrollYProgress } = useScroll();
+  const scrollYProgress = useMotionValue(0);
 
   const current = toc.find((entry) => entry.id === activeId);
+
+  // The sheet covers the text it is opened over, so it needs the escape every
+  // other overlay has — the toggle is the only other way back out.
+  useEffect(() => {
+    if (!sheetOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSheetOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [sheetOpen]);
+
+  // A hand-rolled tracker rather than motion's `useScroll` — that hook
+  // periodically remeasures the page's scrollable height by jumping the
+  // window to (0, 0) and back, and if that fires mid-flight during a jump
+  // (`ReaderContext.jumpTo`'s `scrollIntoView`), it stomps the animation and
+  // strands the reader partway to wherever they clicked. Reading the two
+  // numbers this bar actually needs never touches scroll position.
+  useEffect(() => {
+    let frame = 0;
+
+    const measure = () => {
+      frame = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      scrollYProgress.set(max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0);
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+
+    measure();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [scrollYProgress]);
 
   return (
     <>

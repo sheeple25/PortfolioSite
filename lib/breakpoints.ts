@@ -12,3 +12,8 @@
 export const COMPACT_MAX_WIDTH = 640;
 
 export const COMPACT_QUERY = `(max-width: ${COMPACT_MAX_WIDTH}px)`;
+
+/** Below this, a document's contents rail collapses into the mobile bar + sheet. */
+export const RAIL_MAX_WIDTH = 1280;
+
+export const RAIL_QUERY = `(max-width: ${RAIL_MAX_WIDTH}px)`;

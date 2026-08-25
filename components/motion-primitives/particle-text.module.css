@@ -1,0 +1,27 @@
+/*
+ * Inline-block so the box hugs the word: the canvas is positioned against it,
+ * and a full-width host would put the drawing in the wrong place.
+ */
+.host {
+  position: relative;
+  display: inline-block;
+}
+
+.label {
+  /* Inherits the heading's type; only the colour is ever touched, to hand the
+     word over to the canvas once it has a frame to show. */
+  transition: color 0.35s ease;
+}
+
+/*
+ * Pinned to the top-left of the word and sized in JS — tracking can make the
+ * drawn text a shade wider than the inline box, so the canvas is allowed to
+ * run past it rather than clipping the last glyph. Pointer events pass through
+ * so the heading still behaves like text.
+ */
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}

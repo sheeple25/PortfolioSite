@@ -71,7 +71,7 @@
 }
 
 .panelText {
-  font-family: var(--font-waiting-for-the-sunrise), var(--font-newsreader), cursive;
+  font-family: var(--font-jetbrains-mono);
   font-size: 1.05rem;
   line-height: 1.55;
   color: var(--color-ink-soft);
@@ -138,7 +138,7 @@
 }
 
 .standaloneText {
-  font-family: var(--font-waiting-for-the-sunrise), var(--font-newsreader), cursive;
+  font-family: var(--font-jetbrains-mono);
   font-size: 1.05rem;
   line-height: 1.55;
   color: var(--color-ink-soft);

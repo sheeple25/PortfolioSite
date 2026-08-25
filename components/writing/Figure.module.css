@@ -67,3 +67,44 @@
     text-align: left;
   }
 }
+
+/*
+ * A slot whose artwork hasn't arrived yet. Deliberately quiet — a dashed
+ * rectangle at the figure's own width, naming the file it is holding open for.
+ * It should read as a reserved space in the layout, not as a broken image.
+ */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  aspect-ratio: 16 / 9;
+  padding: 2rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 4px;
+  background: var(--color-white);
+  text-align: center;
+}
+
+.placeholderMark {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--color-border-strong);
+}
+
+.placeholderFile {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--color-charcoal);
+  overflow-wrap: anywhere;
+}
+
+.placeholderNote {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}

@@ -16,6 +16,15 @@ type PixelContextValue = {
   react: (expression: Expression, ms?: number) => void;
   hidden: boolean;
   setHidden: (hidden: boolean) => void;
+  /** Whether the chat sidebar is open. */
+  chatOpen: boolean;
+  /**
+   * Opens the chat sidebar. `source` distinguishes a deliberate header click
+   * from an offer the companion made on its own, so the sidebar (or analytics)
+   * can tell the two apart without threading extra state through the header.
+   */
+  openChat: (source?: "header" | "companion") => void;
+  closeChat: () => void;
 };
 
 const PixelContext = createContext<PixelContextValue | null>(null);
@@ -24,10 +33,17 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
   const [mood, setMood] = useState<Expression | null>(null);
   const [hidden, setHidden] = useState(false);
   const [reaction, react] = useFlash(REACTION_MS);
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const openChat = useMemo(
+    () => (_source?: "header" | "companion") => setChatOpen(true),
+    [],
+  );
+  const closeChat = useMemo(() => () => setChatOpen(false), []);
 
   const value = useMemo(
-    () => ({ mood, setMood, reaction, react, hidden, setHidden }),
-    [mood, reaction, react, hidden],
+    () => ({ mood, setMood, reaction, react, hidden, setHidden, chatOpen, openChat, closeChat }),
+    [mood, reaction, react, hidden, chatOpen, openChat, closeChat],
   );
 
   return <PixelContext.Provider value={value}>{children}</PixelContext.Provider>;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { COMPACT_QUERY } from "./breakpoints";
+import { COMPACT_QUERY, RAIL_QUERY } from "./breakpoints";
 
 /**
  * Subscribe to a media query.
@@ -32,4 +32,9 @@ export function usePrefersReducedMotion(): boolean {
 /** Mirrors the `@media (max-width: 640px)` blocks — see `lib/breakpoints.ts`. */
 export function useCompactViewport(): boolean {
   return useMediaQuery(COMPACT_QUERY);
+}
+
+/** Mirrors the `@media (max-width: 1280px)` blocks — see `lib/breakpoints.ts`. */
+export function useNarrowToc(): boolean {
+  return useMediaQuery(RAIL_QUERY);
 }

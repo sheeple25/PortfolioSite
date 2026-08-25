@@ -11,6 +11,7 @@ import type { Nodes, Root, RootContent } from "mdast";
 import type { Root as HastRoot } from "hast";
 import { proseComponents } from "@/components/writing/proseComponents";
 import type {
+  ArchiveCategory,
   TocEntry,
   WritingDocument,
   WritingFrontmatter,
@@ -42,16 +43,18 @@ const PRIVATE_MARKER = /^<!--\s*private\s*-->$/;
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
 /*
- * Block directives. Both are written as a paragraph on its own that opens with
+ * Block directives. Each is written as a paragraph on its own that opens with
  * a bracketed keyword, which keeps the source readable as plain markdown and
  * needs no MDX:
  *
  *   [NOTE anchor, alias: body]   an aside, triggered by those bold words
  *   [NOTE: body]                 an aside with no trigger
  *   [FIGURE design-loop: cap]    a registered diagram, with its caption
+ *   [PLACEHOLDER a.svg: cap]     a reserved slot, until the asset arrives
  */
 const NOTE_DIRECTIVE = /^\[NOTE(?:\s+([^:\]]*?))?:\s*([\s\S]+)\]$/;
 const FIGURE_DIRECTIVE = /^\[FIGURE\s+([^:\]]+?):\s*([\s\S]*?)\]$/;
+const PLACEHOLDER_DIRECTIVE = /^\[PLACEHOLDER\s+([^:\]]+?):\s*([\s\S]*?)\]$/;
 
 /**
  * Markers that split a section into what shows while collapsed and what waits
@@ -212,7 +215,38 @@ function readFrontmatter(
     tags: Array.isArray(data.tags) ? data.tags.map(String) : undefined,
     recommended: data.recommended === true,
     draft: data.draft === true,
+    // Absent means "expandable", so only an explicit `false` turns it off.
+    expandable: data.expandable === false ? false : undefined,
+
+    // Archive fields. Unset everywhere else, which is why each is optional.
+    place: typeof data.place === "string" ? data.place : undefined,
+    term: typeof data.term === "string" ? data.term : undefined,
+    category: isArchiveCategory(data.category) ? data.category : undefined,
+    rank: typeof data.rank === "number" ? data.rank : undefined,
+    role: typeof data.role === "string" ? data.role : undefined,
+    timeline: typeof data.timeline === "string" ? data.timeline : undefined,
+    team: typeof data.team === "string" ? data.team : undefined,
+    skills: Array.isArray(data.skills) ? data.skills.map(String) : undefined,
+    cover: typeof data.cover === "string" ? data.cover : undefined,
+    coverAlt: typeof data.coverAlt === "string" ? data.coverAlt : undefined,
+    titleEffect:
+      typeof data.titleEffect === "string" ? data.titleEffect : undefined,
   };
+}
+
+const ARCHIVE_CATEGORIES = [
+  "product",
+  "transport",
+  "research",
+  "furniture",
+  "textile",
+] as const;
+
+function isArchiveCategory(value: unknown): value is ArchiveCategory {
+  return (
+    typeof value === "string" &&
+    (ARCHIVE_CATEGORIES as readonly string[]).includes(value)
+  );
 }
 
 /**
@@ -327,6 +361,20 @@ function collectSections(root: Root, sectionDepth: number) {
         continue;
       }
 
+      const placeholderMatch = PLACEHOLDER_DIRECTIVE.exec(text);
+      if (placeholderMatch) {
+        const caption = placeholderMatch[2].trim();
+        target.push(
+          figureNode(
+            `placeholder:${placeholderMatch[1].trim()}`,
+            caption,
+            caption,
+            ++figures
+          )
+        );
+        continue;
+      }
+
       const image = imageOnlyParagraph(node);
       if (image) {
         target.push(
@@ -413,9 +461,18 @@ export function parseWritingDocument(
 
   const visible = raw.filter((section) => includePrivate || !section.private);
 
+  /*
+   * `expandable: false` hands the whole section to the preview, which leaves
+   * the body empty — `renderNodes` returns null for that, and `SectionCard`
+   * only draws its toggle when a body exists. So the section renders open,
+   * with no control, without the card needing to know why.
+   */
+  const expandable = meta.expandable !== false;
+
   const sections: WritingSection[] = visible.map((section) => {
-    const { preview, body: rest } =
-      section.explicitSplit === null
+    const { preview, body: rest } = !expandable
+      ? { preview: section.nodes, body: [] as RootContent[] }
+      : section.explicitSplit === null
         ? splitPreview(section.nodes)
         : {
             preview: section.nodes.slice(0, section.explicitSplit),

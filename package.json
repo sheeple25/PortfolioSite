@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/copy-latest-cv.js && next dev",
+    "build": "node scripts/copy-latest-cv.js && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
     "@number-flow/react": "^0.6.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@visx/curve": "^4.0.1-alpha.0",

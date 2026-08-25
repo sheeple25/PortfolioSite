@@ -25,7 +25,7 @@ const INTERACTIVE = 'a, button, [role="button"], input, textarea, select, summar
 
 export default function PixelCompanion({ size = 88 }: { size?: number }) {
   const pathname = usePathname();
-  const { mood, reaction, hidden } = usePixel();
+  const { mood, reaction, hidden, chatOpen } = usePixel();
   const reducedMotion = usePrefersReducedMotion();
 
   const spriteRef = useRef<HTMLDivElement>(null);
@@ -100,7 +100,7 @@ export default function PixelCompanion({ size = 88 }: { size?: number }) {
 
   return (
     <AnimatePresence>
-      {!hidden && (
+      {!hidden && !chatOpen && (
         <motion.div
           className={styles.companion}
           initial={{ opacity: 0 }}

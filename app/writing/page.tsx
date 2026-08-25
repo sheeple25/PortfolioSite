@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import IndexCard from "@/components/writing/IndexCard";
 import { getWritingSummaries } from "@/lib/writing";
 import { formatDate } from "@/lib/format";
+import IndexShell from "@/components/chrome/IndexShell";
 import styles from "./page.module.css";
 
 const TITLE = "Writing.";
@@ -25,44 +26,30 @@ export default function WritingIndexPage() {
 
   return (
     <main className={styles.page}>
-      {/*
-        The document layout's three columns, with the contents rail left empty —
-        the index has no headings to jump between, but keeping the track holds
-        the reading column in the same place on both pages, so moving from the
-        list into a piece doesn't shift the text sideways.
-      */}
-      <div className={styles.shell}>
-        <div className={styles.rail} aria-hidden="true" />
-
-        <div className={styles.column}>
-          <header className={styles.header}>
-            <h1 className={styles.title}>{TITLE}</h1>
-            <p className={styles.intro}>{INTRO}</p>
-          </header>
-
-          {documents.length === 0 ? (
-            <p className={styles.empty}>
-              Nothing published yet. Documents live in{" "}
-              <code>content/writing</code> and appear here the moment one lands.
-            </p>
-          ) : (
-            <ul className={styles.list}>
-              {documents.map((doc, i) => (
-                <IndexCard
-                  key={doc.slug}
-                  index={i}
-                  slug={doc.slug}
-                  title={doc.meta.title}
-                  description={doc.meta.description}
-                  date={formatDate(doc.meta.date)}
-                  readingMinutes={doc.readingMinutes}
-                  recommended={doc.meta.recommended}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+      <IndexShell title={TITLE} intro={INTRO}>
+        {documents.length === 0 ? (
+          <p className={styles.empty}>
+            Nothing published yet. Documents live in{" "}
+            <code>content/writing</code> and appear here the moment one lands.
+          </p>
+        ) : (
+          <ul className={styles.list}>
+            {documents.map((doc, i) => (
+              <IndexCard
+                key={doc.slug}
+                index={i}
+                slug={doc.slug}
+                title={doc.meta.title}
+                description={doc.meta.description}
+                date={formatDate(doc.meta.date)}
+                readingMinutes={doc.readingMinutes}
+                recommended={doc.meta.recommended}
+                basePath="/writing"
+              />
+            ))}
+          </ul>
+        )}
+      </IndexShell>
 
       {/*
         Pixel's aside, in the same corner a document's annotations open in. It is

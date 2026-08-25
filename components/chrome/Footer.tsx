@@ -9,6 +9,7 @@ import {
   WORDMARK,
   type ExternalLink,
 } from "@/lib/site";
+import { getLatestCVPath } from "@/lib/cv";
 import Logo from "./Logo";
 import styles from "./Footer.module.css";
 
@@ -56,7 +57,12 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   const socials = partitionLinks(SOCIAL_LINKS);
-  const documents = partitionLinks(DOCUMENT_LINKS);
+  const latestCVPath = getLatestCVPath();
+  const documents = partitionLinks(
+    DOCUMENT_LINKS.map((link) =>
+      link.label === "Resume" ? { ...link, href: latestCVPath } : link
+    )
+  );
 
   return (
     // `id` is how BottomEdge finds the footer to lift the mascot clear of it.
@@ -111,7 +117,7 @@ export default function Footer() {
                     <a
                       className={styles.document}
                       href={link.href || undefined}
-                      download={link.href ? "" : undefined}
+                      download={link.href ? link.downloadAs ?? "" : undefined}
                       aria-disabled={link.href ? undefined : true}
                       title={link.href ? undefined : "Add the file to public/ and set the path in lib/site.ts"}
                     >

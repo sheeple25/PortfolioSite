@@ -1,0 +1,65 @@
+/*
+ * The frame every index page sits in.
+ *
+ * Index pages deliberately drop the three-track reading shell that documents
+ * use. That layout exists to hold a contents rail and an annotation margin
+ * against a fixed reading measure — an index has neither, and forcing a grid
+ * of covers through a 42rem measure left the tiles too small to read. Here the
+ * content takes the full page width instead.
+ */
+
+.shell {
+  width: min(var(--page-max), 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding-top: clamp(2rem, 5vw, 4.5rem);
+}
+
+/*
+ * Title on the left, standfirst on the right — the two held apart rather than
+ * stacked, so the head of the page reads as one band instead of a column of
+ * text. The right column is capped so the line length stays readable however
+ * wide the window gets.
+ */
+.header {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 30rem);
+  align-items: start;
+  column-gap: clamp(2rem, 6vw, 6rem);
+  padding-bottom: clamp(3rem, 7vw, 5.5rem);
+}
+
+.title {
+  font-family: var(--font-space-grotesk);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 5.5vw, 4.1rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+.intro {
+  font-family: var(--font-newsreader);
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  line-height: 1.45;
+  color: var(--color-accent);
+  text-wrap: pretty;
+  margin: 0;
+  /* Sits on the title's own line rather than its cap-height. */
+  padding-top: 0.35rem;
+}
+
+/*
+ * Below this the two halves can't share a line without the standfirst becoming
+ * a narrow ragged column, so they stack.
+ */
+@media (max-width: 60rem) {
+  .header {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.25rem;
+  }
+
+  .intro {
+    padding-top: 0;
+    max-width: 34rem;
+  }
+}

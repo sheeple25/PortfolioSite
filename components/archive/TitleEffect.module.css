@@ -1,0 +1,93 @@
+/*
+ * Layout for a split heading.
+ *
+ * The glyphs are laid out inline so the title still wraps and still balances;
+ * only the animation is per letter. Every effect is transform + opacity + a
+ * filter, so nothing here can reflow the column while it plays.
+ */
+
+.title {
+  /* The type scale itself stays in DocumentHeader — this only adds movement. */
+  perspective: 900px;
+}
+
+.glyphs {
+  display: inline;
+}
+
+.glyph {
+  display: inline-block;
+  /* Without this the transforms of one glyph get flattened into the line box. */
+  transform-style: preserve-3d;
+  white-space: pre;
+  will-change: transform, opacity, filter;
+}
+
+/*
+ * Once a glyph has settled, drop its compositing hint. Leaving `will-change`
+ * on a large heading permanently pins a layer per letter, which costs memory
+ * for an animation that has already finished.
+ */
+.glyph[style*="none"] {
+  will-change: auto;
+}
+
+/* The goo filter's <svg> holds only <defs>, so it must not occupy any space. */
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/*
+ * Flux only. Blurred neighbours merge into one shape instead of crossfading,
+ * which is what makes the letters read as liquid pulling together. The filter
+ * is dropped once the animation settles — see the transition below — because a
+ * permanent SVG filter on a heading blocks subpixel text rendering.
+ */
+.ferrofluid .glyphs {
+  filter: url(#archive-goo);
+  animation: unfilter 0s linear 1.5s forwards;
+}
+
+@keyframes unfilter {
+  to {
+    filter: none;
+  }
+}
+
+/* Vortex turns its letters, which needs depth on the line rather than the block. */
+.weave .glyph {
+  transform-origin: center center;
+}
+
+/* Lumex bends around its baseline, not its middle. */
+.bend .glyph {
+  transform-origin: bottom left;
+}
+
+/* Matchbox warms up rather than moving much, so it gets a little accent light. */
+.glow .glyph {
+  text-shadow: 0 0 0 transparent;
+  animation: filament 1.6s ease-out 0.3s 1;
+}
+
+@keyframes filament {
+  40% {
+    text-shadow: 0 0 26px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glyph,
+  .ferrofluid .glyphs,
+  .glow .glyph {
+    animation: none;
+    filter: none;
+    will-change: auto;
+  }
+}

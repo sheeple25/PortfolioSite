@@ -3,7 +3,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --color-accent: #ffa554;
+  /* Electric blue, sampled from the design mockup. */
+  --color-accent: #0047ff;
   --color-bg: #f7f7f7;
   --color-white: #ffffff;
   --color-charcoal: #1e1e1e;
@@ -57,6 +58,16 @@
 
   /** Keep in step with the `size` prop `PixelCompanion` is mounted with. */
   --companion-size: 5.5rem;
+
+  /*
+   * Pixel's chat sidebar. Narrow enough that the page column isn't cropped at
+   * a 1920px-wide (1080p) viewport, wider on bigger screens where there's
+   * slack to spare.
+   */
+  --sidebar-width: clamp(300px, 26vw, 440px);
+  --sidebar-bg: #f0f0f0;
+  /* Deliberately smaller than --page-gutter — a 4rem gutter eats too much of a ~400px panel. */
+  --sidebar-pad: 1.5rem;
   --chart-1: oklch(0.32 0 none);
   --chart-2: oklch(0.41 0 none);
   --chart-3: oklch(0.54 0 none);
@@ -107,6 +118,19 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
+  /*
+   * Pixel's sidebar is `position: fixed` (see PixelSidebar.module.css) rather
+   * than a flex sibling here, so it's pushed open by widening this margin
+   * instead of by flex distribution — same easing as the sidebar's own width
+   * transition so the page edge and the panel edge move together.
+   */
+  margin-right: 0;
+  transition: margin-right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Pushes the whole page left by exactly the sidebar's width while it's open. */
+body:has(aside[aria-label="Ask Pixel"][data-open="true"]) {
+  margin-right: var(--sidebar-width);
 }
 
 /* The routable area between the header and the footer. */

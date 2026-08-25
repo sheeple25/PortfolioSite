@@ -6,7 +6,7 @@ import { usePrefersReducedMotion } from "@/lib/hooks";
 import styles from "./IndexCard.module.css";
 
 /**
- * One document on the `/writing` index.
+ * One document on a section index — `/writing` or `/projects`.
  *
  * A row rather than a card: ordinal and title on one line with the arrow at the
  * far edge, the description under it, and the date and length pushed to the two
@@ -20,6 +20,7 @@ export default function IndexCard({
   date,
   readingMinutes,
   recommended,
+  basePath,
   index,
 }: {
   slug: string;
@@ -28,6 +29,8 @@ export default function IndexCard({
   date: string;
   readingMinutes: number;
   recommended?: boolean;
+  /** Section the slug hangs off, e.g. `/writing` or `/projects`. */
+  basePath: string;
   index: number;
 }) {
   const reducedMotion = usePrefersReducedMotion();
@@ -48,7 +51,7 @@ export default function IndexCard({
     >
       {recommended && <p className={styles.flag}>Recommended</p>}
 
-      <Link href={`/writing/${slug}`} className={styles.link}>
+      <Link href={`${basePath}/${slug}`} className={styles.link}>
         <span className={styles.head}>
           <span className={styles.ordinal} aria-hidden="true">
             {String(index + 1).padStart(2, "0")}

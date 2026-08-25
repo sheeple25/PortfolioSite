@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { TextEffect } from "@/components/motion-primitives/text-effect";
+import ParticleText from "@/components/motion-primitives/particle-text";
+import TitleEffect, { isTitleEffect } from "@/components/archive/TitleEffect";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import styles from "./DocumentHeader.module.css";
 
@@ -19,22 +21,47 @@ export default function DocumentHeader({
   title,
   subtitle,
   date,
+  dateTime,
   version,
   readingMinutes,
   showsPrivate,
+  backHref,
+  backLabel = "Back",
+  titleEffect = "words",
 }: {
   title: string;
   subtitle?: string;
+  /** Human-readable, e.g. `14 Feb 2026` or `Fall 2024`. */
   date: string;
+  /**
+   * Machine-readable ISO date for the `<time>` element. Defaults to `date`,
+   * which is right while the two are the same string — `/archive` shows a term
+   * label like "Fall 2024", which is not a date a parser can read, so it passes
+   * the real one here.
+   */
+  dateTime?: string;
   version?: string;
   readingMinutes: number;
   showsPrivate: boolean;
+  /** Section index this document belongs to. */
+  backHref: string;
+  backLabel?: string;
+  /**
+   * How the title arrives. `words` fades it in a word at a time — the
+   * default, and right for a heading that is a sentence. `particles` builds
+   * it out of its own glyphs, which only suits a short, single-word title.
+   *
+   * Any other value is looked up in the `/archive` registry, where each entry
+   * has a title animation of its own. An unknown name falls back to `words`
+   * rather than throwing, so a typo in frontmatter costs an effect, not a page.
+   */
+  titleEffect?: string;
 }) {
   const reducedMotion = usePrefersReducedMotion();
 
   return (
     <header className={styles.header}>
-      <Link href="/writing" className={styles.back}>
+      <Link href={backHref} className={styles.back}>
         <svg
           className={styles.backIcon}
           viewBox="0 0 20 14"
@@ -51,11 +78,19 @@ export default function DocumentHeader({
             strokeLinejoin="round"
           />
         </svg>
-        Back
+        {backLabel}
       </Link>
 
       {reducedMotion ? (
         <h1 className={styles.title}>{title}</h1>
+      ) : titleEffect === "particles" ? (
+        <ParticleText as="h1" className={styles.title}>
+          {title}
+        </ParticleText>
+      ) : isTitleEffect(titleEffect) ? (
+        <TitleEffect as="h1" effect={titleEffect} className={styles.title}>
+          {title}
+        </TitleEffect>
       ) : (
         <TextEffect
           as="h1"
@@ -88,7 +123,7 @@ export default function DocumentHeader({
         transition={{ duration: 0.5, delay: 0.55 }}
       >
         <p className={styles.metaLeft}>
-          <time dateTime={date}>{date}</time>
+          <time dateTime={dateTime ?? date}>{date}</time>
           {version && (
             <>
               <span className={styles.sep} aria-hidden="true">

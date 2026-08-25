@@ -43,3 +43,9 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Local-only files
+/cv/
+
+# Source material for /archive — large PDFs, kept local like /cv/
+/source/

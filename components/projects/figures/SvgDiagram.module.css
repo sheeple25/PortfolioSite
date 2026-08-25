@@ -1,0 +1,51 @@
+.wrap {
+  position: relative;
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/*
+ * Corner-anchored rather than in the caption row below: the caption belongs
+ * to `Figure.tsx`, which never sees the animation state this button drives.
+ * Quiet at rest — a circle, not a border — so it doesn't compete with line
+ * art that already runs to the image's own edges.
+ */
+.replay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  opacity: 0.5;
+  transition: opacity 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.wrap:hover .replay,
+.replay:hover,
+.replay:focus-visible {
+  opacity: 1;
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+}
+
+.replay:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  /* No hover on touch — stays faintly visible so it's still discoverable. */
+  .replay {
+    opacity: 0.65;
+  }
+}

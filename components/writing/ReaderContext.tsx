@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePrefersReducedMotion } from "@/lib/hooks";
+import { useNarrowToc, usePrefersReducedMotion } from "@/lib/hooks";
 
 /*
  * Shared state for one document: which sections are open, and which one the
@@ -60,8 +60,15 @@ export function ReaderProvider({
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(sectionIds[0] ?? null);
   const reducedMotion = usePrefersReducedMotion();
+  // Below the rail breakpoint, "contents" is a dropdown sheet that starts
+  // closing the instant a row is tapped — animating the scroll at the same
+  // time means it's fighting a collapsing sheet on a small screen. The wide
+  // rail doesn't move when a row is clicked, so it can afford the animation.
+  const narrowToc = useNarrowToc();
+  const instant = reducedMotion || narrowToc;
 
   const elements = useRef(new Map<string, HTMLElement>());
+  const scrollAnimation = useRef<number | null>(null);
 
   const register = useCallback((id: string, element: HTMLElement | null) => {
     if (element) elements.current.set(id, element);
@@ -76,14 +83,71 @@ export function ReaderProvider({
     });
   }, []);
 
+  /*
+   * A hand-driven animation rather than `scrollIntoView({ behavior: "smooth"
+   * })`. Motion's height-"auto" animations (this rail's own expanding
+   * subheadings, a section's expand/collapse) suspend the page's scroll
+   * position while they measure, then restore it — and if that restore lands
+   * mid-flight through a native smooth scroll, it snaps the page back to
+   * wherever it was and strands the jump partway to its target. Writing the
+   * position ourselves, every frame, means a stray write like that only ever
+   * wins for a single frame before the next tick puts it back on the curve.
+   */
+  const animateScrollTo = useCallback((targetY: number) => {
+    if (scrollAnimation.current !== null) {
+      clearTimeout(scrollAnimation.current);
+    }
+
+    const startY = window.scrollY;
+    const delta = targetY - startY;
+    if (Math.abs(delta) < 1) return;
+
+    const duration = Math.min(900, Math.max(280, Math.abs(delta) * 0.25));
+    const startTime = performance.now();
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    // `setTimeout` rather than `requestAnimationFrame`: rAF is paused
+    // wholesale in a background or unfocused tab, where a jump should still
+    // land correctly even if it can't be watched animate. A ~60fps timer
+    // keeps ticking either way.
+    const step = () => {
+      const t = Math.min(1, (performance.now() - startTime) / duration);
+      // The two-argument form: always immediate, unlike `scrollTo`/
+      // `scrollIntoView` with `behavior: "auto"`, which defer to the page's
+      // `scroll-behavior: smooth` and would animate this step itself.
+      window.scrollTo(0, startY + delta * easeOutCubic(t));
+      scrollAnimation.current = t < 1 ? window.setTimeout(step, 16) : null;
+    };
+
+    scrollAnimation.current = window.setTimeout(step, 16);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (scrollAnimation.current !== null) {
+        clearTimeout(scrollAnimation.current);
+      }
+    },
+    []
+  );
+
   const jumpTo = useCallback(
     (targetId: string, ownerId?: string) => {
-      const behavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
-
       const scroll = () => {
         const target =
           document.getElementById(targetId) ?? elements.current.get(targetId);
-        target?.scrollIntoView({ behavior, block: "start" });
+        if (!target) return;
+
+        // `getBoundingClientRect` doesn't know about `scroll-margin-top`
+        // (only `scrollIntoView` resolves that), so it's read directly to
+        // land the target the same distance below the sticky nav either way.
+        const marginTop = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+        const targetY = target.getBoundingClientRect().top + window.scrollY - marginTop;
+
+        setActiveId(targetId);
+
+        if (instant) window.scrollTo(0, targetY);
+        else animateScrollTo(targetY);
       };
 
       // A subheading inside a collapsed body has no stable position until the
@@ -94,13 +158,16 @@ export function ReaderProvider({
         setOpenIds((current) => new Set(current).add(ownerId));
       }
 
+      // This wait is for the *section's own* expand transition (governed by
+      // `reducedMotion` alone, in `SectionCard.tsx`) settling before the
+      // scroll math runs — independent of whether the scroll itself animates.
       if (mustOpen && !reducedMotion) window.setTimeout(scroll, EXPAND_MS);
       else if (mustOpen) requestAnimationFrame(scroll);
       else scroll();
     },
     // Depending on `openIds` costs nothing: the context value it feeds already
     // changes on every toggle, so the consumers re-render either way.
-    [openIds, reducedMotion]
+    [openIds, reducedMotion, instant, animateScrollTo]
   );
 
   /*

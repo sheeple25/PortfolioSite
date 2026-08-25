@@ -1,0 +1,67 @@
+/*
+ * A two-column definition list that collapses to stacked rows on narrow
+ * screens. Labels are mono and small; values carry the weight.
+ */
+
+.meta {
+  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  /*
+   * Bounded top and bottom. The lead paragraph follows immediately, and
+   * without the closing rule the skills pills read as the first line of it.
+   */
+  padding-block: clamp(1.25rem, 2.5vw, 1.75rem);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.75rem 1.25rem;
+  align-items: baseline;
+}
+
+.label {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.value {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+  text-wrap: pretty;
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.skill {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--color-charcoal);
+  white-space: nowrap;
+}
+
+@media (max-width: 34rem) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}

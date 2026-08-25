@@ -76,6 +76,25 @@
   font-weight: 500;
 }
 
+.askPixel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-white);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  transition: opacity 0.18s ease;
+}
+
+.askPixel:hover,
+.askPixel:focus-visible {
+  opacity: 0.88;
+}
+
 /* ------------------------------------------------------------ narrow screens */
 
 .menuButton {
@@ -163,5 +182,10 @@
 
   .wordmarkText {
     font-size: 1.15rem;
+  }
+
+  .askPixel {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
   }
 }

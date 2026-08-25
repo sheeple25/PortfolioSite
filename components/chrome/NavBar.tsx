@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { NAV_LINKS, WORDMARK } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
+import { Pixel, usePixel } from "@/components/pixel";
 import Logo from "./Logo";
 import styles from "./NavBar.module.css";
 
@@ -25,6 +26,8 @@ export default function NavBar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
+  const { chatOpen, openChat, closeChat } = usePixel();
+  const [pixelHover, setPixelHover] = useState(false);
 
   /*
    * Hovering the wordmark runs the loading animation. It lives here rather than
@@ -90,6 +93,25 @@ export default function NavBar() {
             );
           })}
         </ul>
+
+        <button
+          type="button"
+          className={styles.askPixel}
+          onClick={() => (chatOpen ? closeChat() : openChat("header"))}
+          onPointerEnter={() => setPixelHover(true)}
+          onPointerLeave={() => setPixelHover(false)}
+          aria-expanded={chatOpen}
+        >
+          Ask Pixel
+          <Pixel
+            decorative
+            size={18}
+            color="var(--color-white)"
+            eyeColor="var(--color-accent)"
+            expression={pixelHover ? "happy" : "default"}
+            bob={pixelHover && !reducedMotion}
+          />
+        </button>
 
         <button
           type="button"

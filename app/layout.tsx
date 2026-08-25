@@ -5,7 +5,7 @@ import {
   Newsreader,
   Waiting_for_the_Sunrise,
 } from "next/font/google";
-import { PixelCompanion, PixelProvider } from "@/components/pixel";
+import { PixelCompanion, PixelProvider, PixelSidebar } from "@/components/pixel";
 import LabMenu from "@/components/dev/LabMenu";
 import BottomEdge from "@/components/chrome/BottomEdge";
 import Footer from "@/components/chrome/Footer";
@@ -42,8 +42,8 @@ const waitingForTheSunrise = Waiting_for_the_Sunrise({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Portfolio — Under Construction",
-    template: `%s — ${SITE_NAME}`,
+    default: "Vidush Gupta Portfolio",
+    template: `%s — Vidush Gupta Portfolio`,
   },
   description: "My portfolio website is currently under construction.",
 };
@@ -79,6 +79,11 @@ export default function RootLayout({
           <div className="appMain">{children}</div>
           <Footer />
           <BottomEdge />
+          {/*
+            Fixed-position, not part of this flow — opening it widens `body`'s
+            margin-right (globals.css) to push the page over instead.
+          */}
+          <PixelSidebar />
           <PixelCompanion />
         </PixelProvider>
         {SHOW_DEV_LABS && <LabMenu />}

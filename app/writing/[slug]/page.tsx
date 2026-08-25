@@ -73,6 +73,7 @@ export default async function WritingDocumentPage({ params }: PageProps) {
                 version={doc.meta.version}
                 readingMinutes={doc.readingMinutes}
                 showsPrivate={doc.showsPrivate}
+                backHref="/writing"
               />
 
               {/*
