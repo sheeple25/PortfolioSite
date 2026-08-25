@@ -146,6 +146,16 @@ Pixel already exists as a global mascot system — the chat build extends this r
 | `lib/pixel/context.ts` | Utilities for page context capture ("explain this") | TBD |
 | `PIXEL_CHAT.md` | This file — live documentation | Created |
 
+## Cost Guard: 5 Messages Per Session (temporary, 2026-08-25)
+
+Enforced in two places, both gated behind a single `MAX_USER_MESSAGES = 5` constant:
+- **`components/pixel/PixelSidebar.tsx`**: once 5 user messages have been sent, the input/quick-replies disable and a notice appears ("hit the restart icon above to start a new one"). The reset (refresh) button still works — clicking it starts a fresh session, which is the intended way to reset the count.
+- **`app/api/chat/route.ts`**: mirrors the same cap server-side (rejects with 429 if the submitted history has more than 5 user turns), so it can't be bypassed by editing client state directly.
+
+**Known gap, accepted for now**: this doesn't stop someone from just clicking reset repeatedly to keep chatting past 5 messages, or scripting direct requests to the API with fresh (short) history each time — there's no real session/IP tracking behind it, by design, since this is explicitly a stopgap ("for rn") rather than a production rate-limiter. Revisit if it actually becomes a cost problem; until then it's meant to catch normal runaway conversations, not determined abuse.
+
+**To remove later**: delete/raise both `MAX_USER_MESSAGES` constants and the corresponding UI branch in `PixelSidebar.tsx`.
+
 ## Setup Required (user action)
 
 The API route reads `process.env.ANTHROPIC_API_KEY` and returns a 503 with a clear message if it's missing. To actually talk to Claude:

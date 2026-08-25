@@ -14,6 +14,13 @@ const MODEL = "claude-sonnet-4-5";
 const MAX_TOKENS = 1024;
 /** Keeps a runaway client-side history from ballooning the request. */
 const MAX_HISTORY_MESSAGES = 20;
+/**
+ * TEMPORARY cost guard while Pixel is still being built out — remove once
+ * the bot, its prompt, and its usage patterns are settled. Mirrors
+ * `MAX_USER_MESSAGES` in `components/pixel/PixelSidebar.tsx`; kept here too
+ * so the cap holds even if a request bypasses the sidebar's own UI limit.
+ */
+const MAX_USER_MESSAGES = 5;
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -52,6 +59,14 @@ export async function POST(request: Request) {
   }
   if (body.messages.length === 0) {
     return Response.json({ error: "`messages` must not be empty." }, { status: 400 });
+  }
+
+  const userMessageCount = body.messages.filter((m) => m.role === "user").length;
+  if (userMessageCount > MAX_USER_MESSAGES) {
+    return Response.json(
+      { error: "Pixel's chat limit for this session has been reached." },
+      { status: 429 }
+    );
   }
 
   const messages = body.messages.slice(-MAX_HISTORY_MESSAGES);

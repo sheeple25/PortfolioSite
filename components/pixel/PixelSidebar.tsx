@@ -16,6 +16,14 @@ type ChatMessage = {
 const QUICK_REPLIES = ["I'm a recruiter", "I'm just browsing"];
 
 /**
+ * TEMPORARY cost guard while Pixel is still being built out — remove once
+ * the bot, its prompt, and its usage patterns are settled. Mirrored
+ * server-side in `app/api/chat/route.ts` (`MAX_USER_MESSAGES`) so it can't be
+ * bypassed by editing client state directly.
+ */
+const MAX_USER_MESSAGES = 5;
+
+/**
  * Pixel's chat sidebar, pushed in from the header's "Ask Pixel" button (or
  * later, a contextual nudge from the companion). Always mounted so its width
  * can transition — see `.sidebar`/`.open` in the stylesheet — with `inert`
@@ -29,6 +37,9 @@ export default function PixelSidebar() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+
+  const userMessageCount = messages.filter((m) => m.role === "user").length;
+  const limitReached = userMessageCount >= MAX_USER_MESSAGES;
 
   const abortRef = useRef<AbortController | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -59,7 +70,7 @@ export default function PixelSidebar() {
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || streaming) return;
+      if (!trimmed || streaming || limitReached) return;
 
       const history = [...messages, { role: "user" as const, content: trimmed }];
       setMessages([...history, { role: "assistant", content: "" }]);
@@ -98,12 +109,13 @@ export default function PixelSidebar() {
         }
       } catch (error) {
         if ((error as Error).name === "AbortError") return;
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : "Sorry — I hit an error there. Try again in a moment.";
         setMessages((prev) => {
           const next = [...prev];
-          next[next.length - 1] = {
-            role: "assistant",
-            content: "Sorry — I hit an error there. Try again in a moment.",
-          };
+          next[next.length - 1] = { role: "assistant", content: message };
           return next;
         });
       } finally {
@@ -111,7 +123,7 @@ export default function PixelSidebar() {
         abortRef.current = null;
       }
     },
-    [messages, streaming, pathname],
+    [messages, streaming, pathname, limitReached],
   );
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -177,7 +189,12 @@ export default function PixelSidebar() {
               <p className={styles.greeting}>Tell me. What&rsquo;s on your mind?</p>
               <div className={styles.quickReplies}>
                 {QUICK_REPLIES.map((label) => (
-                  <button key={label} type="button" onClick={() => sendMessage(label)}>
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => sendMessage(label)}
+                    disabled={limitReached}
+                  >
                     {label}
                     <ArrowRight size={14} strokeWidth={1.75} />
                   </button>
@@ -202,22 +219,28 @@ export default function PixelSidebar() {
           )}
         </div>
 
-        <form className={styles.inputRow} onSubmit={handleSubmit}>
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Say something else..."
-            className={styles.input}
-            disabled={streaming}
-          />
-          {input.trim() && (
-            <button type="submit" className={styles.sendButton} aria-label="Send" disabled={streaming}>
-              <ArrowUp size={16} strokeWidth={2} />
-            </button>
-          )}
-        </form>
+        {limitReached ? (
+          <p className={styles.limitNotice}>
+            That&rsquo;s the chat limit for this session — hit the restart icon above to start a new one.
+          </p>
+        ) : (
+          <form className={styles.inputRow} onSubmit={handleSubmit}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Say something else..."
+              className={styles.input}
+              disabled={streaming}
+            />
+            {input.trim() && (
+              <button type="submit" className={styles.sendButton} aria-label="Send" disabled={streaming}>
+                <ArrowUp size={16} strokeWidth={2} />
+              </button>
+            )}
+          </form>
+        )}
       </div>
     </aside>
   );

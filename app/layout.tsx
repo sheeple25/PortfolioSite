@@ -42,8 +42,8 @@ const waitingForTheSunrise = Waiting_for_the_Sunrise({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Vidush Gupta Portfolio",
-    template: `%s — Vidush Gupta Portfolio`,
+    default: `${SITE_NAME} Portfolio`,
+    template: `%s — ${SITE_NAME} Portfolio`,
   },
   description: "My portfolio website is currently under construction.",
 };
