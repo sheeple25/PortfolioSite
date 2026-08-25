@@ -12,17 +12,40 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.label {
+/*
+ * The library name plus a one-line description of what the stage should be
+ * doing. Without the second line an effect that fails silently looks the same
+ * as one that is simply subtle.
+ */
+.meta {
   flex-shrink: 0;
-  width: 7.5rem;
+  width: 11rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-self: flex-start;
+  padding-top: 0.25rem;
+}
+
+.label {
   font-family: var(--font-jetbrains-mono);
   font-size: 0.75rem;
+  color: var(--color-charcoal);
+}
+
+.caption {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.6875rem;
+  line-height: 1.45;
   color: var(--color-muted);
 }
 
 .stage {
   position: relative;
   flex: 1;
+  /* Min-width lets the flex item shrink below its content on narrow windows
+     instead of forcing the row to overflow the lab column. */
+  min-width: 0;
   height: 11rem;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -57,13 +80,34 @@
 
 .chartStage {
   flex: 1;
+  min-width: 0;
   padding: 0.75rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
   background: var(--color-white);
 }
 
+/*
+ * Aurora draws a band of light along the lower edge and is transparent above
+ * it, so it needs a dark ground to read against — on the white stage the whole
+ * effect washes out. Taller than the other stages for the same reason: at 11rem
+ * the band is a sliver.
+ */
 .auroraStage {
   composes: stage;
+  height: 14rem;
   background: var(--color-charcoal);
+}
+
+@media (max-width: 40rem) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .meta {
+    width: auto;
+    padding-top: 0;
+  }
 }

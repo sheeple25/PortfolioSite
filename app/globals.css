@@ -68,32 +68,67 @@
   --sidebar-bg: #f0f0f0;
   /* Deliberately smaller than --page-gutter — a 4rem gutter eats too much of a ~400px panel. */
   --sidebar-pad: 1.5rem;
-  --chart-1: oklch(0.32 0 none);
-  --chart-2: oklch(0.41 0 none);
-  --chart-3: oklch(0.54 0 none);
-  --chart-4: oklch(0.71 0 none);
-  --chart-5: oklch(0.89 0 none);
-  --chart-background: oklch(1 0 0);
-  --chart-foreground: oklch(0.145 0.004 285);
-  --chart-foreground-muted: oklch(0.55 0.014 260);
-  --chart-line-primary: var(--chart-1);
-  --chart-line-secondary: var(--chart-2);
-  --chart-crosshair: oklch(0.4 0.1828 274.34);
-  --chart-grid: oklch(0.9 0 0);
-  --chart-brush-border: var(--chart-grid);
-  --chart-tooltip-background: oklch(0.21 0.006 285 / 0.8);
-  --chart-tooltip-foreground: oklch(0.985 0 0);
-  --chart-tooltip-muted: oklch(0.65 0.01 260);
-  --chart-marker-background: oklch(0.97 0.005 260);
-  --chart-marker-border: oklch(0.85 0.01 260);
-  --chart-marker-foreground: oklch(0.3 0.01 260);
-  --chart-label: oklch(0.45 0.01 260);
-  --chart-scale-01: oklch(0.98 0.003 106);
-  --chart-scale-02: oklch(0.92 0.008 106);
-  --chart-scale-03: oklch(0.82 0.015 106);
-  --chart-scale-04: oklch(0.68 0.02 106);
-  --chart-scale-05: oklch(0.55 0.025 106);
-  --chart-scale-pattern-color: oklch(0.96 0.005 106);
+
+  /*
+   * Chart tokens.
+   *
+   * The Bklit registry ships these as a cold neutral ramp with a blue
+   * crosshair, which reads as a foreign object dropped onto warm paper. They
+   * are re-expressed here in terms of the palette above so a chart inherits
+   * the site's colour rather than importing its own — change `--color-accent`
+   * and the charts follow.
+   *
+   * Every token the installed chart components actually reference is defined
+   * here. Six of them (`--chart-indicator-*`, `--chart-marker-badge-*`,
+   * `--chart-segment-*`) were referenced by `chart-context.tsx` but never
+   * shipped by the registry, so they resolved to nothing and the elements
+   * using them rendered untinted.
+   */
+  --chart-1: var(--color-charcoal);
+  --chart-2: var(--color-accent);
+  --chart-3: var(--color-ink-soft);
+  --chart-4: var(--color-muted);
+  --chart-5: var(--color-border-strong);
+
+  --chart-background: var(--color-white);
+  --chart-foreground: var(--color-charcoal);
+  --chart-foreground-muted: var(--color-muted);
+  --chart-label: var(--color-ink-soft);
+
+  --chart-line-primary: var(--color-charcoal);
+  --chart-line-secondary: var(--color-accent);
+
+  --chart-crosshair: var(--color-border-strong);
+  --chart-grid: var(--color-border);
+  --chart-brush-border: var(--color-border-strong);
+
+  --chart-tooltip-background: color-mix(in srgb, var(--color-charcoal) 92%, transparent);
+  --chart-tooltip-foreground: var(--color-bg);
+  --chart-tooltip-muted: var(--color-muted);
+
+  --chart-marker-background: var(--color-white);
+  --chart-marker-border: var(--color-border-strong);
+  --chart-marker-foreground: var(--color-charcoal);
+
+  /* Previously referenced but undefined — see the note above. */
+  --chart-indicator-color: var(--color-charcoal);
+  --chart-indicator-secondary-color: var(--color-accent);
+  --chart-marker-badge-background: var(--color-charcoal);
+  --chart-marker-badge-foreground: var(--color-bg);
+  --chart-segment-background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --chart-segment-line: var(--color-accent);
+
+  /*
+   * Sequential ramp, warm. Nothing installed consumes these yet — they belong
+   * to the heatmap/scale components in the registry. Kept so pulling one in
+   * later lands on-palette instead of re-introducing the cold default.
+   */
+  --chart-scale-01: #faf8f4;
+  --chart-scale-02: #efe9dc;
+  --chart-scale-03: #e0d3b8;
+  --chart-scale-04: #d8ab74;
+  --chart-scale-05: #ffa554;
+  --chart-scale-pattern-color: #faf8f4;
 }
 
 * {
@@ -175,55 +210,85 @@ button {
   }
 }
 
+/*
+ * Dark-mode chart overrides.
+ *
+ * NOTE: nothing in the app ever puts `.dark` on an ancestor — there is no theme
+ * toggle and no `prefers-color-scheme` handling — so this block is currently
+ * unreachable. It is kept, and kept in step with the tokens above, so that
+ * adding a toggle later is a one-line change rather than a re-derivation of
+ * every chart colour. Delete it if dark mode is ruled out.
+ *
+ * `@custom-variant dark` above is NOT dead: the Motion Primitives text
+ * components use `dark:` utilities and need the variant registered.
+ */
 .dark {
-  --chart-1: oklch(1 0 none);
-  --chart-2: oklch(0.73 0 none);
-  --chart-3: oklch(0.51 0 none);
-  --chart-4: oklch(0.39 0 none);
-  --chart-5: oklch(0.32 0 none);
-  --chart-background: oklch(0.145 0 0);
-  --chart-foreground: oklch(0.45 0 0);
-  --chart-foreground-muted: oklch(0.65 0.01 260);
-  --chart-crosshair: oklch(0.45 0 0);
-  --chart-grid: oklch(0.25 0 0);
-  --chart-brush-border: var(--chart-grid);
-  --chart-marker-background: oklch(0.25 0.01 260);
-  --chart-marker-border: oklch(0.4 0.01 260);
-  --chart-marker-foreground: oklch(0.9 0 0);
-  --chart-label: oklch(0.75 0.01 260);
-  --chart-scale-01: oklch(0.28 0.03 270);
-  --chart-scale-02: oklch(0.38 0.04 270);
-  --chart-scale-03: oklch(0.48 0.05 270);
-  --chart-scale-04: oklch(0.58 0.06 270);
-  --chart-scale-05: oklch(0.68 0.07 270);
-  --chart-scale-pattern-color: oklch(0.145 0 0);
+  --chart-1: #f7f7f7;
+  --chart-2: var(--color-accent);
+  --chart-3: #c9c3b4;
+  --chart-4: #8a8578;
+  --chart-5: #5c5747;
+
+  --chart-background: #171614;
+  --chart-foreground: #f0ece3;
+  --chart-foreground-muted: #8a8578;
+  --chart-label: #b8b1a2;
+
+  --chart-line-primary: #f0ece3;
+  --chart-line-secondary: var(--color-accent);
+
+  --chart-crosshair: #5c5747;
+  --chart-grid: #302d28;
+  --chart-brush-border: #5c5747;
+
+  --chart-tooltip-background: color-mix(in srgb, #f0ece3 92%, transparent);
+  --chart-tooltip-foreground: #171614;
+  --chart-tooltip-muted: #5c5747;
+
+  --chart-marker-background: #221f1c;
+  --chart-marker-border: #5c5747;
+  --chart-marker-foreground: #f0ece3;
+
+  --chart-indicator-color: #f0ece3;
+  --chart-indicator-secondary-color: var(--color-accent);
+  --chart-marker-badge-background: #f0ece3;
+  --chart-marker-badge-foreground: #171614;
+  --chart-segment-background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  --chart-segment-line: var(--color-accent);
+
+  --chart-scale-01: #241f19;
+  --chart-scale-02: #3d3226;
+  --chart-scale-03: #5e4830;
+  --chart-scale-04: #9c6b3c;
+  --chart-scale-05: var(--color-accent);
+  --chart-scale-pattern-color: #171614;
 }
 
 @theme inline {
-  --color-chart-1: var(----chart-1);
-  --color-chart-2: var(----chart-2);
-  --color-chart-3: var(----chart-3);
-  --color-chart-4: var(----chart-4);
-  --color-chart-5: var(----chart-5);
-  --color-chart-background: var(----chart-background);
-  --color-chart-foreground: var(----chart-foreground);
-  --color-chart-foreground-muted: var(----chart-foreground-muted);
-  --chart-line-primary: var(----chart-line-primary);
-  --chart-line-secondary: var(----chart-line-secondary);
-  --color-chart-crosshair: var(----chart-crosshair);
-  --color-chart-grid: var(----chart-grid);
-  --chart-brush-border: var(----chart-brush-border);
-  --color-chart-tooltip-background: var(----chart-tooltip-background);
-  --color-chart-tooltip-foreground: var(----chart-tooltip-foreground);
-  --color-chart-tooltip-muted: var(----chart-tooltip-muted);
-  --color-chart-marker-background: var(----chart-marker-background);
-  --color-chart-marker-border: var(----chart-marker-border);
-  --color-chart-marker-foreground: var(----chart-marker-foreground);
-  --color-chart-label: var(----chart-label);
-  --color-chart-scale-01: var(----chart-scale-01);
-  --color-chart-scale-02: var(----chart-scale-02);
-  --color-chart-scale-03: var(----chart-scale-03);
-  --color-chart-scale-04: var(----chart-scale-04);
-  --color-chart-scale-05: var(----chart-scale-05);
-  --color-chart-scale-pattern-color: var(----chart-scale-pattern-color);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-background: var(--chart-background);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-line-primary: var(--chart-line-primary);
+  --color-chart-line-secondary: var(--chart-line-secondary);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-brush-border: var(--chart-brush-border);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-label: var(--chart-label);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
 }
