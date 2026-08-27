@@ -1,0 +1,44 @@
+/*
+ * A pit within the pit: the footer is already the page's "separate space",
+ * and this box marks itself off again inside it — a room within the room —
+ * so it reads as a distinct plaything rather than more footer content.
+ */
+.pit {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid rgba(247, 247, 247, 0.14);
+  background: rgba(247, 247, 247, 0.04);
+  overflow: hidden;
+}
+
+.hint {
+  position: absolute;
+  top: 0.85rem;
+  left: 1rem;
+  z-index: 1;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(247, 247, 247, 0.4);
+  pointer-events: none;
+}
+
+.stage {
+  height: clamp(9rem, 16vw, 12rem);
+  cursor: grab;
+}
+
+.stage:active {
+  cursor: grabbing;
+}
+
+.stage canvas {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage {
+    cursor: default;
+  }
+}

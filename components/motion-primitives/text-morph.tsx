@@ -23,6 +23,15 @@ export function TextMorph({
   transition,
 }: TextMorphProps) {
   const uniqueId = useId();
+  /*
+   * `@react-three/fiber` (added for the STL viewer lab) globally augments
+   * `JSX.IntrinsicElements` with three.js's element set, which breaks TS's
+   * prop-type resolution for polymorphic `as`-prop components like this one
+   * (it collapses `children` to `never`). Escaping to `any` here only
+   * affects this one dynamic tag, not the rest of the file's type-checking.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see note above
+  const Tag = Component as any;
 
   const characters = useMemo(() => {
     const charCounts: Record<string, number> = {};
@@ -52,7 +61,7 @@ export function TextMorph({
   };
 
   return (
-    <Component className={cn(className)} aria-label={children} style={style}>
+    <Tag className={cn(className)} aria-label={children} style={style}>
       <AnimatePresence mode="popLayout" initial={false}>
         {characters.map((character) => (
           <motion.span
@@ -70,6 +79,6 @@ export function TextMorph({
           </motion.span>
         ))}
       </AnimatePresence>
-    </Component>
+    </Tag>
   );
 }

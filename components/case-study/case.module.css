@@ -1,0 +1,1641 @@
+/*
+ * The Traces case-study page, rebuilt from the Figma frame `Traces_Attempt`
+ * (node 230:10461).
+ *
+ * The previous version of this lab was the board PDF translated to the web:
+ * full-bleed plates alternating light and dark, a fixed overlay rail floating
+ * over them. The frame replaces that with an ordinary document — a magenta
+ * banner, then a three-margin reading layout that holds for the whole page.
+ *
+ * That change is what lets the rail go back to being a grid track with
+ * `position: sticky`. The note in the old header here (and in memory) about
+ * sticky being unusable was true of the *old* layout: the rail was the first
+ * sibling of a full-bleed board, so the box sticky reserves in normal flow
+ * pushed the entire board down by the rail's height. Here the rail sits in its
+ * own column, so the box it reserves is in a track nothing else occupies and
+ * costs nothing. No JS measures its top any more.
+ */
+
+/*
+ * The frame's palette. Scoped to the module rather than added to `:root` —
+ * this is one project's identity (its board, its banner, its magenta), not a
+ * site token, and the rest of the site stays on `--color-accent`.
+ */
+.page {
+  /*
+   * The project accent, and three relatives of it.
+   *
+   * Neutral by default, deliberately. A project turns colour on by passing a
+   * `palette` to `CaseShell`, which writes these as inline custom properties;
+   * a project that passes nothing renders monochrome, which is the correct
+   * result for Loco Lavatory, where the absence of colour is a decision rather
+   * than an omission. Every accent in this stylesheet reads through `--tp`, so
+   * one override re-skins the whole page.
+   */
+  --tp: #1e1e1e;
+  /*
+   * The banner texture's type colour.
+   *
+   * Derived from the accent rather than set flat, so a project that overrides
+   * `--tp` can never forget this one and end up with a grey wall on a coloured
+   * banner — which is exactly what happened to Traces when these defaults were
+   * introduced. Mixing toward white keeps it a step lighter than the ground it
+   * sits on, which is the relationship the Figma frames draw. A project can
+   * still override it explicitly via `palette.wall`.
+   */
+  --tp-wall: color-mix(in srgb, var(--tp) 55%, #ffffff);
+  --tp-deep: #4a4a4a;
+  --tp-tint: rgba(30, 30, 30, 0.04);
+  --tp-stage: #efefef;
+
+  --ink: #1e1e1e;
+  --ink-soft: #646464;
+  --ink-mute: #a0a0a0;
+
+  --mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --serif: var(--font-newsreader), Georgia, serif;
+  --sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  /* The three margins, 496 / 929 / 496 at the frame's 1920. */
+  --margin-col: 496fr;
+  --centre-col: 929fr;
+  /* The reading measure inside the centre track. */
+  --column: 773px;
+  /* Distance between top-level beats — a flat 128 the whole way down. */
+  --beat: 8rem;
+
+  background: #ffffff;
+  color: var(--ink);
+
+  /*
+   * Applied to the page rather than to `.banner` itself: a negative margin on a
+   * first child collapses through its parent, which reaches the same place by a
+   * route that breaks the moment anything gains padding or a border. The banner
+   * adds the same amount back to its own height, so everything below it lands
+   * exactly where it did before.
+   */
+  margin-top: calc(-1 * var(--nav-height));
+}
+
+/* ---------------------------------------------------------------- banner -- */
+
+/*
+ * 480px of magenta with the wall of failure modes set into it, a gradient
+ * floor, and the title plate sitting on that floor.
+ *
+ * The site header is transparent over this and overlaps its top 144px, which
+ * is why the title is bottom-aligned rather than centred.
+ */
+/*
+ * The banner runs to the top edge of the window, under the site header.
+ *
+ * `NavBar` is `position: sticky; top: 0`, so it reserves a box in normal flow
+ * and everything after it starts below. Pulling the page up by exactly that
+ * height puts the pink behind it instead, and adding the same amount back to
+ * the banner's height keeps the title plate where the frame puts it relative to
+ * the banner's floor. Nothing about the header needs changing: it is already
+ * transparent chrome until the page scrolls (see `.progressiveBlur` in
+ * `NavBar.module.css`), which is exactly how the frame draws it.
+ */
+.banner {
+  position: relative;
+  height: calc(480px + var(--nav-height));
+  overflow: hidden;
+  background: var(--tp);
+  isolation: isolate;
+}
+
+/*
+ * The wall, as a stack of lines that each scroll on their own.
+ *
+ * Overfilled deliberately — 18 rows at this line box is taller than the banner,
+ * and the column is centred, so it is clipped at both edges and never resolves
+ * into a visible first or last line.
+ */
+.wallRows {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.02;
+  color: var(--tp-wall);
+  user-select: none;
+}
+
+.wallRow {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/*
+ * Two identical copies inside a `max-content` track, translated by exactly
+ * -50%. At the end of the cycle the second copy sits precisely where the first
+ * began, so the loop restarts on an identical frame with no seam.
+ *
+ * `translate3d` rather than `translate`, to keep the row on its own compositor
+ * layer — eighteen of these run at once, and on the main thread they cost a
+ * layout pass per row per frame.
+ */
+.wallRowTrack {
+  display: inline-flex;
+  width: max-content;
+  will-change: transform;
+  animation: wallScroll var(--row-duration, 90s) linear infinite;
+}
+
+/* Odd rows travel the other way, so no two neighbours drift together. */
+.wallRowTrackReverse {
+  animation-direction: reverse;
+}
+
+.wallRowCopy {
+  padding-right: 0.5em;
+}
+
+@keyframes wallScroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/*
+ * The message hidden in the noise. Reading only the medium-weight phrases in
+ * order gives the project's one-line statement, which is the whole trick of
+ * the banner — so the emphasis is semantic (`<strong>`), not decorative.
+ */
+.wallSaid {
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wallRowTrack {
+    animation: none;
+  }
+}
+
+/*
+ * The frame's `bottom-0 h-[345px]` gradient floor, which is what lets white
+ * type sit on an arbitrary texture.
+ *
+ * Carried a little past the frame's 25% black. The frame drew it against one
+ * fixed magenta; it now has to hold up the 14px mono spec labels over a light
+ * text wall, a photograph of a locomotive cabin, and a bright science-fiction
+ * collage. 34% is the point where the smallest type in the plate stays legible
+ * on all three without the banner reading as dimmed.
+ */
+.bannerFloor {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 345px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.34));
+  pointer-events: none;
+}
+
+.bannerPlate {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  padding: 24px var(--page-gutter);
+}
+
+/* `relative` so the institution stickers can anchor to this block's corner. */
+.bannerInner {
+  position: relative;
+  width: min(772px, 100%);
+}
+
+/* Set only when the project has stickers — see `.bannerTitle`. */
+.bannerInnerStuck {
+  --sticker-gutter: 300px;
+}
+
+@media (max-width: 720px) {
+  /* The stickers are hidden at this width, so the title takes the corner back. */
+  .bannerInnerStuck {
+    --sticker-gutter: 0px;
+  }
+}
+
+/*
+ * The title reserves the corner the stickers occupy.
+ *
+ * "Traces" is short enough that a sticker in the block's top-right never met
+ * it. "Loco Lavatory" is not — at 96px it runs the full width of the block and
+ * the stickers landed on top of it. `--sticker-gutter` is set by `Banner` only
+ * when a project actually has stickers, so a page without them keeps the whole
+ * measure. A long title now wraps to a second line instead of colliding, which
+ * the banner has room for: the plate is bottom-anchored inside 560px.
+ */
+.bannerTitle {
+  margin: 0;
+  padding-right: var(--sticker-gutter, 0px);
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(3.5rem, 5vw, 96px);
+  line-height: 1;
+  color: #ffffff;
+  text-wrap: balance;
+}
+
+/* -------------------------------------------------------------- stickers -- */
+
+/*
+ * The institution marks, applied to the top-right of the block the title and
+ * spec row make — not to the banner's own corner.
+ *
+ * That corner belongs to the site header's controls (theme toggle, labs menu,
+ * Ask Pixel), and anything placed there also drifts further from the title the
+ * wider the window gets. Anchored to `.bannerInner` instead, they hold their
+ * relationship to the title at every width, and they land in genuinely empty
+ * space: "Traces" fills only the left third of that block.
+ */
+.stickers {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  gap: 14px;
+}
+
+/*
+ * A sticker, not a button: off-square, slightly raised off the surface, and
+ * never applied perfectly straight. The tilt comes from the data so the two
+ * lean different ways and by different amounts.
+ */
+.sticker {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px 11px;
+  border-radius: 3px;
+  background: #fdfbf7;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.16),
+    0 6px 16px rgba(0, 0, 0, 0.18);
+  text-decoration: none;
+  rotate: var(--tilt, 0deg);
+  transform-origin: 50% 0;
+  transition:
+    rotate 260ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    translate 260ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 260ms ease;
+}
+
+/*
+ * Hover peels it straight and lifts it. The overshoot in the easing is the
+ * point — a sticker being straightened should spring, not glide.
+ */
+.sticker:hover,
+.sticker:focus-visible {
+  rotate: 0deg;
+  translate: 0 -3px;
+  box-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.14),
+    0 12px 26px rgba(0, 0, 0, 0.22);
+}
+
+.sticker:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker {
+    transition: none;
+  }
+}
+
+.stickerLogo {
+  width: auto;
+  height: 20px;
+  margin-bottom: 4px;
+}
+
+.stickerRole {
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tp);
+}
+
+.stickerName {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.1;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* On a narrow window the corner belongs to the nav; the stickers stand down. */
+@media (max-width: 720px) {
+  .stickers {
+    display: none;
+  }
+}
+
+.bannerMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 24px 0 0;
+}
+
+/*
+ * Five fields is one more than the frame drew, and on a narrow window they
+ * would rather wrap than crush. `space-between` still holds them apart on a
+ * wide one.
+ */
+@media (max-width: 900px) {
+  .bannerMeta {
+    flex-wrap: wrap;
+    gap: 16px 32px;
+    justify-content: flex-start;
+  }
+}
+
+.bannerMetaRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bannerMetaValue {
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.3;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.bannerMetaLabel {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: #d4d3d3;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- layout -- */
+
+.body {
+  display: grid;
+  grid-template-columns:
+    minmax(0, var(--margin-col))
+    minmax(0, var(--centre-col))
+    minmax(0, var(--margin-col));
+}
+
+/*
+ * Below the point where a 240px rail plus its 128px inset still fits, both
+ * margins collapse and the column takes the window. The rail becomes an
+ * ordinary block above the text rather than disappearing — on a narrow window
+ * a contents list is still worth having, it just can't be a margin.
+ */
+@media (max-width: 1280px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * The reading measure is the frame's 773px exactly, with no inset of its own —
+ * the frame's 78px offset inside the 929 centre track is what centring the
+ * column in that track already produces, so adding a gutter on top of it would
+ * take 128px out of the measure the type was set to.
+ *
+ * The gutter comes back below 1280px, where the margins have collapsed and the
+ * column is against the window edge instead.
+ */
+.column {
+  width: min(var(--column), 100%);
+  margin-inline: auto;
+  padding-top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--beat);
+}
+
+@media (max-width: 1280px) {
+  .column {
+    padding-inline: var(--page-gutter);
+  }
+}
+
+.margin {
+  padding: 73px 128px;
+}
+
+@media (max-width: 1280px) {
+  .margin {
+    padding: 48px var(--page-gutter) 0;
+  }
+
+  /* Pixel's margin carries nothing but a closing note; it can go. */
+  .marginRight {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------- contents -- */
+
+.rail {
+  position: sticky;
+  top: calc(var(--nav-height) + 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  width: 240px;
+  transition:
+    transform 340ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 240ms ease;
+}
+
+@media (max-width: 1280px) {
+  .rail {
+    position: static;
+    width: 100%;
+  }
+}
+
+/* Matches the old rail's behaviour: a deliberate scroll down clears it. */
+.railHidden {
+  transform: translateX(-130%);
+  opacity: 0;
+}
+
+@media (max-width: 1280px) {
+  .railHidden {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail {
+    transition: none;
+  }
+}
+
+.railHeading {
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: #000000;
+}
+
+.railList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.railLink {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--ink-mute);
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.railNum {
+  flex: none;
+  white-space: nowrap;
+}
+
+.railTitle {
+  flex: 1 0 0;
+  min-width: 0;
+}
+
+.railTag {
+  flex: none;
+  white-space: nowrap;
+}
+
+.railLink:hover {
+  color: var(--ink);
+}
+
+/*
+ * The frame marks the current beat by colouring its number and inking its
+ * title — the row doesn't move or gain a marker.
+ */
+.railLinkActive .railNum {
+  font-weight: 700;
+  color: var(--tp);
+}
+
+.railLinkActive .railTitle,
+.railLinkActive .railTag {
+  color: #000000;
+}
+
+/* ------------------------------------------------------------------ type -- */
+
+.lede {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.75rem, 2.2vw, 36px);
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.sectionHeading {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 2.5vw, 40px);
+  line-height: 1.15;
+  color: var(--tp);
+}
+
+.prose {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.75rem, 2.2vw, 36px);
+  line-height: 1.25;
+  color: var(--ink-soft);
+}
+
+/*
+ * Emphasis by colour. Fine on a page that has an accent.
+ */
+.proseMark {
+  color: var(--tp);
+}
+
+/*
+ * Emphasis by weight, for pages that don't.
+ *
+ * `.proseMark` marks a phrase by setting it in `--tp`, which on a monochrome
+ * project resolves to the ink colour — the emphasis becomes invisible. Loco
+ * Lavatory is deliberately colourless, and its frame emphasises in Newsreader
+ * SemiBold instead. This is that: same role, no dependence on there being an
+ * accent to spend.
+ */
+.proseStrong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.proseSmall {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 1.5vw, 24px);
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+.label {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.labelPink {
+  color: var(--tp);
+}
+
+/* ------------------------------------------------------------ disclosure -- */
+
+.beat {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  scroll-margin-top: calc(var(--nav-height) + 2rem);
+}
+
+.disclosureBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.disclosureToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  transition: color 160ms ease;
+}
+
+.disclosureToggle:hover {
+  color: var(--tp);
+}
+
+.disclosureIcon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  transition: rotate 240ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * The frame draws one plus glyph for both states; open is the same mark turned
+ * into a minus by a quarter turn.
+ */
+.disclosureIconOpen {
+  rotate: 45deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosureIcon {
+    transition: none;
+  }
+}
+
+.disclosurePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.disclosurePanelClosed {
+  display: none;
+}
+
+/* ----------------------------------------------------- observation chain -- */
+
+.chain {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.chainStep {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.chainStepText {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 1.9vw, 32px);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+/*
+ * Painted through the accent token, not by the asset.
+ *
+ * The arrow is exported from Figma in Traces' magenta. Rendered as an `<img>`
+ * it carries that magenta onto every project — which was invisible while Traces
+ * was the only page, and wrong the moment Unflattening (orange) and Loco
+ * (monochrome) arrived. Masking the shape and filling it with `--tp` makes one
+ * asset serve every palette.
+ */
+.chainArrow {
+  flex: none;
+  width: 60px;
+  height: 15px;
+  background: var(--tp);
+  -webkit-mask-image: url("/case-study/arrow-straight.svg");
+  mask-image: url("/case-study/arrow-straight.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+@media (max-width: 720px) {
+  .chain {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chainArrow {
+    rotate: 90deg;
+    align-self: center;
+  }
+}
+
+/* ------------------------------------------------------------- focus rows -- */
+
+/*
+ * The frame draws these card rows with the first card at full strength and the
+ * rest at 48% (or 36%) opacity. Static, that reads as a bug; the reading it
+ * encodes is that these are stepped — you take them one at a time.
+ *
+ * So the dimming is real, and pointer or keyboard focus moves it. The row
+ * starts on its first card, exactly as drawn.
+ */
+.focusRow {
+  display: flex;
+  align-items: stretch;
+  gap: 32px;
+}
+
+.focusCard {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.48;
+  transition: opacity 240ms ease;
+}
+
+.focusCardDim {
+  opacity: 0.36;
+}
+
+.focusCardActive {
+  opacity: 1;
+}
+
+.focusCard:focus-visible {
+  outline: 2px solid var(--tp);
+  outline-offset: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focusCard {
+    transition: none;
+  }
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 1.9vw, 32px);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.cardTitleItalic {
+  font-style: italic;
+}
+
+.cardNote {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+/*
+ * The archetype cards carry a mono header with the index and the name pushed
+ * to opposite ends, then a display-cased title.
+ */
+.archetypeCard {
+  gap: 12px;
+}
+
+.archetypeHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--tp);
+  white-space: nowrap;
+}
+
+.archetypeDisplay {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(1.5rem, 1.9vw, 32px);
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .focusRow {
+    flex-direction: column;
+  }
+}
+
+/* ----------------------------------------------------------------- stats -- */
+
+.stats {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 180px;
+}
+
+.statFigure {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/*
+ * The counting figure. Sized like `.statValue`, but it is a NumberFlow rather
+ * than a `<p>`, so the type is set on the row and the affixes ride along at the
+ * frame's smaller size.
+ */
+.statFigure {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1;
+}
+
+/* The board sets the third figure of each group in magenta — the damning one. */
+.statFigureAccent {
+  color: var(--tp);
+}
+
+.statAffix {
+  font-weight: 400;
+  font-size: 32px;
+}
+
+@media (max-width: 720px) {
+  .stats {
+    flex-wrap: wrap;
+  }
+}
+
+/* ----------------------------------------------------------------- charts -- */
+
+/*
+ * The frame draws one charcoal slot here labelled "custom bklit UI chart". It
+ * is really three — the board carries a different figure per failure — and they
+ * are built light rather than charcoal, because both source charts are ink on
+ * paper and inverting them would mean re-deriving every value's contrast for no
+ * gain.
+ *
+ * Height is left to the chart's own aspect ratio instead of the frame's flat
+ * 280px: a stacked bar pair and a five-year line want different room, and
+ * forcing both into one box squashes one of them.
+ */
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 20px;
+  background: color-mix(in srgb, var(--tp) 4%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--tp) 18%, transparent);
+}
+
+.chartTitle {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/*
+ * The hand-drawn "Love lost" chart. See `LoveLostChart` in `problem.data.tsx`
+ * for why this one is not a registry chart.
+ */
+.sparkline {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.sparkGrid {
+  stroke: color-mix(in srgb, var(--tp) 22%, transparent);
+  stroke-width: 1;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--tp);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparkDot {
+  fill: var(--tp);
+}
+
+.sparkTick {
+  fill: var(--ink-mute);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* The percentage printed against each band of the stacked bars. */
+.sparkValue {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/*
+ * The line draws itself in once, rather than simply appearing. The dash length
+ * is a generous over-estimate of the path — anything at or above the true
+ * length reveals cleanly, and hard-coding one avoids measuring the path at
+ * runtime just to animate it.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .sparkLine {
+    stroke-dasharray: 1200;
+    animation: sparkDraw 1100ms cubic-bezier(0.85, 0, 0.15, 1) forwards;
+  }
+
+  .sparkDot {
+    opacity: 0;
+    animation: sparkDot 300ms ease-out 900ms forwards;
+  }
+}
+
+@keyframes sparkDraw {
+  from {
+    stroke-dashoffset: 1200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sparkDot {
+  to {
+    opacity: 1;
+  }
+}
+
+.chartCredit {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-mute);
+}
+
+/* The experiential failure's figure is a screenshot, not a plot. */
+.chartShot {
+  display: grid;
+  place-items: center;
+  padding: 8px 0;
+}
+
+.chartShotImage {
+  width: auto;
+  height: 260px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* The plus marks between the three conditions at the foot of the section. */
+.conditionPlus {
+  flex: none;
+  align-self: center;
+}
+
+/* ---------------------------------------------------------- placeholders -- */
+
+/*
+ * Two beats in the frame are drawn as a charcoal block with their own name in
+ * it — the chart and the flow diagram are not designed yet. They are built as
+ * a labelled slot rather than quietly omitted, so the gap in the design stays
+ * visible in the page.
+ */
+.slot {
+  display: grid;
+  place-items: center;
+  height: 280px;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+.slotLabel {
+  margin: 0;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------- cycle figure -- */
+
+/*
+ * The three-icon loop. Drawn in the frame at absolute offsets inside a
+ * 773 x 378 box, so it is reproduced as a percentage-positioned overlay on a
+ * box of the same ratio — it scales with the column instead of breaking under
+ * it.
+ */
+.cycle {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 773 / 378;
+  background: #ffffff;
+  overflow: hidden;
+  /*
+   * Makes the box a container, so the notes inside it can be sized in `cqw`
+   * and scale with the figure instead of staying at the frame's absolute 12px
+   * while everything around them shrinks.
+   */
+  container-type: inline-size;
+}
+
+/*
+ * Every child is placed from its centre — `left`/`top` are the centre point as
+ * a percentage of the box, and `translate` takes it back by half its own size.
+ * Positioning from the centre is what lets the two curved arrows carry a
+ * `rotate` as well: rotation about the centre leaves the placement alone,
+ * where a corner-anchored element would swing away from where it was put.
+ */
+.cycleIcon,
+.cycleArrow,
+.cycleNote {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.cycleIcon {
+  width: 12.42%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.cycleArrow {
+  height: auto;
+}
+
+.cycleNote {
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 1.55cqw;
+  line-height: 1.25;
+  color: var(--ink-mute);
+}
+
+/* The one note the frame sets larger and centres under the loop. */
+.cycleNoteWide {
+  font-size: 2.07cqw;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .cycle {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------- fix cards -- */
+
+.fixRow {
+  display: flex;
+  align-items: stretch;
+  gap: 32px;
+}
+
+.fixCard {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--tp-tint);
+  color: var(--tp);
+}
+
+.fixHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.fixClaim {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(1.5rem, 1.9vw, 32px);
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+/*
+ * The same card headline in the display face but left in sentence case.
+ *
+ * `.fixClaim` upper-cases, which is right for a refusal ("NO SWIPING.") and
+ * wrong for a concept ("Speculative Critical Design") — Unflattening's
+ * theoretical positions are set in Space Grotesk at 24px, sentence case. The
+ * face was the part worth sharing; the shouting wasn't.
+ */
+.fixClaimPlain {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(1.25rem, 1.5vw, 24px);
+  line-height: 1.2;
+}
+
+@media (max-width: 720px) {
+  .fixRow {
+    flex-direction: column;
+  }
+}
+
+/* ---------------------------------------------------------------- outcome -- */
+
+/*
+ * The closing beat. Shares the fix row's shape — three tinted cards — but not
+ * its focus behaviour: these are three facts held together, not three options
+ * to step through, so nothing here dims.
+ */
+.outcomeRow {
+  display: flex;
+  align-items: stretch;
+  gap: 32px;
+}
+
+.outcomeCard {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--tp-tint);
+}
+
+.outcomeHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--tp);
+  white-space: nowrap;
+}
+
+.outcomeHeadline {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 1.5vw, 24px);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+/*
+ * The three headlines are different lengths — one wraps to three lines, two fit
+ * on one — so the notes below them would start at three different heights.
+ * Pushing the note to the bottom of its card puts all three on a shared line
+ * without forcing the headlines to be the same length.
+ */
+.outcomeCard .cardNote {
+  margin-top: auto;
+}
+
+@media (max-width: 720px) {
+  .outcomeRow {
+    flex-direction: column;
+  }
+}
+
+/* --------------------------------------------------------------- carousel -- */
+
+.carousel {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 600px;
+  padding: 48px 12px;
+  background: var(--tp-stage);
+  overflow: hidden;
+}
+
+.carouselNav {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+
+.carouselNav:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.carouselSlide {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  height: 100%;
+}
+
+.carouselCopy {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+/*
+ * The frame sets this kicker white, on a stage it also sets to #f3e7ef — white
+ * on pale lavender is very close to invisible, and reads as a leftover from
+ * when the stage was dark. It takes the deep magenta instead, which is the
+ * darkest colour already in this beat.
+ */
+.carouselKicker {
+  margin: 0;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--tp-deep);
+}
+
+/* A flow that has no screen captured yet — outlined, not filled. */
+.carouselShotPending {
+  display: grid;
+  place-items: center;
+  width: 240px;
+  height: 500px;
+  border: 1px dashed color-mix(in srgb, var(--tp-deep) 40%, transparent);
+  font-family: var(--mono);
+  font-size: 14px;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tp-deep) 60%, transparent);
+}
+
+.carouselTitle {
+  margin: 16px 0 0;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--tp);
+}
+
+.carouselBody {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 24px;
+  color: var(--tp-deep);
+}
+
+.carouselShot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 260px;
+  height: 100%;
+}
+
+.carouselShotImage {
+  width: 240px;
+  height: 500px;
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .carousel {
+    height: auto;
+  }
+
+  .carouselSlide {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .carouselCopy {
+    height: auto;
+    gap: 24px;
+  }
+
+  .carouselShot {
+    height: auto;
+  }
+}
+
+/* ------------------------------------------------------------ teaser rows -- */
+
+/*
+ * The two process rows near the foot of the frame are collapsed sections with
+ * nothing behind them yet — the research write-up is a separate deliverable.
+ * They are rendered as the frame draws them: a line and an EXPAND control.
+ */
+.teaser {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.teaserLabel {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 1.5vw, 24px);
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------- more projects -- */
+
+.more {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-bottom: var(--beat);
+}
+
+.moreHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.moreHeading {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 2.5vw, 41px);
+  line-height: 1;
+  color: var(--ink);
+}
+
+.moreGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 720px) {
+  .moreGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.moreCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.moreThumb {
+  position: relative;
+  aspect-ratio: 374.5 / 219.5;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+/*
+ * Neither neighbour has cover art cut yet, so the thumb is the frame's charcoal
+ * plate carrying the project's name. Kept at the frame's card ratio so dropping
+ * a real still in later changes nothing but the fill.
+ */
+.moreThumbLabel {
+  position: absolute;
+  inset: auto auto 12px 12px;
+  margin: 0;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #ffffff;
+  transition: translate 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.moreCard:hover .moreThumbLabel {
+  translate: 4px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moreThumbLabel {
+    transition: none;
+  }
+}
+
+.moreMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* -------------------------------------------------------- pixel's margin -- */
+
+.pixelNote {
+  position: sticky;
+  top: calc(100svh - 12rem);
+  width: 240px;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.25;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------- banner texture -- */
+
+/*
+ * The common banner texture: one photograph bled across the full width.
+ *
+ * Pulled up so the image's middle band sits behind the title rather than its
+ * top edge — the frames crop these well above centre, which is where the
+ * subject usually is.
+ */
+.bannerImage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.bannerImage img {
+  object-fit: cover;
+  object-position: 50% 35%;
+}
+
+/* --------------------------------------------------------------- steps -- */
+
+/*
+ * A vertical numbered sequence with an arrow between entries — Unflattening's
+ * "Goal". Reads as a sequence rather than a set, which is what separates it
+ * from a card row.
+ */
+.stepList {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.stepNum {
+  flex: none;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--tp);
+}
+
+.stepText {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 1.5vw, 24px);
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+/* The chain arrow turned a quarter, so one asset serves both directions. */
+/* The chain arrow turned a quarter, masked the same way so it follows `--tp`. */
+.stepArrow {
+  align-self: center;
+  width: 48px;
+  height: 15px;
+  rotate: 90deg;
+  background: var(--tp);
+  -webkit-mask-image: url("/case-study/arrow-straight.svg");
+  mask-image: url("/case-study/arrow-straight.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* --------------------------------------------------------------- slots -- */
+
+/*
+ * The frames draw figure placeholders at two heights — a 280px band and a
+ * 320px one. `tall` is the larger.
+ */
+.slotTall {
+  height: 320px;
+}
+
+/* -------------------------------------------------------- project covers -- */
+
+.moreThumbCover {
+  object-fit: cover;
+  transition: scale 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.moreCard:hover .moreThumbCover {
+  scale: 1.04;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moreThumbCover {
+    transition: none;
+  }
+}

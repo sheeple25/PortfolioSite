@@ -1,0 +1,197 @@
+/*
+ * The shelf itself: the horizontal scroll rail, the spines, and the open-book
+ * panel they expand into.
+ *
+ * Shared by both shelves — `components/about/Bookshelf.tsx` (personal reading,
+ * generated spine colourways) and `components/projects/figures/
+ * ReadingListShelf.tsx` (the thesis corpus, hand-authored spines). The two were
+ * byte-identical here for 117 of ~200 lines. Anything specific to one of them
+ * lives in its own stylesheet beside it and is composed on top.
+ */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* ---------- shelf ---------- */
+
+.shelfArea {
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Room for the hover lift so it doesn't clip against the scroll container. */
+  padding-top: 1.25rem;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.shelfRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  width: max-content;
+  min-width: 100%;
+  padding-inline: 0.25rem;
+  border-bottom: 3px solid var(--color-charcoal);
+}
+
+.slot {
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* ---------- closed spine ---------- */
+
+.spine {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-block: 0.75rem;
+  border: none;
+  border-radius: 1px 1px 0 0;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    filter 0.18s ease,
+    box-shadow 0.18s ease;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+}
+
+.spine:hover,
+.spine:focus-visible {
+  transform: translateY(-0.6rem);
+  filter: brightness(1.06);
+  box-shadow: 0 0.4rem 0.6rem -0.3rem rgb(0 0 0 / 0.35);
+  outline: none;
+}
+
+.spineLabel {
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* ---------- open book (inline, mid-shelf) ---------- */
+
+.openBook {
+  display: flex;
+  align-items: stretch;
+  height: clamp(15rem, 42vw, 23rem);
+  width: fit-content;
+  background: var(--color-white);
+  box-shadow:
+    -0.25rem 0 0.5rem -0.35rem rgb(0 0 0 / 0.25),
+    0.25rem 0 0.5rem -0.35rem rgb(0 0 0 / 0.25);
+}
+
+/*
+ * No fixed width here on purpose — the cover's own aspect ratio decides how
+ * wide this column is, at whatever height `.openBook` is currently set to.
+ * That's what keeps the full cover in frame with nothing cropped off.
+ */
+.openCover {
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.coverImage {
+  width: auto;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  display: block;
+}
+
+.openInfo {
+  position: relative;
+  flex: 0 0 17rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem 1rem 1.1rem;
+  overflow: hidden;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--color-muted);
+  padding: 0.25rem;
+}
+
+.closeBtn:hover {
+  color: var(--color-charcoal);
+}
+
+/* ---------- shared text ---------- */
+
+.byline {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.titleLine {
+  font-family: var(--font-space-grotesk);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--color-charcoal);
+  padding-right: 1.2rem;
+}
+
+.year {
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.rowLabel {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.rowBody {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-charcoal);
+}
+
+@media (max-width: 640px) {
+  .openBook {
+    height: clamp(11rem, 55vw, 17rem);
+  }
+
+  .openInfo {
+    flex-basis: 13rem;
+    padding: 0.9rem 1rem 0.85rem 0.9rem;
+  }
+}

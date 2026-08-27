@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
+import { track } from "@vercel/analytics";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import styles from "./IndexCard.module.css";
 
@@ -51,7 +52,17 @@ export default function IndexCard({
     >
       {recommended && <p className={styles.flag}>Recommended</p>}
 
-      <Link href={`${basePath}/${slug}`} className={styles.link}>
+      <Link
+        href={`${basePath}/${slug}`}
+        className={styles.link}
+        onClick={() => {
+          // Only `/projects` is a "project click" in the analytics sense —
+          // the same card renders `/writing`'s index too.
+          if (basePath === "/projects") {
+            track("project_click", { slug, title });
+          }
+        }}
+      >
         <span className={styles.head}>
           <span className={styles.ordinal} aria-hidden="true">
             {String(index + 1).padStart(2, "0")}

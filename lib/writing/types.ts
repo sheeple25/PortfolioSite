@@ -21,6 +21,12 @@ export type WritingFrontmatter = {
   date: string;
   /** Free-form revision label, e.g. `v4`. Shown next to the date. */
   version?: string;
+  /**
+   * Domain tags — subject matter/theme, e.g. `furniture`, `speculative design`.
+   * Feeds the Work/Archive knowledge graph's Domain nodes (`lib/graph`); reuse
+   * an existing label verbatim where the concept is the same, so it collapses
+   * to one node instead of forking into a near-duplicate.
+   */
   tags?: string[];
   /** Flags the piece on the index as the one to start with. */
   recommended?: boolean;
@@ -55,6 +61,13 @@ export type WritingFrontmatter = {
   role?: string;
   timeline?: string;
   team?: string;
+  /**
+   * Skills/Tools tags, e.g. `Product Design`, `CAD Modelling`. Feeds the
+   * Work/Archive knowledge graph's Skill/Tool nodes (`lib/graph`) — a
+   * separate node type from Domain tags above, even where a label looks
+   * similar (a "Textile Design" skill and a "textile" domain aren't the same
+   * node). Reuse an existing label verbatim so it collapses correctly.
+   */
   skills?: string[];
   /** Index tile image, as a path under `/public`. */
   cover?: string;

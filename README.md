@@ -181,9 +181,24 @@ preview, body, headings, notes — and MDX only hands back one opaque component.
 
 ## Dev sandboxes
 
-`/pixel-lab` and `/text-lab` are working surfaces, not portfolio pages. They are
-`noindex`, disallowed in `robots.txt`, and reachable from the **labs** menu in
-the top-right corner, which only renders in development. Both are safe to delete.
+The routes under `app/(labs)` — `/pixel-lab`, `/text-lab`, `/effects-lab`,
+`/stl-lab`, `/traces-board`, `/traces-entry` — are working surfaces, not
+portfolio pages. They are reachable from the **labs** menu in the top-right
+corner, which only renders in development. All are safe to delete.
+
+They do not exist in a production build at all: every route file in the group is
+named `*.dev.tsx`, and `pageExtensions` in `next.config.ts` only recognises that
+extension in development. Adding a lab means adding a `page.dev.tsx` and an entry
+to `LAB_ROUTES` in `lib/site.ts`, which is the single list the labs menu and
+`robots.ts` both read.
+
+## Working docs
+
+Notes that track work in progress live in `docs/`, not the repo root:
+
+- `docs/TODO.md` — what's next.
+- `docs/PIXEL_CHAT.md` — the Pixel chat build log and architecture.
+- `docs/KNOWN_BUGS.md` — open question marks, not confirmed bugs.
 
 ## Deployment
 

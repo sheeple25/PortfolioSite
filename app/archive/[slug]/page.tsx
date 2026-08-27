@@ -12,7 +12,7 @@ import prose from "@/components/writing/prose.module.css";
 import { getArchiveDocument, getArchiveSlugs } from "@/lib/archive";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
-import styles from "./page.module.css";
+import styles from "@/components/writing/documentPage.module.css";
 
 type PageProps = { params: Promise<{ slug: string }> };
 

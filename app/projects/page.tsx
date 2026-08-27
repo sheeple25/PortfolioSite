@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import IndexCard from "@/components/writing/IndexCard";
 import { getProjectSummaries } from "@/lib/projects";
+import { getProjectGraph } from "@/lib/graph";
 import { formatDate } from "@/lib/format";
 import IndexShell from "@/components/chrome/IndexShell";
+import WorkGraph from "@/components/graph/WorkGraph";
 import styles from "./page.module.css";
 
 const TITLE = "Work.";
@@ -24,10 +26,13 @@ export const metadata: Metadata = {
 export default function ProjectsIndexPage() {
   const projects = getProjectSummaries();
   const pick = projects.find((project) => project.meta.recommended);
+  const graph = getProjectGraph();
 
   return (
     <main className={styles.page}>
       <IndexShell title={TITLE} intro={INTRO}>
+        <WorkGraph graph={graph} />
+
         {projects.length === 0 ? (
           <p className={styles.empty}>
             Nothing published yet. Projects live in{" "}

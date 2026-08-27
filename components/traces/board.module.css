@@ -1,0 +1,1291 @@
+/*
+ * Palette sampled straight off the board PDF rather than guessed:
+ *   magenta #ed14a5 · paper #f6f6f6 · ink #0f0f0f
+ *
+ * The board paces itself by alternating full-bleed plates, and that alternation
+ * is load-bearing — so the sections here are full-bleed too, with the measure
+ * held by an inner wrapper. The PDF alternates light against black; this does
+ * it with two light tones instead, keeping the rhythm while letting the whole
+ * page theme later. Two colour plates survive as brand moments: the Traces
+ * reveal and the screen flows.
+ */
+
+.board {
+  --pink: #ed14a5;
+  --paper: #f6f6f6;
+  --tint-bg: #eaeaea;
+  --ink: #0f0f0f;
+  --rule: color-mix(in srgb, var(--ink) 12%, transparent);
+  /* The header banner's own background — a step darker than `--paper`. */
+  --banner-bg: #ececec;
+  /* Derived, not themed separately — automatically follows `--banner-bg` into
+     dark mode. Where the banner's gradient (and the meta strip's halo) goes
+     deepest, at the bottom where the meta strip sits. Mixed deep enough
+     (22%, not 15%) that the meta strip's low-opacity label text actually
+     clears text-contrast minimums against it — 15% measured under 4.5:1. */
+  --banner-bg-deep: color-mix(in srgb, var(--banner-bg) 78%, black 22%);
+
+  --gutter: clamp(1.25rem, 5vw, 6rem);
+  --measure: 78rem;
+
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  /* The board has no site chrome around it — it is the whole surface. */
+  margin: 0;
+  /*
+   * No `overflow-x` here on purpose: setting it to anything but `visible`
+   * makes this element a scroll/clip container per spec, which becomes the
+   * sticky containing block for every `position: sticky` descendant (`.lead`)
+   * instead of the real viewport — breaking the stick entirely. The wide
+   * marquee track in `.wallRows` already clips at `.wallRow` and `.wallSection`
+   * itself, so nothing here actually needs this any more.
+   */
+}
+
+/*
+ * Dark mode, on the same tokens `app/globals.css` uses site-wide
+ * (`--color-bg`/`--color-white`/`--color-charcoal` under `.dark`) — this
+ * board's own dark palette is those same three values re-keyed to the local
+ * `--paper`/`--tint-bg`/`--ink` names, not an invented one, so the labs page
+ * turns dark in step with the rest of the site instead of clashing with it.
+ * `--pink` is the project's own brand colour, not the site's theme accent, so
+ * it holds constant across both themes.
+ *
+ * Every section built on these four tokens (nearly all of them — `.light`,
+ * `.tint`, the wall, the meta strip, all body copy) re-themes for free.
+ * `.introSection`'s solid-ink background is the one deliberate exception: it
+ * is a full-bleed dark brand moment in *both* themes, not a themed surface,
+ * so it is pinned below rather than left to flip with `--ink`.
+ */
+:global(.dark) .board {
+  --paper: #171310;
+  --tint-bg: #211b15;
+  --ink: #f3ecdf;
+  --banner-bg: #100d0a;
+}
+
+/*
+ * True global scope, not `.board`-scoped — `entry.module.css` positions the
+ * contents rail against this same value, and that rail is a sibling of
+ * `.board`, not a descendant, so a var declared on `.board` wouldn't reach it.
+ */
+:global(:root) {
+  --wall-height: max(50svh, 22rem);
+}
+
+.pink {
+  color: var(--pink);
+}
+
+/* ------------------------------------------------------------------ */
+/* The shelled variant                                                 */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The panels overlay rather than reserve.
+ *
+ * Reserving width would mean the content reflows every time the chrome hides or
+ * returns — a full relayout on the exact interaction that has to feel smooth.
+ * So the board is laid out once, at one width, and the panels float over the
+ * margins. Hiding them is then a transform, which costs nothing.
+ *
+ * The measure ramps instead. Both rails sit hard against the screen edges — the
+ * contents rail at `--page-gutter` on the left, Pixel at the same inset on the
+ * right — so the centred content clears them as long as each margin is at least
+ * `--page-gutter` (4rem) + `--rail-width` (15rem). That's 19rem of minimum
+ * clearance per side, 38rem for both — but held to exactly that minimum, with
+ * no slack, it measured a real overlap at odd browser-zoom levels near the
+ * 1280px breakpoint (subpixel rounding between the rail's own box and this
+ * `calc()` disagreeing by a couple px). 44rem instead: still the same 38rem
+ * minimum, plus 3rem/48px of margin per side the rounding can't eat into.
+ *
+ * The cap also came down a full step, 72rem → 64rem — at 64rem the reading
+ * column already reads comfortably wide even on a plain 1920px screen instead
+ * of maxing out immediately; full-bleed plates aren't affected; they hold
+ * `--measure` too, but the widest of them (`.uiMap`) has its own independent
+ * 90rem cap regardless.
+ *
+ * Content and rail therefore never overlap at any width, whether the rails are
+ * showing or not, and nothing moves when they toggle.
+ *
+ *   1920px → 64rem (capped)   ·   1600px → 56rem   ·   1440px → 46rem
+ */
+.inShell {
+  --measure: min(64rem, calc(100vw - 44rem));
+}
+
+@media (max-width: 1280px) {
+  /* Below the rail breakpoint there is no rail to clear. */
+  .inShell {
+    --measure: 64rem;
+  }
+}
+
+/*
+ * One width, not two.
+ *
+ * The big plates had a wider band of their own for legibility, but with both
+ * rails pinned to the screen edges that band would run underneath them while
+ * everything else cleared them — which reads as a bug rather than a hierarchy.
+ * So the plates hold `--measure` like everything else, and if the flow map ends
+ * up too tight the answer is click-to-zoom on that artefact, not letting it
+ * slide under the furniture.
+ */
+
+.inShell .note,
+.inShell .noteTint,
+.inShell .briefBody,
+.inShell .loopBody {
+  max-width: 46rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Plates                                                              */
+/* ------------------------------------------------------------------ */
+
+.light,
+.tint,
+.introSection,
+.uiSection,
+.wallSection {
+  padding: clamp(4rem, 11vh, 9rem) var(--gutter);
+}
+
+.light {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/*
+ * Was a full-bleed dark plate. Now a tonal step against `--paper`.
+ *
+ * The alternation is what paces the board, so the mechanism stays — but two
+ * light tones instead of light/dark, for three reasons: the contents rail no
+ * longer needs a scrim to stay legible over either, both tones can become
+ * theme tokens when dark mode lands, and there is no plate that is dark in
+ * *both* themes. The two colour moments that survive are the product reveal
+ * and the screen flows, which are brand rather than rhythm.
+ */
+.tint {
+  background: var(--tint-bg);
+  color: var(--ink);
+}
+
+.stack {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+/* ------------------------------------------------------------------ */
+/* 1 · The wall                                                        */
+/* ------------------------------------------------------------------ */
+
+.wallSection {
+  position: relative;
+  /*
+   * A step darker than the page, in both themes, and its own gradient rather
+   * than a flat fill — flat through the title, deepening only where the meta
+   * strip sits. Reads as depth (the banner as a window looking into
+   * something, not a coat of paint) and gives the meta strip's small text a
+   * touch more contrast right where it needs it.
+   */
+  background: linear-gradient(
+    to bottom,
+    var(--banner-bg) 0%,
+    var(--banner-bg) 40%,
+    var(--banner-bg-deep) 100%
+  );
+  color: var(--ink);
+  /* A cover banner, not a full-screen splash — half the viewport, like the
+     reference. */
+  height: var(--wall-height);
+  /*
+   * Pulls the whole board up by the site nav's height, collapsing through
+   * `.board` (which has no padding/border to block it) — so the banner's own
+   * background starts at the true top of the page, under the nav rather than
+   * below its reserved space. The nav is `position: sticky`, transparent at
+   * rest and z-index 40, so it reads as floating over the banner instead of
+   * pushing it down. This is deliberate structure, not a visual trick: the
+   * banner is meant to stay a real, load-bearing block (real height, real
+   * document position) so a later full-screen transition has something solid
+   * to animate, rather than being an overlay bolted on top of the page.
+   */
+  margin-top: calc(-1 * var(--nav-height));
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/*
+ * ~190 failure modes, verbatim from the board PDF. On the board this is a
+ * static block of 6pt type and the volume is the argument; on the web it
+ * becomes a wall of independently scrolling rows instead of one drifting
+ * block — a `flex column, space-evenly` container always fills the header at
+ * any viewport height (a drifting block sized by guesswork could fall short
+ * or overshoot), and each row loops seamlessly rather than jumping when the
+ * drift resets, because it holds the same text twice and travels exactly
+ * 50% of its own (doubled) width.
+ *
+ * Every row is the same size and weight — rows alternate scroll direction
+ * (and a mild two-way speed difference) so they visibly cross each other,
+ * which is the effect that's supposed to read as "alive," not a size/weight
+ * hierarchy implying some phrases matter more than others.
+ */
+.wallRows {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+}
+
+.wallRow {
+  overflow: hidden;
+  white-space: nowrap;
+  /* Closer to the banner's own background than to the ink — texture, not
+     something competing with the title/meta for attention. */
+  color: color-mix(in srgb, var(--ink) 20%, transparent);
+  font-size: clamp(0.85rem, 1.15vw, 1.05rem);
+  letter-spacing: 0.01em;
+}
+
+.wallRowTrack {
+  display: inline-flex;
+  width: max-content;
+  animation-name: wallScrollLeft;
+  /* Per-row duration/delay come in as inline custom properties (`TracesBoard.tsx`
+     computes them deterministically per index) so rows drift out of phase with
+     each other instead of scrolling in uniform lockstep. */
+  animation-duration: var(--row-duration, 150s);
+  animation-delay: var(--row-delay, 0s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /*
+   * The delay has to render the row at its start position, not untransformed
+   * — without this, a reverse row (whose keyframe starts at `-50%`) would sit
+   * at `translateX(0)` for the whole delay, then jump to `-50%` when it
+   * finally starts.
+   */
+  animation-fill-mode: backwards;
+  will-change: transform;
+}
+
+.wallRowTrackReverse {
+  animation-name: wallScrollRight;
+}
+
+@keyframes wallScrollLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes wallScrollRight {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wallRowTrack {
+    animation: none;
+  }
+}
+
+/*
+ * Title and meta strip share one wrapper bounded to `--measure`, the same
+ * width every other section on the board holds to. Positioning the meta
+ * strip against the full-bleed section itself (as it was) let it stretch
+ * edge to edge on a wide window — 2353px on a 2560px-wide screen, measured,
+ * against 1152px everywhere else on the page. Bounding it here instead of
+ * hand-tuning gaps means it can't drift out of sync with the rest of the
+ * page's measure again.
+ */
+/*
+ * Absolutely positioned to exactly the banner's own content box, rather than
+ * centred there by the parent (`.wallSection` used to be `display: grid;
+ * place-items: center;`) — a grid item's cell isn't sized by its own
+ * `align-self`/`justify-self`, only by the (here, implicit and therefore
+ * content-sized) track, so a "centred" item just sizes to its content and
+ * sits in the middle of the section: this box was only ever as tall as the
+ * title, `.wallMeta`'s `bottom` was anchoring to *that* box's edge (right
+ * under the title, not the banner's true bottom), and the whole too-short
+ * block then floated in the section's middle with empty margin above and
+ * below. `top: 0; bottom: 0` makes this box exactly the section's height, no
+ * alignment property fighting a track size required; `left/right: 0` plus
+ * `max-width` plus `margin-inline: auto` is the standard "fill, then cap and
+ * centre" combination for an absolutely positioned box.
+ */
+.wallInner {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  /* Left-anchored, matching the meta strip below it and the rest of the
+     page's content — the title was centred, which put it out of alignment
+     with everything else on the board. */
+  align-items: flex-start;
+  /*
+   * Title and meta strip stack together at the banner's base rather than the
+   * title floating centred with the meta strip pinned separately to the
+   * section's own bottom edge — that split read as two unrelated layers with
+   * dead space between them instead of one connected header block.
+   */
+  justify-content: flex-end;
+  gap: clamp(1rem, 3vh, 1.75rem);
+  padding-bottom: clamp(1.25rem, 4vh, 2.5rem);
+}
+
+/*
+ * The title sits directly in the wall's own plane — same layer as the rows,
+ * no card or scrim behind it. Legibility against the crossing text comes
+ * from scale, weight and a soft halo (stacked text-shadow, colour-matched to
+ * the banner's own background) rather than from boxing it off, so it reads
+ * as part of the composition the way a title card sits *in* a collage rather
+ * than on top of it.
+ */
+.wallHero {
+  position: relative;
+  margin: 0;
+  font-size: clamp(3rem, 11vw, 7.5rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+  color: var(--ink);
+  text-shadow:
+    0 0 1.25rem var(--banner-bg),
+    0 0 2.5rem var(--banner-bg),
+    0 0 4rem var(--banner-bg);
+}
+
+/*
+ * The spec strip sits directly on the wall too, stacked under the title as
+ * one connected block (`.wallInner`'s `gap`) rather than pinned to the
+ * section's own bottom edge independently of it — that split read as two
+ * unrelated layers with dead space between them. It's a tight cluster
+ * (`justify-content: flex-start`, gaps held to a fixed rem range rather than
+ * stretched by `vw`) — it should read as one unit sized to its content, not a
+ * row spread to fill whatever width happens to be there.
+ */
+.wallMeta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 1.5rem 2rem;
+}
+
+.wallMetaRow {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.4rem;
+}
+
+/* Halo colour-matched to `--banner-bg-deep`, not `--banner-bg` — the strip
+   sits in the gradient's deepened band, not the flat zone the title's in. */
+.wallMetaValue {
+  margin: 0;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: clamp(0.85rem, 1.1vw, 0.98rem);
+  color: var(--ink);
+  text-shadow:
+    0 0 0.75rem var(--banner-bg-deep),
+    0 0 1.5rem var(--banner-bg-deep),
+    0 0 2.25rem var(--banner-bg-deep);
+  white-space: nowrap;
+}
+
+/*
+ * Plain text, matching the file's own micro-caption convention (`.featLabel`)
+ * — the halo, not a pill, is what keeps it legible over the wall. The label
+ * was 55% ink, which against `--banner-bg-deep` measured under 4:1 contrast
+ * at this size — illegible in practice, not just quiet. 72% clears 4.5:1.
+ */
+.wallMetaLabel {
+  margin: 0;
+  align-self: flex-start;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 72%, transparent);
+  text-shadow:
+    0 0 0.6rem var(--banner-bg-deep),
+    0 0 1.2rem var(--banner-bg-deep);
+}
+
+@media (max-width: 40rem) {
+  .wallMeta {
+    gap: 1rem 1.25rem;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 1b · Lead — the hook line                                           */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The hand-off from banner to content. `.lead` docks at the top of the
+ * viewport (`position: sticky`) right as the wall's bottom edge clears the
+ * screen — at that instant its natural flow position and its sticky
+ * position are the same point, so the arrival is seamless, not a jump.
+ *
+ * `.leadHold` is the hold: extra scroll room reserved below `.lead` inside
+ * its own (short) sticky containing block, so it stays pinned for that
+ * distance before releasing back into normal flow — rather than pinning for
+ * the rest of the page, which is what happens if the sticky containing
+ * block isn't bounded tightly around just this element. This has to be a
+ * real element with real height, not `.leadStage`'s `padding-bottom` — a
+ * sticky element is constrained to stay within its containing block, and in
+ * practice that constraint is measured against the *content* box some
+ * padding added to the parent doesn't extend the range the element can
+ * travel through, so the hold silently collapses to zero and `.lead` just
+ * scrolls off normally. Confirmed by isolating the pattern outside the app.
+ */
+.leadStage {
+  position: relative;
+  background: var(--paper);
+}
+
+.lead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--paper);
+  padding: clamp(3rem, 9vh, 5.5rem) var(--gutter) clamp(2.5rem, 6vh, 4rem);
+}
+
+.leadHold {
+  height: 30vh;
+}
+
+.leadInner {
+  max-width: var(--measure);
+  margin-inline: auto;
+}
+
+.leadHook {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: clamp(1.5rem, 3.2vw, 2.35rem);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  margin: 0;
+  max-width: 30ch;
+}
+
+/* ------------------------------------------------------------------ */
+/* 1c · Tagline                                                        */
+/* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/* 2 · Problem Part A — one horizontal beat, left to right               */
+/* ------------------------------------------------------------------ */
+
+.problemRow {
+  max-width: 64rem;
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: clamp(1rem, 3vw, 2rem);
+}
+
+.problemBeat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.problemKicker {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+  margin: 0;
+}
+
+.problemText {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: clamp(1.5rem, 3.4vw, 2.5rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+  max-width: 16ch;
+}
+
+.problemArrow {
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  color: var(--pink);
+  padding-bottom: 0.4em;
+}
+
+@media (max-width: 40rem) {
+  .problemRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .problemArrow {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 3 · Why do they suck? — the interactive failure selector             */
+/* ------------------------------------------------------------------ */
+
+.reasonHeading {
+  max-width: 64rem;
+  margin-inline: auto;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 700;
+  color: var(--pink);
+  letter-spacing: -0.03em;
+}
+
+.reasonBlock {
+  max-width: 64rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 5vh, 3rem);
+}
+
+.reasonTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+
+.reasonTab {
+  flex: 1 1 13rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.reasonNumber {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: color-mix(in srgb, var(--ink) 35%, transparent);
+  transition: color 0.2s ease;
+}
+
+.reasonTab[aria-pressed="true"] .reasonNumber {
+  color: var(--pink);
+}
+
+.reasonNumber .hash {
+  opacity: 0.55;
+}
+
+.reasonTitle {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: clamp(1.4rem, 3vw, 2.1rem);
+  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  transition: color 0.2s ease;
+}
+
+.reasonTab[aria-pressed="true"] .reasonTitle {
+  color: var(--ink);
+}
+
+.reasonChart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legendDot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.chartCredit {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+  margin: 0;
+}
+
+.chartAxisRow {
+  display: flex;
+  justify-content: space-between;
+  padding-inline: 8px 16px;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.chartPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 2 / 1;
+  border: 1px dashed var(--rule);
+  border-radius: 0.5rem;
+  color: color-mix(in srgb, var(--ink) 35%, transparent);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ */
+/* 4 · Shared inline marks                                             */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The old `.failure*` block that stood here styled a section that has since
+ * been cut from the board; the rules outlived it with no markup left to
+ * match. `.hash` was the one thing in it still in use, so it stays.
+ */
+.hash {
+  color: color-mix(in srgb, var(--ink) 40%, transparent);
+  margin-right: 0.35em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Stats                                                               */
+/* ------------------------------------------------------------------ */
+
+.statRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1.25rem, 3vw, 2.75rem);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 8rem;
+  min-width: 7rem;
+}
+
+.statFigure,
+.statFigureAccent {
+  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+}
+
+.statFigureAccent {
+  color: var(--pink);
+}
+
+/* The unit rides small and tight against the digits, as on the board. */
+.statAffix {
+  font-size: 0.5em;
+  font-weight: 600;
+  margin-left: 0.1em;
+  letter-spacing: 0;
+}
+
+.statLabel {
+  font-size: clamp(0.7rem, 0.95vw, 0.82rem);
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--ink) 58%, transparent);
+  margin: 0;
+  max-width: 16ch;
+}
+
+.tint .statLabel {
+  color: color-mix(in srgb, var(--ink) 58%, transparent);
+}
+
+.statNote {
+  font-size: 0.75em;
+  color: var(--pink);
+  margin-left: 0.15em;
+}
+
+/* ------------------------------------------------------------------ */
+/* 5 · In short                                                        */
+/* ------------------------------------------------------------------ */
+
+.inShort {
+  max-width: var(--measure);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.inShortLead {
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+  margin: 0 0 clamp(2rem, 5vh, 3.5rem);
+}
+
+.qualities {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 2vh, 1.25rem);
+}
+
+.quality {
+  font-size: clamp(1.75rem, 6vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.quality:nth-child(2) {
+  color: var(--pink);
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1.5rem;
+  margin: clamp(3rem, 8vh, 5rem) 0 0;
+  padding: 0;
+  list-style: decimal;
+  list-style-position: inside;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+/* ------------------------------------------------------------------ */
+/* Section rules                                                       */
+/* ------------------------------------------------------------------ */
+
+.rule {
+  background: var(--paper);
+  padding: clamp(2rem, 6vh, 4rem) var(--gutter) 0;
+}
+
+.ruleLabel {
+  display: block;
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--ink);
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ------------------------------------------------------------------ */
+/* 6 · Research                                                        */
+/* ------------------------------------------------------------------ */
+
+.researchRow {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+  padding-block: clamp(2rem, 6vh, 4rem);
+}
+
+.researchBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.researchFig {
+  margin: 0;
+}
+
+.kicker {
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.researchTitle {
+  font-size: clamp(1.9rem, 4.5vw, 3.5rem);
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  margin: 0;
+  max-width: 12ch;
+}
+
+.note {
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+  margin: 0;
+  max-width: 68ch;
+}
+
+.noteTint {
+  font-size: clamp(0.95rem, 1.25vw, 1.15rem);
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--ink) 68%, transparent);
+  margin: 0;
+  max-width: 72ch;
+}
+
+/* ------------------------------------------------------------------ */
+/* 7 · Themes                                                          */
+/* ------------------------------------------------------------------ */
+
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.theme {
+  border-top: 2px solid var(--ink);
+  padding-top: 0.85rem;
+}
+
+.themeTitle {
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.themeList {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ink) 66%, transparent);
+}
+
+.themeList li::marker {
+  color: var(--pink);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
+/* 9 · Synthesis                                                       */
+/* ------------------------------------------------------------------ */
+
+.synthTitle {
+  font-size: clamp(2rem, 5.5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  margin: 0;
+  line-height: 1.05;
+}
+
+.loopGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.loopCard {
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 0.75rem;
+  padding: clamp(1.25rem, 2.5vw, 1.85rem);
+  background: color-mix(in srgb, #fff 65%, transparent);
+}
+
+.loopTitle {
+  font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.loopSub {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pink);
+  margin: 0.35rem 0 0.9rem;
+}
+
+.loopBody {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--ink) 66%, transparent);
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 10 · Brief                                                          */
+/* ------------------------------------------------------------------ */
+
+.briefGrid {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.brief {
+  border-top: 2px solid var(--ink);
+  padding-top: 1rem;
+}
+
+.briefKicker {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 50%, transparent);
+  margin: 0 0 0.9rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.briefBody {
+  font-size: clamp(1.1rem, 1.9vw, 1.55rem);
+  line-height: 1.35;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.reqs {
+  max-width: var(--measure);
+  margin: clamp(2.5rem, 6vh, 4rem) auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.req,
+.reqPlus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
+  font-weight: 500;
+  border: 1px solid var(--rule);
+}
+
+.reqPlus {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+.reqMark {
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+/* ------------------------------------------------------------------ */
+/* 11 · Introducing                                                    */
+/* ------------------------------------------------------------------ */
+
+/*
+ * A full-bleed dark brand moment, not a themed surface — `#0f0f0f`/`#f6f6f6`
+ * fixed rather than `var(--ink)`/`var(--paper)`, so it stays the one deliberate
+ * dark plate in both themes instead of flipping to a light one under dark mode.
+ */
+.introSection {
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 50% 40%,
+      color-mix(in srgb, var(--pink) 22%, transparent),
+      transparent 70%
+    ),
+    #0f0f0f;
+  color: #f6f6f6;
+  text-align: center;
+}
+
+.introInner {
+  max-width: var(--measure);
+  margin-inline: auto;
+}
+
+.heart {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  color: var(--pink);
+  margin: 0 0 1.5rem;
+  line-height: 1;
+}
+
+.introKicker {
+  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-size: clamp(1.75rem, 4.5vw, 3.25rem);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.introTitle {
+  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  color: var(--pink);
+  margin: 0 0 clamp(2rem, 5vh, 3.5rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.introLine {
+  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-size: clamp(1.75rem, 5vw, 3.5rem);
+  line-height: 1.25;
+  margin: 0 auto clamp(2.5rem, 6vh, 4rem);
+  max-width: 20ch;
+}
+
+.negations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  text-align: left;
+  padding: clamp(1.75rem, 3.5vw, 3rem);
+  border-radius: 1.25rem;
+  background: linear-gradient(105deg, #c2185b, #ad2fa8 55%, #6a4de0);
+}
+
+.negationTitle {
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 500;
+  margin: 0 0 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.negationBody {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, #fff 82%, transparent);
+  margin: 0 0 0.9rem;
+}
+
+.negationGain {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 12–14 · Flow, Q&A, features                                         */
+/* ------------------------------------------------------------------ */
+
+.hand {
+  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-size: clamp(2.25rem, 5.5vw, 4rem);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.qaStack {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 7vh, 5rem);
+}
+
+.qaRow,
+.qaRowReverse {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+}
+
+.qaRowReverse > .qaBody {
+  order: 2;
+}
+
+.qaTitle {
+  font-size: clamp(1.35rem, 2.8vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.75rem;
+}
+
+.featGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.feat {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  padding-top: 1.25rem;
+}
+
+.featPhone {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.featBody {
+  min-width: 0;
+}
+
+.featLabel {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 48%, transparent);
+  margin: 0 0 0.25rem;
+}
+
+.featProblem {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.9rem;
+  line-height: 1.3;
+}
+
+.featName {
+  font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+  font-weight: 700;
+  color: var(--pink);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.featNote {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 15 · UI screens                                                     */
+/* ------------------------------------------------------------------ */
+
+.uiSection {
+  background: linear-gradient(150deg, #b3123f, #8f1e93 45%, #4a2fb8);
+  color: #fff;
+  text-align: center;
+}
+
+.handLarge {
+  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-size: clamp(2.5rem, 8vw, 6rem);
+  margin: 0 0 clamp(2rem, 5vh, 3.5rem);
+  letter-spacing: 0.02em;
+}
+
+.uiMap {
+  width: 100%;
+  max-width: 90rem;
+  height: auto;
+  margin-inline: auto;
+  border-radius: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Images                                                              */
+/* ------------------------------------------------------------------ */
+
+.img,
+.imgWide {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.imgWide {
+  border-radius: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Narrow                                                              */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 60rem) {
+  .claimRow,
+  .researchRow,
+  .qaRow,
+  .qaRowReverse {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+   * The alternation only means anything when the two columns sit side by
+   * side. Stacked, every row should read image-under-text in source order.
+   */
+  .qaRowReverse > .qaBody {
+    order: 0;
+  }
+
+  .claimFig,
+  .researchFig {
+    max-width: 26rem;
+  }
+
+  .noticedB {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .feat {
+    grid-template-columns: 5rem 1fr;
+  }
+}

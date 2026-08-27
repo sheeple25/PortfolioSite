@@ -1,0 +1,168 @@
+/*
+ * Placeholder styling only — this is the data/interaction pass, not the
+ * visual one. Just enough to read as its own framed panel and stay legible.
+ */
+
+.frame {
+  position: relative;
+  width: min(900px, 100%);
+  aspect-ratio: 16 / 9;
+  margin: 0 auto clamp(2rem, 5vw, 3.5rem);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-white);
+  overflow: hidden;
+}
+
+.frameExpanded {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: min(92vw, calc(92vh * 16 / 9));
+  margin: auto;
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--color-bg) 92%, transparent);
+}
+
+.expandButton {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  background: var(--color-white);
+  color: var(--color-charcoal);
+  cursor: pointer;
+}
+
+.expandButton:hover {
+  border-color: var(--color-border-strong);
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.svg:active {
+  cursor: grabbing;
+}
+
+.dotBackground {
+  pointer-events: all;
+}
+
+.dot {
+  fill: var(--color-border-strong);
+  opacity: 0.4;
+}
+
+.edge {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.edge[data-dim="true"] {
+  opacity: 0.15;
+}
+
+.node {
+  cursor: pointer;
+  outline: none;
+}
+
+.node[data-dim="true"] {
+  opacity: 0.3;
+}
+
+.nodeHit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.nodeIcon {
+  pointer-events: none;
+}
+
+.nodeIcon[data-type="project"] {
+  color: var(--color-charcoal);
+}
+
+.nodeIcon[data-type="project"][data-featured="true"] {
+  color: var(--color-accent);
+}
+
+.nodeIcon[data-type="domain"] {
+  color: var(--color-border-strong);
+}
+
+.nodeIcon[data-type="skill"] {
+  color: var(--color-muted);
+}
+
+.nodeLabel {
+  font-size: 0.6rem;
+  fill: var(--color-ink-soft);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.legend {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 3rem;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  background: color-mix(in srgb, var(--color-white) 85%, transparent);
+  backdrop-filter: blur(4px);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  pointer-events: none;
+  width: fit-content;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.detail {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--color-white) 92%, transparent);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.detailTitle {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-charcoal);
+}
+
+.detailLine {
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+}

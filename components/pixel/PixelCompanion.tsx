@@ -103,6 +103,7 @@ export default function PixelCompanion({ size = 88 }: { size?: number }) {
       {!hidden && !chatOpen && (
         <motion.div
           className={styles.companion}
+          data-chrome="rail"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

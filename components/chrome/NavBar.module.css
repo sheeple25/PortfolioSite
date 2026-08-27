@@ -4,23 +4,110 @@
   z-index: 40;
   /* `--nav-height` is declared in globals.css; the TOC bar stacks below it. */
   height: var(--nav-height);
-  background: transparent;
-  transition: background 0.25s ease, border-color 0.25s ease;
-  border-bottom: 1px solid transparent;
 }
 
 /*
- * Only once the page has actually moved. At rest the bar is invisible chrome
- * over the hero; the moment text starts passing under it, it earns a surface.
+ * Progressive blur, only once the page has actually moved — at rest the bar
+ * is invisible chrome over the hero; the moment text starts passing under
+ * it, it earns a surface. `backdrop-filter: blur()` has no way to vary its
+ * radius across an element — one filter, one radius — so a *gradient* of
+ * blur (heavy right under the nav, thinning to nothing by the page below)
+ * is faked the standard way: stack several constant-radius layers, each
+ * masked to its own horizontal band, radius halving layer by layer. Where
+ * two layers' bands overlap, each blurs whatever the one below it already
+ * produced, so the seams disappear and it reads as one continuous ramp
+ * instead of six discrete steps.
+ *
+ * To adjust:
+ *   - Overall strength: change `--pb-max-blur` below (each layer past
+ *     nth-child(6) halves it going down).
+ *   - How far down the fade reaches: `--pb-zone`.
+ *   - The flat colour wash (tint/opacity, independent of the blur): `::after`.
+ *   - Number of bands: add/remove `<span />`s in NavBar.tsx and nth-child
+ *     rules here, keeping the band percentages evenly spaced.
+ *
+ * `.nav` is given `position: relative` purely so it paints in front of this
+ * (both become z-index:auto positioned elements, ordered by DOM position —
+ * without it, the non-positioned nav would paint *behind* the positioned
+ * layers per the stacking rules).
  */
-.scrolled {
-  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  border-bottom-color: var(--color-border);
+.progressiveBlur {
+  --pb-max-blur: 28px;
+  --pb-zone: calc(var(--nav-height) + 2rem);
+  position: absolute;
+  inset: 0;
+  height: var(--pb-zone);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.scrolled .progressiveBlur {
+  opacity: 1;
+}
+
+.progressiveBlur span {
+  position: absolute;
+  inset: 0;
+  -webkit-backdrop-filter: blur(var(--pb-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--pb-blur)) saturate(1.4);
+}
+
+/* Bottom-most band (weakest blur, nearest the clear page) painted first... */
+.progressiveBlur span:nth-child(1) {
+  --pb-blur: calc(var(--pb-max-blur) / 32);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 66.667%, black 83.333%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 66.667%, black 83.333%, transparent 100%);
+}
+
+.progressiveBlur span:nth-child(2) {
+  --pb-blur: calc(var(--pb-max-blur) / 16);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 50%, black 66.667%, transparent 83.333%);
+  mask-image: linear-gradient(to bottom, transparent 50%, black 66.667%, transparent 83.333%);
+}
+
+.progressiveBlur span:nth-child(3) {
+  --pb-blur: calc(var(--pb-max-blur) / 8);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 33.333%, black 50%, transparent 66.667%);
+  mask-image: linear-gradient(to bottom, transparent 33.333%, black 50%, transparent 66.667%);
+}
+
+.progressiveBlur span:nth-child(4) {
+  --pb-blur: calc(var(--pb-max-blur) / 4);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 16.667%, black 33.333%, transparent 50%);
+  mask-image: linear-gradient(to bottom, transparent 16.667%, black 33.333%, transparent 50%);
+}
+
+.progressiveBlur span:nth-child(5) {
+  --pb-blur: calc(var(--pb-max-blur) / 2);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 16.667%, transparent 33.333%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 16.667%, transparent 33.333%);
+}
+
+/* ...top-most band (strongest blur, right under the nav) painted last, on top. */
+.progressiveBlur span:nth-child(6) {
+  --pb-blur: var(--pb-max-blur);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 16.667%);
+  mask-image: linear-gradient(to bottom, black 0%, transparent 16.667%);
+}
+
+/*
+ * The flat colour wash, independent of the blur bands above — this is what
+ * gives scrolled content contrast against the header text, not just soft
+ * focus. Same taper as the old single-layer version: solid for the nav's
+ * own height, then fading out over the zone's extra reach.
+ */
+.progressiveBlur::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-bg) 64%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black 0, black var(--nav-height), transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0, black var(--nav-height), transparent 100%);
 }
 
 .nav {
+  position: relative;
   height: 100%;
   padding-inline: var(--page-gutter);
   display: flex;
@@ -72,8 +159,15 @@
 }
 
 .linkCurrent {
-  color: var(--color-charcoal);
+  color: var(--color-accent);
   font-weight: 500;
+  background-size: 0% 1.5px;
+}
+
+.linkCurrent:hover,
+.linkCurrent:focus-visible {
+  color: var(--color-accent);
+  background-size: 0% 1.5px;
 }
 
 .askPixel {

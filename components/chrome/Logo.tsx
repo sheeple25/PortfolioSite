@@ -16,6 +16,15 @@ import styles from "./Logo.module.css";
  *   in motion  — `public/site-loader.webp`, the authored loading animation,
  *                overlaid on the SVG.
  *
+ * The animation is a raster, so its colour *is* baked in — which is what made
+ * it stay orange in light mode while the resting mark went blue. It is
+ * re-tinted at paint time instead of at build time: `TINT_FILTER_ID` below
+ * floods the accent colour and composites it into the frame's own alpha, so
+ * whatever `--color-accent` currently resolves to is what the moving artwork
+ * is, in either theme. That keeps `scripts/recolor-brand-assets.mjs` for what
+ * it's actually needed for (the favicon, and re-authoring the source asset)
+ * rather than making the loader's palette a build-time decision.
+ *
  * The SVG's geometry is not drawn by eye: it is measured off the animation's
  * own resting frame (the triangles, and the artwork's bounding box within the
  * 512px asset), so the two line up exactly and the swap has nothing to give it
@@ -32,6 +41,13 @@ import styles from "./Logo.module.css";
  * Corners are rounded by stroking each triangle in its own fill with a round
  * line join, so there is no path arithmetic to keep in step.
  */
+
+/**
+ * One id for every mounted `Logo`. The defs below are identical wherever they
+ * render, so duplicates across several logos on a page resolve to the same
+ * filter — no per-instance id, and no single shared mount to keep alive.
+ */
+const TINT_FILTER_ID = "logo-loader-tint";
 
 /** Artwork bounds inside the 512x512 loader, from its resting frame. */
 const LOADER = { frame: 512, x: 54, y: 104, width: 404, height: 352 } as const;
@@ -90,6 +106,19 @@ export default function Logo({
         {TRIANGLES.map((points) => (
           <polygon key={points} className={styles.triangle} points={points} />
         ))}
+      </svg>
+
+      {/*
+        The tint filter itself. `flood-color` is set from CSS (see the module
+        stylesheet) rather than as an attribute here, which is what lets it
+        read `--color-accent` and follow the theme without a re-render.
+      */}
+      <svg className={styles.defs} aria-hidden="true" focusable="false">
+        <filter id={TINT_FILTER_ID}>
+          {/* Flood the whole region, then keep only where the frame is opaque. */}
+          <feFlood result="tint" />
+          <feComposite in="tint" in2="SourceGraphic" operator="in" />
+        </filter>
       </svg>
 
       {/* Reset in onExitComplete, not an effect: the img remounts each cycle

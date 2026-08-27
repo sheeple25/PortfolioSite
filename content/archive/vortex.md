@@ -12,6 +12,7 @@ skills:
   - Textile Design
   - Ply-Split Braiding
   - Structural Prototyping
+  - Furniture Design
 cover: /archive/vortex-hero.webp
 coverAlt: The Vortex stool — a braided cotton seat suspended in a teak and chain tensegrity frame.
 titleEffect: weave

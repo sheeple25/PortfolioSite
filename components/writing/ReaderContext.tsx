@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useNarrowToc, usePrefersReducedMotion } from "@/lib/hooks";
+import { useScrollFrame, type ScrollSnapshot } from "@/lib/useScrollFrame";
 
 /*
  * Shared state for one document: which sections are open, and which one the
@@ -161,8 +162,18 @@ export function ReaderProvider({
       // This wait is for the *section's own* expand transition (governed by
       // `reducedMotion` alone, in `SectionCard.tsx`) settling before the
       // scroll math runs — independent of whether the scroll itself animates.
-      if (mustOpen && !reducedMotion) window.setTimeout(scroll, EXPAND_MS);
-      else if (mustOpen) requestAnimationFrame(scroll);
+      //
+      // Parked on the same ref the scroll animation uses, so the unmount
+      // cleanup can cancel it and a second jump started inside the wait
+      // replaces the first rather than racing it. `animateScrollTo` clears
+      // this handle again when `scroll` finally runs, which is a no-op on an
+      // already-fired timer.
+      if (mustOpen && !reducedMotion) {
+        if (scrollAnimation.current !== null) {
+          clearTimeout(scrollAnimation.current);
+        }
+        scrollAnimation.current = window.setTimeout(scroll, EXPAND_MS);
+      } else if (mustOpen) requestAnimationFrame(scroll);
       else scroll();
     },
     // Depending on `openIds` costs nothing: the context value it feeds already
@@ -176,12 +187,9 @@ export function ReaderProvider({
    * reading line" stays correct through that, where a set of observer
    * thresholds has to be recomputed.
    */
-  useEffect(() => {
-    let frame = 0;
-
-    const measure = () => {
-      frame = 0;
-      const line = window.innerHeight * ACTIVE_LINE;
+  const onScrollFrame = useCallback(
+    ({ viewport }: ScrollSnapshot) => {
+      const line = viewport * ACTIVE_LINE;
       let current: string | null = sectionIds[0] ?? null;
 
       for (const id of sectionIds) {
@@ -190,22 +198,11 @@ export function ReaderProvider({
       }
 
       setActiveId(current);
-    };
+    },
+    [sectionIds],
+  );
 
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(measure);
-    };
-
-    measure();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [sectionIds]);
+  useScrollFrame(onScrollFrame);
 
   const value = useMemo<ReaderValue>(
     () => ({

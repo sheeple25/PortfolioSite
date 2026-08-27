@@ -10,6 +10,7 @@ import Fig431 from "./Fig431";
 import Fig432 from "./Fig432";
 import Fig532 from "./Fig532";
 import FigTestOverview from "./FigTestOverview";
+import ReadingListShelf from "./ReadingListShelf";
 
 export type DiagramProps = { label?: string };
 
@@ -29,4 +30,5 @@ export const DIAGRAMS: Record<string, ComponentType<DiagramProps>> = {
   "fig-4-3-2": Fig432,
   "fig-5-3-2": Fig532,
   "fig-test-overview": FigTestOverview,
+  "reading-list": ReadingListShelf,
 };

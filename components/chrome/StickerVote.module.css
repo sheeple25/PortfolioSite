@@ -1,0 +1,116 @@
+/*
+ * Fixed to the left edge, vertically centred — the right edge already
+ * belongs to Pixel's sidebar and companion (PixelSidebar.module.css,
+ * PixelCompanion.module.css), so this is the one side left free. `left`
+ * sits slightly negative so a sliver of the tab is clipped by the viewport
+ * edge, reading as a tab tucked in rather than a card floating free.
+ *
+ * `pointer-events: none` on the wrapper and back to `auto` on the tab itself,
+ * same pattern as `.companion`/`.hitArea` in PixelCompanion.module.css — only
+ * the tab should ever intercept a click or drag.
+ */
+.wrap {
+  position: fixed;
+  left: -9px;
+  top: 55%;
+  transform: translateY(-50%);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.tab {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 0.6rem 0.9rem 1rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-strong);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  color: var(--color-ink-soft);
+  touch-action: none;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.tab:hover,
+.tab:focus-visible {
+  color: var(--color-charcoal);
+  border-color: var(--color-muted);
+}
+
+.tab:disabled {
+  cursor: default;
+}
+
+.tab:disabled:hover {
+  color: var(--color-ink-soft);
+  border-color: var(--color-border-strong);
+}
+
+/* Once a page's vote is in, the tab settles to a quieter "thanks" state
+   rather than disappearing — still visible, just no longer inviting a drag. */
+.tabVoted {
+  opacity: 0.6;
+}
+
+.label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+/* The two vote targets. Hidden until a drag is in progress (mounted by
+   AnimatePresence), stacked above/below the tab in normal flow so the tab
+   visually approaches whichever one it's dragged toward. */
+.zone {
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.zoneArmed {
+  color: var(--color-white);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+@media (max-width: 640px) {
+  .tab {
+    padding: 0.7rem 0.5rem 0.7rem 0.8rem;
+  }
+
+  .zone {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+}
+
+@media print {
+  .wrap {
+    display: none;
+  }
+}

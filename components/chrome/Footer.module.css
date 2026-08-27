@@ -1,16 +1,31 @@
+/*
+ * The footer as its own room: a dark panel lifted off the bottom of the page
+ * rather than a lighter continuation of it, with a shadow cast up onto the
+ * content above. Everything below reads against this
+ * charcoal ground, so the local custom properties re-point the same names
+ * `.column`, `.document`, etc. already reach for (`--color-charcoal` as
+ * "ink", `--color-muted`/`--color-border-strong` as translucent whites) —
+ * child rules don't need their own dark-mode overrides, they just keep using
+ * the tokens they already had.
+ *
+ * Every one of those re-pointed values is a literal, not a reference to a
+ * palette token, and that is the point: the panel is charcoal in both themes,
+ * so its type has to stay light in both themes. Pointing the ink at
+ * `--color-bg` tracked the theme and turned the text near-black on a
+ * near-black ground in dark mode. `--color-accent` is left alone — the accent
+ * is the one thing here that *should* still answer to the theme.
+ */
 .footer {
   margin-top: auto;
-  padding: 0 var(--page-gutter) 1.75rem;
-}
-
-/*
- * A full-bleed rule sitting well above the footer content, as in the mockup —
- * it separates the page from the colophon rather than boxing the colophon in.
- */
-.rule {
-  height: 1px;
-  background: var(--color-charcoal);
-  opacity: 0.85;
+  --color-charcoal: #f7f7f7;
+  --color-muted: rgba(247, 247, 247, 0.58);
+  --color-border-strong: rgba(247, 247, 247, 0.26);
+  --color-border: rgba(247, 247, 247, 0.12);
+  --color-ink-soft: rgba(247, 247, 247, 0.75);
+  background: #1e1e1e;
+  color: var(--color-charcoal);
+  box-shadow: 0 -32px 56px -36px rgba(0, 0, 0, 0.35);
+  padding: clamp(2.75rem, 5vw, 4.5rem) var(--page-gutter) 1.75rem;
 }
 
 .inner {
@@ -19,7 +34,6 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 3rem 4rem;
-  padding-top: clamp(2.5rem, 5vw, 4.5rem);
 }
 
 .identity {
@@ -159,15 +173,59 @@
 }
 
 .baseline {
-  margin-top: clamp(3rem, 6vw, 5rem);
+  margin-top: clamp(2.5rem, 5vw, 4rem);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
   font-family: var(--font-jetbrains-mono);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: var(--color-muted);
+}
+
+.baselineLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/*
+ * The "alive" line: last commit, embedded at build time by
+ * `scripts/generate-last-commit.js` (see lib/lastCommit.ts). The dot pulses
+ * — the one bit of motion in an otherwise static credit line — so the claim
+ * "this is a living, worked-on site" is felt rather than just read.
+ */
+.signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.signalDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  flex-shrink: 0;
+  animation: signalPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes signalPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.signalHash {
+  color: var(--color-accent);
 }
 
 .top {

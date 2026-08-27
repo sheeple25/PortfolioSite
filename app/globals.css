@@ -30,8 +30,13 @@
    * measure, and the annotation column. The tracks are fixed and the leftover
    * space is dealt out between them, which is what pins the rail to the left
    * margin and the annotations to the right one at any window width.
+   *
+   * Bounded at ~2560px (a 2K-wide monitor) rather than left unbounded — past
+   * that the gap either side of the reading measure would grow indefinitely.
+   * Below that width, this cap has no effect: the shell already tracks
+   * `100% - 2 * page-gutter` and just fills the viewport.
    */
-  --shell-max: 104rem;
+  --shell-max: 160rem;
   --rail-width: 15rem;
   --measure: 42rem;
   --notes-width: 14.5rem;
@@ -211,18 +216,46 @@ button {
 }
 
 /*
- * Dark-mode chart overrides.
+ * Dark mode.
  *
- * NOTE: nothing in the app ever puts `.dark` on an ancestor — there is no theme
- * toggle and no `prefers-color-scheme` handling — so this block is currently
- * unreachable. It is kept, and kept in step with the tokens above, so that
- * adding a toggle later is a one-line change rather than a re-derivation of
- * every chart colour. Delete it if dark mode is ruled out.
+ * `<html>` gets `.dark` from the header toggle (components/chrome/ThemeToggle.tsx),
+ * set before paint by the inline script in app/layout.tsx. Manual only — the
+ * site never reads `prefers-color-scheme` and defaults every first visit to
+ * light; a stored choice is the only thing that moves it off that default.
  *
- * `@custom-variant dark` above is NOT dead: the Motion Primitives text
- * components use `dark:` utilities and need the variant registered.
+ * The base tokens below are a fresh dark palette, not a re-skin of the light
+ * one: `--color-charcoal` and `--color-white` swap roles (charcoal becomes the
+ * near-white text colour, white becomes a raised dark surface) because that's
+ * what almost every component in the site is already keyed on — `color:
+ * var(--color-charcoal)` for body text, `var(--color-white)` for card/code
+ * backgrounds. Same warm hue family as the light palette's borders and ink
+ * (~30-35° hue, low saturation) rather than a cool slate/zinc grey, so dark
+ * mode reads as this site's palette turned down, not a generic dark theme
+ * dropped on top of it. Ramp, darkest to lightest, all pass WCAG AA against
+ * `--color-bg` at the sizes they're used at (muted ~5.9:1, ink-soft ~12:1,
+ * charcoal-as-text ~15.7:1) — see the report for the full contrast workings.
+ *
+ * `--color-accent` is the one token that isn't a palette continuation: blue
+ * is the light-mode brand colour, orange is dark mode's, deliberately — the
+ * favicon and loading mark are already orange (`app/icon.svg`,
+ * `public/site-loader.webp`), so dark mode is where the site's two identities
+ * meet up instead of fighting each other.
  */
 .dark {
+  --color-bg: #171310;
+  --color-white: #211b15;
+  --color-charcoal: #f3ecdf;
+
+  --color-border: #332a20;
+  --color-border-strong: #4a3d2c;
+  --color-muted: #9c9078;
+  --color-ink-soft: #cabfa4;
+
+  --sidebar-bg: #1c1712;
+  --color-accent: #ffa554;
+
+  /* ---------------------------------------------------- chart overrides */
+
   --chart-1: #f7f7f7;
   --chart-2: var(--color-accent);
   --chart-3: #c9c3b4;
@@ -291,4 +324,90 @@ button {
   --color-chart-scale-04: var(--chart-scale-04);
   --color-chart-scale-05: var(--chart-scale-05);
   --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
+}
+
+/* ------------------------------------------------------------------ */
+/* Immersive chrome                                                    */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Lets a page clear the site's furniture out of the way — used by the Traces
+ * entry lab, which hides the header, footer and side panels as you read down
+ * and brings them back as you scroll up.
+ *
+ * Driven by two classes on <html>, not by inline styles. The previous version
+ * found these elements with `querySelectorAll` on CSS-module class prefixes and
+ * wrote `style.transform`/`style.opacity` onto them, which broke twice over:
+ *
+ *  1. It fought Motion. `PixelCompanion` is a `motion.div` whose whole
+ *     animation is opacity, so two owners wrote the same property and the last
+ *     writer won — meaning whether it actually hid depended on whether a Motion
+ *     animation happened to be mid-flight.
+ *  2. It only styled what was mounted at the moment the effect ran. Both Pixel
+ *     elements mount conditionally, so closing the sidebar while scrolled down
+ *     brought the companion back with no inline style at all, popping into a
+ *     page whose header and footer were still gone.
+ *
+ * A class on an ancestor has neither problem: it applies to elements that mount
+ * later, and a stylesheet rule loses to Motion's inline styles cleanly instead
+ * of racing them.
+ *
+ * The rail group moves on transform only, deliberately: opacity belongs to
+ * Motion on the companion, and this must not reach for it.
+ */
+[data-chrome] {
+  transition:
+    transform 340ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 240ms ease;
+}
+
+.chrome-hidden [data-chrome="header"] {
+  transform: translateY(-115%);
+  opacity: 0;
+}
+
+.chrome-hidden [data-chrome="footer"] {
+  transform: translateY(115%);
+  opacity: 0;
+}
+
+.rails-hidden [data-chrome="rail"] {
+  transform: translateY(115%);
+}
+
+/*
+ * Hidden chrome must not still be clickable or focusable — it is off-screen,
+ * not merely faint.
+ */
+.chrome-hidden [data-chrome="header"],
+.chrome-hidden [data-chrome="footer"],
+.rails-hidden [data-chrome="rail"] {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-chrome] {
+    transition: none;
+  }
+}
+
+/*
+ * White header, for a page whose hero bleeds to the top edge.
+ *
+ * `NavBar` is deliberately transparent until the page scrolls, so a full-bleed
+ * hero puts its charcoal wordmark and grey links directly onto the hero's
+ * colour. Set by `useHeroChrome` (see `app/(labs)/traces-entry`) while the hero
+ * is still behind the bar, and removed the moment it scrolls clear.
+ *
+ * No rule here names a nav link. Every colour in `NavBar.module.css` already
+ * comes from a token, so re-pointing the tokens on the header retints the
+ * wordmark, the links, the current-page marker and the Ask Pixel pill together
+ * — including anything added to the bar later.
+ */
+.hero-chrome [data-chrome="header"] {
+  --color-charcoal: #ffffff;
+  --color-muted: color-mix(in srgb, #ffffff 82%, transparent);
+  --color-accent: #ffffff;
+  /* The pill inverts: white ground, hero-coloured text. */
+  --color-white: #ee15a5;
 }

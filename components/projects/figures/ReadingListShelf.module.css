@@ -1,0 +1,19 @@
+/*
+ * Only what the corpus shelf adds. The shelf furniture — rail, spines, the
+ * open-book frame — is in `components/bookshelf/shelf.module.css`, shared with
+ * the personal shelf on /about.
+ */
+
+.kindTag {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.cite {
+  color: var(--color-muted);
+  font-size: 0.7em;
+  margin-left: 0.2em;
+}

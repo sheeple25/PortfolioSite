@@ -22,6 +22,22 @@ const eslintConfig = defineConfig([
        */
       react: { version: "19.0" },
     },
+    rules: {
+      /*
+       * An underscore prefix marks a parameter that exists to document the
+       * call signature rather than to be used — `openChat(_source)` in
+       * PixelContext keeps the call sites self-describing without the
+       * provider having to care which one fired.
+       */
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
   },
   // globalIgnores REPLACES eslint-config-next's defaults rather than adding to
   // them, so the defaults have to be repeated here alongside our own.

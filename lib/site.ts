@@ -75,3 +75,24 @@ export const ROUTES = [
   "/about",
   "/contact",
 ] as const;
+
+/**
+ * The dev sandboxes under `app/(labs)`, in menu order.
+ *
+ * One list, three consumers: `components/dev/LabMenu.tsx` renders it,
+ * `app/robots.ts` disallows it, and the route files themselves are named
+ * `page.dev.tsx` so `pageExtensions` in next.config.ts drops them from a
+ * production build entirely. Adding a lab means adding it here — the previous
+ * arrangement kept the menu and the robots list separately by hand, and they
+ * had already drifted three routes apart.
+ */
+export const LAB_ROUTES = [
+  { href: "/pixel-lab", label: "Pixel" },
+  { href: "/text-lab", label: "Text" },
+  { href: "/effects-lab", label: "Effects" },
+  { href: "/stl-lab", label: "STL" },
+  { href: "/traces-board", label: "Traces board" },
+  { href: "/traces-entry", label: "Traces shelled" },
+  { href: "/loco-entry", label: "Loco shelled" },
+  { href: "/unflattening-entry", label: "Unflattening shelled" },
+] as const;

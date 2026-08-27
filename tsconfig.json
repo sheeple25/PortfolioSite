@@ -40,6 +40,17 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    /*
+     * Dev-only generated route types. `next dev` writes these from the dev
+     * route set, which now legitimately differs from production: the labs
+     * under `app/(labs)` are `*.dev.tsx` and only resolve in development
+     * (see `pageExtensions` in next.config.ts). Typechecking both sets at
+     * once makes `next build` fail whenever a dev server happens to be
+     * running. Excluded here rather than removed from `include` because
+     * `next dev` rewrites `include` on startup; `exclude` wins over it and
+     * survives. `.next/types/**` (the production set) is still checked.
+     */
+    ".next/dev/types/**/*"
   ]
 }

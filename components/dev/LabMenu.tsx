@@ -16,13 +16,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
+import { LAB_ROUTES } from "@/lib/site";
 import styles from "./LabMenu.module.css";
-
-const LABS = [
-  { href: "/pixel-lab", label: "Pixel" },
-  { href: "/text-lab", label: "Text" },
-  { href: "/effects-lab", label: "Effects" },
-];
 
 export default function LabMenu() {
   const [open, setOpen] = useState(false);
@@ -48,7 +43,7 @@ export default function LabMenu() {
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
           >
-            {LABS.map((lab) => (
+            {LAB_ROUTES.map((lab) => (
               <Link
                 key={lab.href}
                 href={lab.href}

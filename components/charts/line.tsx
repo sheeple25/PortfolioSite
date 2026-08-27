@@ -10,6 +10,7 @@ type CurveFactory = any;
 import {
   type RefObject,
   useCallback,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -265,10 +266,27 @@ export function Line({
   const [pulseEpoch, setPulseEpoch] = useState(0);
   const effectiveShowHighlight = showHighlight && !showLoadingPulse;
 
+  /*
+   * Local patch, not upstream: the loop pause below used to be a bare
+   * `window.setTimeout`, so unmounting mid-pause left it pending and it woke
+   * up to `setPulseEpoch` on a gone component. Parked on a ref and cleared on
+   * unmount. Re-apply if this file is ever re-pulled from the source library.
+   */
+  const loopTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (loopTimer.current !== null) window.clearTimeout(loopTimer.current);
+    },
+    [],
+  );
+
   const handleLoadingPulseComplete = useCallback(() => {
     onLoadingPulseCycleComplete?.();
     if (pulseMode === "loop") {
-      window.setTimeout(() => {
+      if (loopTimer.current !== null) window.clearTimeout(loopTimer.current);
+      loopTimer.current = window.setTimeout(() => {
+        loopTimer.current = null;
         setPulseEpoch((epoch) => epoch + 1);
       }, LINE_LOADING_LOOP_PAUSE_MS);
       return;

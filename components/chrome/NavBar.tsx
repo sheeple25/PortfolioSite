@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 import { Pixel, usePixel } from "@/components/pixel";
 import Logo from "./Logo";
 import styles from "./NavBar.module.css";
+import { useScrollFrame, type ScrollSnapshot } from "@/lib/useScrollFrame";
 
 /**
- * Site header. Sticky, and it grows a hairline and a blur once the page has
+ * Site header. Sticky, and it grows a translucent blur once the page has
  * scrolled far enough that content would otherwise slide under bare text.
  */
 
@@ -36,12 +37,12 @@ export default function NavBar() {
    */
   const [logoHovered, setLogoHovered] = useState(false);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const onScrollFrame = useCallback(
+    ({ y }: ScrollSnapshot) => setScrolled(y > 8),
+    [],
+  );
+
+  useScrollFrame(onScrollFrame);
 
   // The sheet covers the viewport, so the page behind it shouldn't scroll.
   useEffect(() => {
@@ -63,11 +64,28 @@ export default function NavBar() {
   }, [menuOpen]);
 
   return (
-    <header className={cn(styles.header, scrolled && styles.scrolled)}>
+    <header
+      className={cn(styles.header, scrolled && styles.scrolled)}
+      data-chrome="header"
+    >
+      {/*
+        Six flat-blur layers, each masked to its own band — see
+        `.progressiveBlur` in NavBar.module.css for why this takes six
+        elements instead of one `backdrop-filter`.
+      */}
+      <div className={styles.progressiveBlur} aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+
       <nav className={styles.nav} aria-label="Primary">
         {/* The header sits above the sheet, so this stays reachable with it open. */}
         <Link
-          href="/"
+          href="/projects"
           className={styles.wordmark}
           onClick={() => setMenuOpen(false)}
           onPointerEnter={() => setLogoHovered(true)}

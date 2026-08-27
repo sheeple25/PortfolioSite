@@ -36,7 +36,27 @@
   opacity: 0;
 }
 
+/*
+ * The tint. The loader is a flat-colour-on-alpha raster, so flooding the
+ * accent and compositing it into the frame's alpha replaces the baked colour
+ * outright rather than shifting it — the result is exactly `--color-accent`,
+ * matching `.triangle` below in both themes. `flood-color` lives here, not on
+ * the `feFlood` element, so it can read the custom property.
+ */
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.defs feFlood {
+  flood-color: var(--color-accent);
+  flood-opacity: 1;
+}
+
 .loop {
+  filter: url(#logo-loader-tint);
   width: 126.7327%;
   height: 145.4545%;
   left: -13.3663%;

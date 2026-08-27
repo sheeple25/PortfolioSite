@@ -1,0 +1,16 @@
+/*
+ * Only what the personal shelf adds. The shelf furniture — rail, spines, the
+ * open-book frame — is in `components/bookshelf/shelf.module.css`, shared with
+ * the thesis corpus shelf.
+ */
+
+.stars {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+.starEmpty {
+  color: var(--color-border-strong);
+}

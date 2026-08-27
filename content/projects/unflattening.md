@@ -184,6 +184,12 @@ Each story's narrative structure carries its argument:
 - **Shit Flower** is nonlinear, running past and present chronologies side by side.
 - **The Diamond Library** is nested loops of truth; the protagonist spirals inward, and discovery is loss of ground rather than gain.
 
+### The Reading List
+
+Six texts hold up the theoretical frame — SF, SCD and ontological design, read through Suvin, Dunne & Raby, Willis, Fry, Escobar and Banerjee — alongside the four anthology covers behind the corpus decision above: both Gollancz volumes, and the two collections rejected for being curated on theme rather than form.
+
+[FIGURE reading-list: The reading list — six foundational texts, four anthology covers]
+
 ## How Design Designs
 
 Preview:
