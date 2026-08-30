@@ -9,6 +9,14 @@
   --color-white: #ffffff;
   --color-charcoal: #1e1e1e;
 
+  /*
+   * The Ask Pixel pill's fill. Site blue everywhere by default; a case-study
+   * page overrides it on `<html>` for as long as it's mounted (see
+   * `useNavAccent` in `components/case-study/useImmersiveChrome.ts`), so the
+   * one thing that ever changes it is which project you're on.
+   */
+  --nav-pixel-accent: var(--color-accent);
+
   /* Warm greys, lightest to darkest. */
   --color-border: #e4e0d6;
   --color-border-strong: #c9c3b4;
@@ -21,6 +29,19 @@
    * so the height has to be a value both can read rather than a magic number
    * repeated in two stylesheets.
    */
+  /*
+   * The index pages' ground — `/projects`, `/archive`, `/writing`.
+   *
+   * A warm near-black rather than the earlier olive green, chosen to sit in
+   * the same family as the site's actual dark-mode ground (`#171310` /
+   * `#f3ecdf` below) — an always-dark hero that no longer looks like a
+   * mismatched colour if it's on screen right as someone toggles dark mode.
+   * Independent of that toggle on purpose: this stays constant either way,
+   * it just happens to now share its palette instead of clashing with it.
+   */
+  --index-header-ground: #17130f;
+  --index-header-ink: #f3ecdf;
+
   --nav-height: 5rem;
   --page-max: 76rem;
   --page-gutter: clamp(1.25rem, 5vw, 4rem);
@@ -159,7 +180,7 @@ body {
   flex-direction: column;
   min-height: 100svh;
   /*
-   * Pixel's sidebar is `position: fixed` (see PixelSidebar.module.css) rather
+   * Pixel's sidebar is `position: fixed` (see chat/PixelSidebar.module.css) rather
    * than a flex sibling here, so it's pushed open by widening this margin
    * instead of by flex distribution — same easing as the sidebar's own width
    * transition so the page edge and the panel edge move together.
@@ -168,9 +189,32 @@ body {
   transition: margin-right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Pushes the whole page left by exactly the sidebar's width while it's open. */
+/*
+ * Pushes the whole page left by exactly the sidebar's width while it's open.
+ *
+ * `margin-right` moves the page but NOT anything `position: fixed`, which is
+ * positioned against the viewport rather than the body box — so the mascot and
+ * the annotation panel above him would slide underneath the open sidebar and
+ * disappear behind it. Widening `--shell-inset` by the same amount is what
+ * carries the corner across with the page it belongs to.
+ */
 body:has(aside[aria-label="Ask Pixel"][data-open="true"]) {
   margin-right: var(--sidebar-width);
+  --shell-inset: calc(
+    max(var(--page-gutter), (100vw - var(--sidebar-width) - var(--shell-max)) / 2) +
+      var(--sidebar-width)
+  );
+}
+
+/*
+ * Below the breakpoint the sidebar covers the whole screen, so there is no page
+ * left to push aside and nowhere for the corner to move to.
+ */
+@media (max-width: 40rem) {
+  body:has(aside[aria-label="Ask Pixel"][data-open="true"]) {
+    margin-right: 0;
+    --shell-inset: max(var(--page-gutter), calc((100vw - var(--shell-max)) / 2));
+  }
 }
 
 /* The routable area between the header and the footer. */
@@ -218,28 +262,36 @@ button {
 /*
  * Dark mode.
  *
- * `<html>` gets `.dark` from the header toggle (components/chrome/ThemeToggle.tsx),
- * set before paint by the inline script in app/layout.tsx. Manual only — the
- * site never reads `prefers-color-scheme` and defaults every first visit to
- * light; a stored choice is the only thing that moves it off that default.
+ * `<html>` gets `.dark` from the header's theme toggle
+ * (components/chrome/ThemeToggle.tsx), set before paint by the inline script
+ * in app/layout.tsx. Manual only — the site never reads
+ * `prefers-color-scheme` and defaults every first visit to light; a stored
+ * choice is the only thing that moves it off that default.
  *
- * The base tokens below are a fresh dark palette, not a re-skin of the light
- * one: `--color-charcoal` and `--color-white` swap roles (charcoal becomes the
- * near-white text colour, white becomes a raised dark surface) because that's
- * what almost every component in the site is already keyed on — `color:
- * var(--color-charcoal)` for body text, `var(--color-white)` for card/code
- * backgrounds. Same warm hue family as the light palette's borders and ink
- * (~30-35° hue, low saturation) rather than a cool slate/zinc grey, so dark
- * mode reads as this site's palette turned down, not a generic dark theme
- * dropped on top of it. Ramp, darkest to lightest, all pass WCAG AA against
- * `--color-bg` at the sizes they're used at (muted ~5.9:1, ink-soft ~12:1,
- * charcoal-as-text ~15.7:1) — see the report for the full contrast workings.
+ * Deliberately a plain inversion, nothing more: `--color-charcoal` and
+ * `--color-white` swap roles (charcoal becomes the near-white text colour,
+ * white becomes a raised dark surface) because that's what almost every
+ * component in the site is already keyed on — `color: var(--color-charcoal)`
+ * for body text, `var(--color-white)` for card/code backgrounds. The
+ * border/muted/ink ramp darkens along the same warm hue family so borders and
+ * secondary text stay legible against the new background, all passing WCAG
+ * AA against `--color-bg` at the sizes they're used at.
  *
- * `--color-accent` is the one token that isn't a palette continuation: blue
- * is the light-mode brand colour, orange is dark mode's, deliberately — the
- * favicon and loading mark are already orange (`app/icon.svg`,
- * `public/site-loader.webp`), so dark mode is where the site's two identities
- * meet up instead of fighting each other.
+ * `--color-accent` is deliberately NOT overridden here — it stays the site's
+ * blue in both themes. Everything that reads it (nav links, the Ask Pixel
+ * pill, every chart token below that's defined as `var(--color-accent)` in
+ * `:root`) just follows along with no override of its own needed.
+ *
+ * The header is untouched by design, not by a token override: it carries no
+ * background of its own until the page scrolls (see `.header`/
+ * `.progressiveBlur` in NavBar.module.css), so it was always transparent
+ * chrome reading whatever colour sits beneath it — the same reason
+ * `.hero-chrome` below retints it over a full-bleed image. Pinning its text
+ * to the light-mode literal would leave charcoal-on-charcoal the moment the
+ * page under it goes dark, so it inherits the ramp above like everything
+ * else and stays legible against the page it's laid over. The footer needs
+ * no such handling either way — it pins every one of these to a literal
+ * colour of its own (see Footer.module.css) and never answered to `.dark`.
  */
 .dark {
   --color-bg: #171310;
@@ -252,49 +304,6 @@ button {
   --color-ink-soft: #cabfa4;
 
   --sidebar-bg: #1c1712;
-  --color-accent: #ffa554;
-
-  /* ---------------------------------------------------- chart overrides */
-
-  --chart-1: #f7f7f7;
-  --chart-2: var(--color-accent);
-  --chart-3: #c9c3b4;
-  --chart-4: #8a8578;
-  --chart-5: #5c5747;
-
-  --chart-background: #171614;
-  --chart-foreground: #f0ece3;
-  --chart-foreground-muted: #8a8578;
-  --chart-label: #b8b1a2;
-
-  --chart-line-primary: #f0ece3;
-  --chart-line-secondary: var(--color-accent);
-
-  --chart-crosshair: #5c5747;
-  --chart-grid: #302d28;
-  --chart-brush-border: #5c5747;
-
-  --chart-tooltip-background: color-mix(in srgb, #f0ece3 92%, transparent);
-  --chart-tooltip-foreground: #171614;
-  --chart-tooltip-muted: #5c5747;
-
-  --chart-marker-background: #221f1c;
-  --chart-marker-border: #5c5747;
-  --chart-marker-foreground: #f0ece3;
-
-  --chart-indicator-color: #f0ece3;
-  --chart-indicator-secondary-color: var(--color-accent);
-  --chart-marker-badge-background: #f0ece3;
-  --chart-marker-badge-foreground: #171614;
-  --chart-segment-background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  --chart-segment-line: var(--color-accent);
-
-  --chart-scale-01: #241f19;
-  --chart-scale-02: #3d3226;
-  --chart-scale-03: #5e4830;
-  --chart-scale-04: #9c6b3c;
-  --chart-scale-05: var(--color-accent);
-  --chart-scale-pattern-color: #171614;
 }
 
 @theme inline {
@@ -401,13 +410,31 @@ button {
  *
  * No rule here names a nav link. Every colour in `NavBar.module.css` already
  * comes from a token, so re-pointing the tokens on the header retints the
- * wordmark, the links, the current-page marker and the Ask Pixel pill together
- * — including anything added to the bar later.
+ * wordmark, the links and the current-page marker together — including
+ * anything added to the bar later.
+ *
+ * The Ask Pixel pill is deliberately left out of this: it fills with
+ * `--nav-pixel-accent`, which already tracks the project you're on (see
+ * `--nav-pixel-accent` in the `:root` block above), and forcing it white here
+ * would fight that with a second, scroll-linked colour on top.
  */
+/*
+ * Set on `<html>` for as long as an index page is mounted (see `IndexShell`).
+ *
+ * The index carries its own dark ground, but several pieces of site chrome are
+ * fixed elements in the root layout — `BottomEdge` most visibly — and so sit
+ * outside the page's subtree entirely. A token override scoped to `.page`
+ * cannot reach them, and `BottomEdge` washing the foot of the window in
+ * `--color-bg` laid a pale band across the bottom of the dark index. Moving the
+ * override up to the document reaches every one of them, and takes the body's
+ * own background (and so the overscroll area) with it.
+ */
+.index-ground {
+  --color-bg: var(--index-header-ground);
+}
+
 .hero-chrome [data-chrome="header"] {
   --color-charcoal: #ffffff;
   --color-muted: color-mix(in srgb, #ffffff 82%, transparent);
   --color-accent: #ffffff;
-  /* The pill inverts: white ground, hero-coloured text. */
-  --color-white: #ee15a5;
 }

@@ -1,4 +1,10 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "motion/react";
 import Image from "next/image";
+import { useShutter } from "@/components/chrome/Shutter";
+import { scallopedCirclePath } from "@/lib/scallopedCirclePath";
 import styles from "./case.module.css";
 
 /**
@@ -22,11 +28,92 @@ export type Institution = {
   /** Small line above the name — what the place is to this project. */
   role: string;
   href: string;
-  /** Path under `public/` once a mark exists. Renders as type until then. */
-  logo?: string;
   /** Degrees of tilt. Nothing is applied perfectly straight. */
   tilt: number;
 };
+
+/**
+ * Logo convention, shared by every place a company/institution mark can show
+ * up (project stickers here, and eventually the work-index logo strip): drop
+ * a file named after the entity with whitespace stripped — `"CEPT
+ * University"` -> `public/logos/CEPTUniversity.svg` — and it picks up
+ * automatically, no per-entry wiring. SVG is tried first, PNG second (some
+ * marks only come as a raster), and if neither exists the sticker just shows
+ * type, exactly as it did before any mark existed.
+ */
+const LOGO_EXTENSIONS = ["svg", "png"] as const;
+
+function logoSrc(name: string, extIndex: number) {
+  return `/logos/${name.replace(/\s+/g, "")}.${LOGO_EXTENSIONS[extIndex]}`;
+}
+
+/**
+ * The sticker's own wavy rim — the same shape `StickerVote`'s rating badges
+ * use (`scallopedCirclePath`), so the site's two badge surfaces read as one
+ * visual language rather than two independent wavy-circle implementations.
+ *
+ * `scallopedCirclePath(radius, ...)` draws a shape whose true centre is
+ * `(radius, radius)` and whose bounding box is exactly `2 * radius` square —
+ * so the viewBox has to be that same `2 * radius`, not an independently
+ * chosen number, or the rim ends up off-centre inside it (padded on the
+ * bottom-right only). The logo `<img>` centres itself on the full container,
+ * so a mismatched viewBox here is exactly what made the mark look off-centre
+ * against the badge's own rim.
+ */
+const STICKER_RADIUS = 46;
+const STICKER_VIEWBOX = STICKER_RADIUS * 2;
+const STICKER_PATH = scallopedCirclePath(STICKER_RADIUS, 15, 4.5);
+
+/**
+ * One institution mark: a circular, scallop-edged badge holding only the
+ * logo — no name, no role. `role`/`name` still carry the accessible label,
+ * they just no longer render as visible type.
+ *
+ * A single component rather than the shape and the `<img>` as siblings,
+ * because the logo can fail to load (no file yet under `public/logos/`) and
+ * a wavy circle with nothing inside it reads as broken, not as a badge — so
+ * the whole sticker, shape included, drops out rather than showing an empty
+ * rim.
+ */
+function Sticker({ inst }: { inst: Institution }) {
+  const [extIndex, setExtIndex] = useState(0);
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return null;
+
+  return (
+    <a
+      className={styles.sticker}
+      style={{ "--tilt": `${inst.tilt}deg` } as React.CSSProperties}
+      href={inst.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${inst.name} — ${inst.role} (opens in a new tab)`}
+    >
+      <svg
+        viewBox={`0 0 ${STICKER_VIEWBOX} ${STICKER_VIEWBOX}`}
+        className={styles.stickerShape}
+        aria-hidden="true"
+      >
+        <path d={STICKER_PATH} className={styles.stickerFace} />
+      </svg>
+      {/* eslint-disable-next-line @next/next/no-img-element -- extension fallback chain needs a plain <img onError> */}
+      <img
+        src={logoSrc(inst.name, extIndex)}
+        alt=""
+        aria-hidden="true"
+        className={styles.stickerLogo}
+        onError={() => {
+          if (extIndex < LOGO_EXTENSIONS.length - 1) {
+            setExtIndex((i) => i + 1);
+          } else {
+            setFailed(true);
+          }
+        }}
+      />
+    </a>
+  );
+}
 
 /**
  * The institution marks, applied to the top-right of the block the title and
@@ -42,27 +129,7 @@ export function Stickers({ institutions }: { institutions: Institution[] }) {
   return (
     <div className={styles.stickers}>
       {institutions.map((inst) => (
-        <a
-          key={inst.name}
-          className={styles.sticker}
-          style={{ "--tilt": `${inst.tilt}deg` } as React.CSSProperties}
-          href={inst.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${inst.name} — ${inst.role} (opens in a new tab)`}
-        >
-          {inst.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element -- local SVG mark
-            <img
-              src={inst.logo}
-              alt=""
-              aria-hidden="true"
-              className={styles.stickerLogo}
-            />
-          ) : null}
-          <span className={styles.stickerRole}>{inst.role}</span>
-          <span className={styles.stickerName}>{inst.name}</span>
-        </a>
+        <Sticker key={inst.name} inst={inst} />
       ))}
     </div>
   );
@@ -100,8 +167,22 @@ export default function Banner({
   /** The texture layer — an image, a text wall, whatever the project needs. */
   children?: React.ReactNode;
 }) {
+  const shutter = useShutter();
+
   return (
-    <header className={styles.banner}>
+    /*
+     * The far end of the shutter, and symmetric with the index header: arriving
+     * from an index this opens downward once that header has closed, and
+     * leaving for one it closes upward so the index header can open in its
+     * place. One pair of animations serves both directions, because they are
+     * described in absolute terms — close up, open down — not as forward and
+     * back.
+     */
+    <motion.header
+      className={styles.banner}
+      ref={shutter?.panelRef}
+      {...shutter?.panelProps}
+    >
       {children}
 
       <div className={styles.bannerFloor} />
@@ -130,6 +211,6 @@ export default function Banner({
           </dl>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

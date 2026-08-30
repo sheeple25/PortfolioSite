@@ -92,7 +92,4 @@ export const LAB_ROUTES = [
   { href: "/effects-lab", label: "Effects" },
   { href: "/stl-lab", label: "STL" },
   { href: "/traces-board", label: "Traces board" },
-  { href: "/traces-entry", label: "Traces shelled" },
-  { href: "/loco-entry", label: "Loco shelled" },
-  { href: "/unflattening-entry", label: "Unflattening shelled" },
 ] as const;

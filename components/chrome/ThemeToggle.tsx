@@ -9,22 +9,23 @@ const STORAGE_KEY = "theme";
 type Theme = "light" | "dark";
 
 /**
- * Manual light/dark toggle: a switch, not a push button — the two themes are
- * a persistent on/off state, so it's marked up as `role="switch"` with
- * `aria-checked` and reads as a track with a knob that slides between the
- * sun and the moon. There is no `prefers-color-scheme` handling anywhere in
- * the site — it defaults to light on a first visit and only changes when a
- * visitor asks it to, via this switch.
+ * Manual light/dark toggle: a single icon button in the header, immediately
+ * left of "Ask Pixel". The glyph shown is always the destination theme, not
+ * the current one — a sun while dark (press it to go light), a moon while
+ * light (press it to go dark) — so it reads as an instruction rather than a
+ * status light. There is no `prefers-color-scheme` handling anywhere in the
+ * site — it defaults to light on a first visit and only changes when a
+ * visitor presses this button.
  *
  * The source of truth is the `.dark` class on `<html>`, not component state:
  * that's what every stylesheet in the site already keys off, and it's what
  * the inline script in app/layout.tsx sets before paint to avoid a flash. A
- * `useSyncExternalStore` subscription is what keeps this button's
- * `aria-checked` in step with that class without duplicating it in a
- * `useState` — `getServerSnapshot` below is what lets the server (and the
- * client's first hydration pass) agree on "light" while the *actual* class
- * can already be "dark", the same trick the inline script relies on, without
- * a hydration-mismatch warning.
+ * `useSyncExternalStore` subscription is what keeps this button's icon in
+ * step with that class without duplicating it in a `useState` —
+ * `getServerSnapshot` below is what lets the server (and the client's first
+ * hydration pass) agree on "light" while the *actual* class can already be
+ * "dark", the same trick the inline script relies on, without a
+ * hydration-mismatch warning.
  */
 
 const listeners = new Set<() => void>();
@@ -99,24 +100,21 @@ export default function ThemeToggle() {
     applyTheme(theme === "dark" ? "light" : "dark", true);
   }
 
+  const label = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
+
   return (
     <button
       type="button"
-      role="switch"
       className={styles.toggle}
-      data-chrome="header"
       onClick={toggle}
-      aria-label="Dark theme"
-      aria-checked={theme === "dark"}
-      title={
-        theme === "dark" ? "Switch to light theme" : "Switch to dark theme"
-      }
+      aria-label={label}
+      title={label}
     >
-      {/* The two icons sit in the track, one at each end; the knob slides
-          over whichever one is currently inactive. */}
-      <Sun size={13} className={styles.sun} aria-hidden="true" />
-      <Moon size={13} className={styles.moon} aria-hidden="true" />
-      <span className={styles.knob} aria-hidden="true" />
+      {theme === "dark" ? (
+        <Sun size={18} aria-hidden="true" />
+      ) : (
+        <Moon size={18} aria-hidden="true" />
+      )}
     </button>
   );
 }

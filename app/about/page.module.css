@@ -1,29 +1,8 @@
 /*
- * Deliberately minimal — the About page's full content/layout hasn't been
- * decided yet. This just gives the bookshelf a page to live on for review.
+ * The title/intro masthead and page frame now come from `IndexShell` — see
+ * `components/chrome/IndexShell.module.css`. All that's left here is the
+ * label above the bookshelf, sitting inside `IndexShell`'s sheet.
  */
-.page {
-  max-width: var(--page-max);
-  margin-inline: auto;
-  padding-inline: var(--page-gutter);
-  padding-block: clamp(3rem, 8vw, 6rem) clamp(4rem, 10vw, 8rem);
-}
-
-.heading {
-  font-family: var(--font-newsreader);
-  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-  color: var(--color-charcoal);
-  margin-bottom: 0.5rem;
-}
-
-.intro {
-  max-width: var(--measure);
-  color: var(--color-ink-soft);
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 2.5rem;
-}
-
 .sectionLabel {
   font-family: var(--font-jetbrains-mono);
   font-size: 0.72rem;

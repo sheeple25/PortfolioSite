@@ -12,6 +12,12 @@ skills:
   - Product Design
   - Model-Led Iteration
   - Packaging Design
+# Confirmed from the body text below ("Keyshot answered the one number that
+# mattered"). "Model-Led Iteration" above suggests physical models carried
+# most of the process, so this is deliberately just the one tool, not a
+# guessed CAD package alongside it.
+tools:
+  - Keyshot
 cover: /archive/matchbox-hero.webp
 coverAlt: The Matchbox bedside lamp in plywood, its shade raised.
 titleEffect: glow

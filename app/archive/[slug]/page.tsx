@@ -6,8 +6,8 @@ import DocumentHeader from "@/components/writing/DocumentHeader";
 import { ReaderProvider } from "@/components/writing/ReaderContext";
 import SectionCard from "@/components/writing/SectionCard";
 import Toc from "@/components/writing/Toc";
-import AnnotationPanel from "@/components/writing/notes/AnnotationPanel";
-import { NotesProvider } from "@/components/writing/notes/NotesContext";
+import { AnnotationPanel, NotesProvider } from "@/components/pixel";
+import { ProcessNote } from "@/components/pixel/server";
 import prose from "@/components/writing/prose.module.css";
 import { getArchiveDocument, getArchiveSlugs } from "@/lib/archive";
 import { cn } from "@/lib/utils";
@@ -124,6 +124,13 @@ export default async function ArchiveEntryPage({ params }: PageProps) {
                 </Link>
               </div>
             </div>
+
+            {/*
+              The third track's first real occupant: what Vidush actually did on
+              this project, in Pixel's margin, without being asked. Renders
+              nothing while the project's DecisionLog is still a placeholder.
+            */}
+            <ProcessNote slug={slug} />
           </div>
 
           <AnnotationPanel />

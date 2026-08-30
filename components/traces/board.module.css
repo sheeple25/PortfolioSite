@@ -1069,14 +1069,14 @@
 }
 
 .introKicker {
-  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-family: cursive;
   font-size: clamp(1.75rem, 4.5vw, 3.25rem);
   margin: 0;
   letter-spacing: 0.04em;
 }
 
 .introTitle {
-  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-family: cursive;
   font-size: clamp(3rem, 9vw, 6.5rem);
   color: var(--pink);
   margin: 0 0 clamp(2rem, 5vh, 3.5rem);
@@ -1085,7 +1085,7 @@
 }
 
 .introLine {
-  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-family: cursive;
   font-size: clamp(1.75rem, 5vw, 3.5rem);
   line-height: 1.25;
   margin: 0 auto clamp(2.5rem, 6vh, 4rem);
@@ -1127,7 +1127,7 @@
 /* ------------------------------------------------------------------ */
 
 .hand {
-  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-family: cursive;
   font-size: clamp(2.25rem, 5.5vw, 4rem);
   margin: 0;
   letter-spacing: 0.02em;
@@ -1226,7 +1226,7 @@
 }
 
 .handLarge {
-  font-family: var(--font-waiting-for-the-sunrise), cursive;
+  font-family: cursive;
   font-size: clamp(2.5rem, 8vw, 6rem);
   margin: 0 0 clamp(2rem, 5vh, 3.5rem);
   letter-spacing: 0.02em;

@@ -62,16 +62,41 @@ export type WritingFrontmatter = {
   timeline?: string;
   team?: string;
   /**
-   * Skills/Tools tags, e.g. `Product Design`, `CAD Modelling`. Feeds the
-   * Work/Archive knowledge graph's Skill/Tool nodes (`lib/graph`) — a
-   * separate node type from Domain tags above, even where a label looks
-   * similar (a "Textile Design" skill and a "textile" domain aren't the same
-   * node). Reuse an existing label verbatim so it collapses correctly.
+   * Skill tags, e.g. `Product Design`, `Design Research`. Feeds the
+   * Work/Archive knowledge graph's Skill nodes (`lib/graph`) — a separate
+   * node type from Domain tags above, even where a label looks similar (a
+   * "Textile Design" skill and a "textile" domain aren't the same node).
+   * Reuse an existing label verbatim so it collapses correctly.
    */
   skills?: string[];
+  /**
+   * Named software/equipment, e.g. `Figma`, `SolidWorks`, `Keyshot`. Feeds
+   * the graph's Tool nodes — split from `skills` above because "Product
+   * Design" and "Figma" answer different questions (what you can do vs. what
+   * you used). Reuse an existing label verbatim so it collapses correctly.
+   */
+  tools?: string[];
   /** Index tile image, as a path under `/public`. */
   cover?: string;
   coverAlt?: string;
+  /**
+   * Looping background video for the index tile, as a path under `/public`.
+   * Autoplays muted on load (skipped under `prefers-reduced-motion`), with
+   * `cover` as its poster frame — so `cover` should be a plain frame of the
+   * same loop rather than something composited, since the video takes over
+   * the instant it can play.
+   */
+  coverVideo?: string;
+  /**
+   * A mark centered over the index tile's cover/video, as a path under
+   * `/public` — kept a separate layer rather than composited into `cover` so
+   * its color and size stay one-line edits instead of a re-render.
+   */
+  logo?: string;
+  /** Forces the logo to pure white — for a mark drawn in a dark, solid fill. */
+  logoInvert?: boolean;
+  /** Logo width as a percent of the tile's own width. Defaults to 20. */
+  logoWidth?: number;
   /**
    * Which title animation the document header uses. Keys are resolved against
    * the registry in `components/archive/titleEffects`.

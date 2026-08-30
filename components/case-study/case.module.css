@@ -22,6 +22,9 @@
  * site token, and the rest of the site stays on `--color-accent`.
  */
 .page {
+  /* Positioning context for `.backLink`, which sits over the banner. */
+  position: relative;
+
   /*
    * The project accent, and three relatives of it.
    *
@@ -52,6 +55,35 @@
   --ink-soft: #646464;
   --ink-mute: #a0a0a0;
 
+  /* The page's own background, named so anything that needs to blend toward
+   * it (a color-mix wash, a placeholder that must read as "the page's
+   * negative") can follow it into dark mode instead of hardcoding #ffffff. */
+  --page-bg: #ffffff;
+
+  /*
+   * Every figure diagram (`components/projects/figures`) was drawn against a
+   * fixed dark backing — white line work and labels, this project's accent, a
+   * muted grey for de-emphasised text. `.dark` below restates that literally:
+   * dark mode shows the artwork as originally drawn, panel and all.
+   *
+   * Light mode gets its own pass instead of inheriting the same dark panel —
+   * a pale card (`--tp`-tinted, same recipe `.chart`'s background already
+   * uses) with dark ink, so switching themes actually changes how a figure
+   * reads rather than leaving a dark box sitting on the light page either
+   * way. `--fig-accent` is the one constant: this project's identity colour,
+   * not a light/dark concern.
+   *
+   * `--fig-ink-mute` is its own literal rather than `var(--ink-mute)`: that
+   * token is tuned for `#a0a0a0`-on-dark-charcoal contrast, which reads as
+   * barely-there on this pale card — de-emphasised shouldn't mean
+   * unreadable.
+   */
+  --fig-stage: color-mix(in srgb, var(--tp) 4%, var(--page-bg));
+  --fig-ink: var(--ink);
+  --fig-ink-mute: #6b6b66;
+  --fig-accent: var(--tp);
+  --fig-accent-deep: #bc5e09;
+
   --mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --serif: var(--font-newsreader), Georgia, serif;
   --sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
@@ -64,7 +96,7 @@
   /* Distance between top-level beats — a flat 128 the whole way down. */
   --beat: 8rem;
 
-  background: #ffffff;
+  background: var(--page-bg);
   color: var(--ink);
 
   /*
@@ -75,6 +107,42 @@
    * exactly where it did before.
    */
   margin-top: calc(-1 * var(--nav-height));
+}
+
+/*
+ * Dark mode for the chassis. `.dark` lands on `<html>` (see `ThemeToggle`),
+ * outside this module's scope, hence the `:global()` escape.
+ *
+ * Reuses the exact neutrals `globals.css` already defines for `.dark` on
+ * `:root` (`--color-bg`, `--color-charcoal`, `--color-muted`,
+ * `--color-ink-soft`) rather than inventing a second dark palette — this
+ * stylesheet just doesn't read those tokens normally (see the note on `.page`
+ * above about staying off `--color-accent`), so the numbers are restated
+ * here instead of piped through.
+ *
+ * The banner, its texture, the sticker board and the "more projects" plates
+ * are deliberately left alone: each already pins its own literal colour
+ * (magenta ground, white type) the way the footer does — see the comment
+ * below `.hero-chrome` — because that's a fixed material, not page chrome
+ * answering to the reader's theme choice.
+ */
+:global(.dark) .page {
+  --page-bg: #171310;
+  --ink: #f3ecdf;
+  --ink-soft: #cabfa4;
+  --ink-mute: #9c9078;
+  --tp-stage: #241d15;
+  --tp-tint: rgba(255, 255, 255, 0.05);
+
+  /*
+   * Stated explicitly rather than left to cascade from `--ink`/`--page-bg`
+   * above: this is the figure artwork's original literal palette (white line
+   * work, muted grey, a near-black panel), not a derived tint of the page's
+   * own dark-mode ink — restoring it exactly is the point.
+   */
+  --fig-stage: #1e1e1e;
+  --fig-ink: #ffffff;
+  --fig-ink-mute: #a0a0a0;
 }
 
 /* ---------------------------------------------------------------- banner -- */
@@ -181,6 +249,66 @@
 }
 
 /*
+ * Unflattening's banner texture: an orange line grid on black, drawn in
+ * stroke by stroke — one row or column at a time, in a shuffled order
+ * (Tron's floor grid materialising, not a wipe over a pre-rendered
+ * pattern). `Grid.tsx` builds the SVG lines and their draw order; this file
+ * just animates whichever line each one turns out to be.
+ */
+.flatGrid {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #070502;
+}
+
+/*
+ * No `width`/`height` here: `Grid.tsx` sets them as attributes, in pixels,
+ * to exactly match its `ResizeObserver`-measured container — so this box
+ * only ever needs positioning, never sizing.
+ */
+.flatGridSvg {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * One stroke per line: hidden via `pathLength`-normalised dashing (so the
+ * dash math never has to know each line's real pixel length) and drawn in
+ * by animating the offset to 0. `--line-delay`, set per line in `Grid.tsx`
+ * from its position in the shuffled draw order, is what staggers the whole
+ * set instead of drawing them all in lockstep.
+ */
+.gridLine {
+  stroke: rgba(255, 165, 84, 0.65);
+  stroke-width: 1;
+  fill: none;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: drawLine 0.32s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+  animation-delay: var(--line-delay, 0s);
+}
+
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gridLine {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .flatGridWarp {
+    filter: none !important;
+  }
+}
+
+/*
  * The frame's `bottom-0 h-[345px]` gradient floor, which is what lets white
  * type sit on an arbitrary texture.
  *
@@ -265,31 +393,46 @@
   right: 0;
   z-index: 2;
   display: flex;
-  gap: 14px;
+  gap: 20px;
 }
 
 /*
- * A sticker, not a button: off-square, slightly raised off the surface, and
- * never applied perfectly straight. The tilt comes from the data so the two
- * lean different ways and by different amounts.
+ * A badge, not a button: a wavy-rimmed medallion holding just the mark, off-
+ * square and never applied perfectly straight. The tilt comes from the data
+ * so the two lean different ways and by different amounts. Pivots from its
+ * own centre rather than an edge — a coin tilts about its middle, which the
+ * old rectangular sticky-note version (pivoting from its top) didn't have to
+ * account for.
  */
 .sticker {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 14px 11px;
-  border-radius: 3px;
-  background: #fdfbf7;
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.16),
-    0 6px 16px rgba(0, 0, 0, 0.18);
+  position: relative;
+  display: block;
+  width: 100px;
+  height: 100px;
   text-decoration: none;
   rotate: var(--tilt, 0deg);
-  transform-origin: 50% 0;
+  transform-origin: 50% 50%;
   transition:
     rotate 260ms cubic-bezier(0.34, 1.4, 0.64, 1),
-    translate 260ms cubic-bezier(0.34, 1.4, 0.64, 1),
-    box-shadow 260ms ease;
+    translate 260ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/*
+ * The wavy rim itself — `filter: drop-shadow` rather than `box-shadow` so the
+ * shadow hugs the scalloped silhouette instead of the badge's square bounding
+ * box (the same reason `StickerVote.module.css`'s `.badgeShape` uses it).
+ */
+.stickerShape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.16)) drop-shadow(0 6px 16px rgba(0, 0, 0, 0.18));
+  transition: filter 260ms ease;
+}
+
+.stickerFace {
+  fill: #fdfbf7;
 }
 
 /*
@@ -300,44 +443,36 @@
 .sticker:focus-visible {
   rotate: 0deg;
   translate: 0 -3px;
-  box-shadow:
-    0 2px 2px rgba(0, 0, 0, 0.14),
-    0 12px 26px rgba(0, 0, 0, 0.22);
+}
+
+.sticker:hover .stickerShape,
+.sticker:focus-visible .stickerShape {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.14)) drop-shadow(0 12px 26px rgba(0, 0, 0, 0.22));
 }
 
 .sticker:focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 3px;
+  border-radius: 50%;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sticker {
+  .sticker,
+  .stickerShape {
     transition: none;
   }
 }
 
 .stickerLogo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  max-width: 58%;
+  max-height: 58%;
   width: auto;
-  height: 20px;
-  margin-bottom: 4px;
-}
-
-.stickerRole {
-  font-family: var(--mono);
-  font-size: 10px;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--tp);
-}
-
-.stickerName {
-  font-family: var(--sans);
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 1.1;
-  color: var(--ink);
-  white-space: nowrap;
+  height: auto;
+  object-fit: contain;
 }
 
 /* On a narrow window the corner belongs to the nav; the stickers stand down. */
@@ -501,7 +636,7 @@
   font-size: 20px;
   line-height: 1.3;
   text-transform: uppercase;
-  color: #000000;
+  color: var(--ink);
 }
 
 .railList {
@@ -559,7 +694,7 @@
 
 .railLinkActive .railTitle,
 .railLinkActive .railTag {
-  color: #000000;
+  color: var(--ink);
 }
 
 /* ------------------------------------------------------------------ type -- */
@@ -688,14 +823,42 @@
   }
 }
 
+/*
+ * The collapse animates on a grid row rather than `height`, which can't be
+ * transitioned to or from `auto`. `grid-template-rows` can: a single row that
+ * eases between `1fr` and `0fr` while its one child is clipped by
+ * `overflow: hidden` gives an accordion that measures nothing at runtime and
+ * still settles at the content's real height.
+ */
+.disclosurePanelWrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 360ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.disclosurePanelWrapClosed {
+  grid-template-rows: 0fr;
+}
+
 .disclosurePanel {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  overflow: hidden;
+  min-height: 0;
+  opacity: 1;
+  transition: opacity 220ms ease;
 }
 
-.disclosurePanelClosed {
-  display: none;
+.disclosurePanelWrapClosed .disclosurePanel {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosurePanelWrap,
+  .disclosurePanel {
+    transition: none;
+  }
 }
 
 /* ----------------------------------------------------- observation chain -- */
@@ -757,6 +920,27 @@
     rotate: 90deg;
     align-self: center;
   }
+}
+
+/* ------------------------------------------------------------ subquestions -- */
+
+/*
+ * A stacked list of label + sentence pairs — the shape a research question's
+ * subquestions take when they're lenses read together rather than steps taken
+ * in order. `Chain` was the closer-looking primitive but its arrows assert a
+ * sequence these explicitly aren't, so this stays its own pair of classes
+ * instead of forcing that fit.
+ */
+.subquestionList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.subquestion {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* ------------------------------------------------------------- focus rows -- */
@@ -929,6 +1113,14 @@
  * Height is left to the chart's own aspect ratio instead of the frame's flat
  * 280px: a stacked bar pair and a five-year line want different room, and
  * forcing both into one box squashes one of them.
+ *
+ * `min-height` is set to the tallest of the three figures this slot actually
+ * holds (measured at the column's own width: the Hinge screenshot renders at
+ * 378.8px against the Tinder chart's 352.4px and the line chart's 338.9px).
+ * Without it, `Problem`'s selector swaps a 379px box for a 339px one and the
+ * whole page reflows under the reader's cursor. Content still aligns to the
+ * top of the box, so the shorter two just leave the difference as space below
+ * the credit line rather than stretching to fill it.
  */
 .chart {
   display: flex;
@@ -936,7 +1128,8 @@
   gap: 12px;
   margin: 0;
   padding: 20px;
-  background: color-mix(in srgb, var(--tp) 4%, #ffffff);
+  min-height: 384px;
+  background: color-mix(in srgb, var(--tp) 4%, var(--page-bg));
   border: 1px solid color-mix(in srgb, var(--tp) 18%, transparent);
 }
 
@@ -1094,7 +1287,11 @@
   font-size: 20px;
   line-height: 1.3;
   text-transform: uppercase;
-  color: #ffffff;
+  /* The page's own background, not a literal white — `.slot`'s band is
+   * `var(--ink)`, so the label just needs to be whatever colour contrasts
+   * against it, and that's the same relationship `--ink`/`--page-bg` already
+   * hold in both themes. */
+  color: var(--page-bg);
 }
 
 /* ---------------------------------------------------------- cycle figure -- */
@@ -1125,22 +1322,63 @@
  * Positioning from the centre is what lets the two curved arrows carry a
  * `rotate` as well: rotation about the centre leaves the placement alone,
  * where a corner-anchored element would swing away from where it was put.
+ * `scale` on the active icon is likewise independent of `translate`, so
+ * enlarging it doesn't need to touch its position.
  */
 .cycleIcon,
 .cycleArrow,
 .cycleNote {
   position: absolute;
   translate: -50% -50%;
+  transition: opacity 240ms ease, background-color 240ms ease, scale 240ms ease, color 240ms ease;
 }
 
+/*
+ * Icons and arrows are painted through a mask rather than rendered as `<img>`,
+ * the same technique `.chainArrow` uses — see its comment. Both assets are
+ * solid, single-colour shapes on a transparent ground, so a mask reproduces
+ * them exactly, and it is what lets the selected one recolour to the accent
+ * instead of staying stuck at whatever colour Figma exported.
+ */
+.cycleIcon,
+.cycleArrow {
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/*
+ * The icon doubles as a click target — see `Why.tsx` — so it is a `<button>`
+ * rather than a masked `<span>`, reset back to a bare rectangle.
+ */
 .cycleIcon {
   width: 12.42%;
-  height: auto;
   aspect-ratio: 1;
+  border: 0;
+  padding: 0;
+  background-color: var(--ink);
+  cursor: pointer;
+  opacity: 0.4;
+}
+
+.cycleIconActive {
+  opacity: 1;
+  scale: 1.15;
+  background-color: var(--tp);
 }
 
 .cycleArrow {
   height: auto;
+  background-color: #a0a0a0;
+  opacity: 0.4;
+}
+
+.cycleArrowActive {
+  opacity: 1;
+  background-color: var(--tp);
 }
 
 .cycleNote {
@@ -1150,12 +1388,27 @@
   font-size: 1.55cqw;
   line-height: 1.25;
   color: var(--ink-mute);
+  opacity: 0.6;
+}
+
+.cycleNoteActive {
+  opacity: 1;
+  color: var(--tp);
+  font-weight: 600;
 }
 
 /* The one note the frame sets larger and centres under the loop. */
 .cycleNoteWide {
   font-size: 2.07cqw;
   text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cycleIcon,
+  .cycleArrow,
+  .cycleNote {
+    transition: none;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1532,7 +1785,7 @@
   top: calc(100svh - 12rem);
   width: 240px;
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--mono);
   font-size: 18px;
   line-height: 1.25;
   color: var(--ink-soft);
@@ -1638,4 +1891,40 @@
   .moreThumbCover {
     transition: none;
   }
+}
+
+/*
+ * The way back to the index, sitting over the banner's top-left under the site
+ * bar. Absolute against `.page` rather than inside the banner, so it is not
+ * clipped by the banner's `overflow: hidden` and not caught in the snapshot the
+ * shutter closes.
+ *
+ * White, because every banner ground is dark enough to carry it — the same
+ * assumption `.bannerTitle` already makes.
+ */
+.backLink {
+  position: absolute;
+  top: calc(var(--nav-height) + clamp(0.75rem, 2vw, 1.5rem));
+  left: max(var(--page-gutter), calc((100vw - var(--page-max)) / 2));
+  z-index: 6;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  opacity: 0.72;
+  transition: opacity 0.25s ease, gap 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.backLink:hover,
+.backLink:focus-visible {
+  opacity: 1;
+  /* The arrow steps away from the word rather than the whole link moving. */
+  gap: 0.85rem;
 }

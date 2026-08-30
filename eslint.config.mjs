@@ -25,9 +25,9 @@ const eslintConfig = defineConfig([
     rules: {
       /*
        * An underscore prefix marks a parameter that exists to document the
-       * call signature rather than to be used — `openChat(_source)` in
-       * PixelContext keeps the call sites self-describing without the
-       * provider having to care which one fired.
+       * call signature rather than to be used — several of PixelBot's
+       * context helpers take arguments that document the call site
+       * without the provider itself needing them.
        */
       "@typescript-eslint/no-unused-vars": [
         "warn",
@@ -35,6 +35,45 @@ const eslintConfig = defineConfig([
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  /*
+   * PixelBot's module boundary.
+   *
+   * The mascot, the InScreen annotations, the InChat sidebar, the prompt and
+   * the API route are one feature, and everything outside it imports from
+   * `@/components/pixel` — never from a file inside. Deep imports are how a
+   * module quietly grows a second, undocumented public surface, and this
+   * feature is specifically meant to have exactly one.
+   *
+   * `ignores` lists the module's own directories: inside it, the files import
+   * from each other normally.
+   *
+   * See `components/pixel/AGENTS.md`.
+   */
+  {
+    files: ["**/*.{ts,tsx,mjs}"],
+    ignores: ["components/pixel/**", "lib/pixel/**", "app/api/pixel/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              /*
+               * Everything under the module except its two entry points:
+               * `@/components/pixel` (client-safe) and
+               * `@/components/pixel/server`. A `group` glob can't express the
+               * exception — a leading `!` is read as another pattern to match,
+               * not as a carve-out — so this is a regex with a lookahead.
+               */
+              regex: "^@/(components|lib)/pixel/(?!server$).+",
+              message:
+                "PixelBot has one public surface: import from '@/components/pixel' (or '@/components/pixel/server' in a server component). If it doesn't export what you need, that's a request in docs/PIXELBOT_BUILD.md — not a deep import. See components/pixel/AGENTS.md.",
+            },
+          ],
         },
       ],
     },

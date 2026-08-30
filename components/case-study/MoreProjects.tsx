@@ -24,7 +24,7 @@ export type Neighbour = {
 
 export default function MoreProjects({
   projects,
-  indexHref = "/work",
+  indexHref = "/projects",
 }: {
   projects: readonly Neighbour[];
   indexHref?: string;

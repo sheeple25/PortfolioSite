@@ -2,20 +2,24 @@
 
 How Traces, Loco Lavatory and Unflattening are built, and how to add the next one.
 
-**Status:** three lab pages built and rendering. Content is roughed in, not final —
-the point of this pass was to get the structure and flow right so copy can be
-iterated on afterwards. Nothing here has replaced anything on the live site.
+**Status:** live. All three are real pages under the Work tab — they graduated
+out of `app/(labs)` and are the site's only version of this work. Copy is still
+being iterated on; the structure is settled.
 
 | Project | Route | Figma node | Accent |
 | --- | --- | --- | --- |
-| Traces | `/traces-entry` | `230:10461` | magenta `#ee15a5` |
-| Loco Lavatory | `/loco-entry` | `232:11647` | none — monochrome, deliberately |
-| Unflattening | `/unflattening-entry` | `232:12450` | orange `#ffa554` |
+| Traces | `/projects/traces` | `230:10461` | magenta `#ee15a5` |
+| Loco Lavatory | `/projects/loco` | `232:11647` | none — monochrome, deliberately |
+| Unflattening | `/projects/unflattening` | `232:12450` | orange `#ffa554` |
 
-Figma file key: `j9Qe0Z9qS4qk3KE27Kr0b9`. All three are dev-only labs
-(`*.dev.tsx`, invisible in a production build) and are listed in `LAB_ROUTES`
-in `lib/site.ts`. The pre-existing `/traces-board` and `/projects/unflattening`
-were left untouched.
+Figma file key: `j9Qe0Z9qS4qk3KE27Kr0b9`.
+
+Each page lives at `app/projects/<slug>/`, with its route file, its
+`<Name>Entry.tsx` and its `sections/` colocated. The markdown documents they
+replaced — `content/projects/unflattening.md`, `content/archive/traces.md`,
+`content/archive/loco.md` — have been removed; their frontmatter now lives in
+`lib/caseStudies.ts`, which is what feeds the Work index, the knowledge graph,
+the sitemap and Pixel's system prompt. `/traces-board` remains a dev-only lab.
 
 ---
 
@@ -212,14 +216,14 @@ title (e.g. "Loco Lavatory") wraps instead of colliding.
 
 ## 5. Adding a new project
 
-1. `app/(labs)/<name>-entry/page.dev.tsx` — must be `.dev.tsx` (`pageExtensions`
-   in `next.config.ts` only recognises it in development, so labs don't exist in
-   a production build).
+1. `app/projects/<slug>/page.tsx` — a server component that exports `metadata`
+   built from the registry entry and renders the entry below.
 2. `<Name>Entry.tsx` — `"use client"`, composes `CaseShell`. Copy
-   `app/(labs)/traces-entry/TracesEntry.tsx` as the model.
+   `app/projects/traces/TracesEntry.tsx` as the model.
 3. `sections/*.tsx` for the beats, `*.content.ts` / `*.data.ts` for copy.
-4. Add the route to `LAB_ROUTES` in `lib/site.ts` or it's unreachable from the
-   dev menu.
+4. Add the project to `CASE_STUDIES` in `lib/caseStudies.ts`, or it exists as a
+   URL but appears on no index, in no graph and in no sitemap, and Pixel will
+   not know it exists.
 5. Verify: `npx tsc --noEmit` and `npx eslint "app/(labs)/<name>-entry"`.
 
 **Do not** start a dev server if one is already on port 3000 — Turbopack's cache
@@ -248,7 +252,7 @@ grows large and two servers fight over the port.
 
 ## 6. Per-project notes
 
-### Traces (`/traces-entry`)
+### Traces (`/projects/traces`)
 
 Content is furthest along. The banner wall is real text with a **hidden sentence
 set into it** in medium weight — reading only the emphasised phrases gives
@@ -267,26 +271,27 @@ and invents no adoption metrics.
 Still open: the `00 Context` lede, the user flow chart, and two of three
 carousel screens.
 
-### Loco Lavatory (`/loco-entry`)
+### Loco Lavatory (`/projects/loco`)
 
-Monochrome by design — passes **no** palette. Content came from
+Monochrome by design — passes **no** palette. Content came from the former
 `content/archive/loco.md` plus pp. 9–14 of
 `source/archive/VidushGupta_Spring25_Portfolio_V1.1.pdf`.
 
 **Spec-row conflict, unresolved:** the Figma frame says "1 Month / Fall 2025"
-and files "Lead Designer" under `PROJ TYPE`. `loco.md` and the CV page both say
-Jul–Sept 2024, Fall 2024, "Transport Design Intern". These look like Traces'
-values left behind when the frame was duplicated. **The page uses `loco.md`.**
+and files "Lead Designer" under `PROJ TYPE`. The archive entry and the CV page
+both said Jul–Sept 2024, Fall 2024, "Transport Design Intern". These look like
+Traces' values left behind when the frame was duplicated. **The page uses the
+archive entry's values**, now carried in `lib/caseStudies.ts`.
 Worth correcting the Figma frame.
 
 Carousel copy is written prose (grounded in the requirements list and
 interviews, not quoted). Institution URLs are guesses carrying `TODO: confirm`.
 No outcome beat — the sources give no outcome figures, so none was invented.
 
-### Unflattening (`/unflattening-entry`)
+### Unflattening (`/projects/unflattening`)
 
-Content from `content/projects/unflattening.md` and the existing Work-tab
-implementation. Nothing thesis-bearing was invented.
+Content from the former `content/projects/unflattening.md` and the Work-tab
+implementation this page replaced. Nothing thesis-bearing was invented.
 
 **Two placeholders that need real assets:** there is no banner image (a book
 cover from `public/projects/books/` is standing in) and no thesis PDF, so the

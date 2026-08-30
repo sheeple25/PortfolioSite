@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -8,13 +8,53 @@ import { NAV_LINKS, WORDMARK } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { Pixel, usePixel } from "@/components/pixel";
+import { useShutterLink } from "./Shutter";
 import Logo from "./Logo";
+import ThemeToggle from "./ThemeToggle";
 import styles from "./NavBar.module.css";
-import { useScrollFrame, type ScrollSnapshot } from "@/lib/useScrollFrame";
 
 /**
- * Site header. Sticky, and it grows a translucent blur once the page has
- * scrolled far enough that content would otherwise slide under bare text.
+ * A bar link that plays the shutter on its way out: the header section of the
+ * page you are leaving rolls up, and the one you are arriving at opens in its
+ * place. Moving between Work, Archive and Writing is the same gesture as
+ * opening a project from one of them.
+ *
+ * A real `<Link>` underneath, so href, prefetching, right-click and cmd-click
+ * all still behave — `useShutterLink` only takes over the plain left click, and
+ * declines when the destination has no panel to open (see `sections.ts`).
+ */
+function ShutterNavLink({
+  href,
+  className,
+  children,
+  onNavigate,
+  ...rest
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+  /** Runs on every click, shutter or not — closing the mobile sheet. */
+  onNavigate?: () => void;
+} & Omit<React.ComponentProps<typeof Link>, "href" | "className" | "onClick">) {
+  const shutterClick = useShutterLink(href);
+
+  return (
+    <Link
+      href={href}
+      className={className}
+      onClick={(event) => {
+        onNavigate?.();
+        shutterClick(event);
+      }}
+      {...rest}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/**
+ * Site header. Sticky.
  */
 
 /** A link is current if it matches, or owns the segment you're inside. */
@@ -24,7 +64,6 @@ function isCurrent(pathname: string, href: string): boolean {
 
 export default function NavBar() {
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
   const { chatOpen, openChat, closeChat } = usePixel();
@@ -36,13 +75,6 @@ export default function NavBar() {
    * alone is 26px.
    */
   const [logoHovered, setLogoHovered] = useState(false);
-
-  const onScrollFrame = useCallback(
-    ({ y }: ScrollSnapshot) => setScrolled(y > 8),
-    [],
-  );
-
-  useScrollFrame(onScrollFrame);
 
   // The sheet covers the viewport, so the page behind it shouldn't scroll.
   useEffect(() => {
@@ -64,84 +96,72 @@ export default function NavBar() {
   }, [menuOpen]);
 
   return (
-    <header
-      className={cn(styles.header, scrolled && styles.scrolled)}
-      data-chrome="header"
-    >
-      {/*
-        Six flat-blur layers, each masked to its own band — see
-        `.progressiveBlur` in NavBar.module.css for why this takes six
-        elements instead of one `backdrop-filter`.
-      */}
-      <div className={styles.progressiveBlur} aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-
+    <header className={styles.header} data-chrome="header">
       <nav className={styles.nav} aria-label="Primary">
         {/* The header sits above the sheet, so this stays reachable with it open. */}
-        <Link
+        <ShutterNavLink
           href="/projects"
           className={styles.wordmark}
-          onClick={() => setMenuOpen(false)}
+          onNavigate={() => setMenuOpen(false)}
           onPointerEnter={() => setLogoHovered(true)}
           onPointerLeave={() => setLogoHovered(false)}
         >
           <Logo mode={logoHovered ? "loop" : "static"} size={26} />
           <span className={styles.wordmarkText}>{WORDMARK}</span>
-        </Link>
+        </ShutterNavLink>
 
         <ul className={styles.links}>
           {NAV_LINKS.map((link) => {
             const current = isCurrent(pathname, link.href);
             return (
               <li key={link.href}>
-                <Link
+                <ShutterNavLink
                   href={link.href}
                   className={cn(styles.link, current && styles.linkCurrent)}
                   aria-current={current ? "page" : undefined}
+                  onNavigate={() => setMenuOpen(false)}
                 >
                   {link.label}
-                </Link>
+                </ShutterNavLink>
               </li>
             );
           })}
         </ul>
 
-        <button
-          type="button"
-          className={styles.askPixel}
-          onClick={() => (chatOpen ? closeChat() : openChat("header"))}
-          onPointerEnter={() => setPixelHover(true)}
-          onPointerLeave={() => setPixelHover(false)}
-          aria-expanded={chatOpen}
-        >
-          Ask Pixel
-          <Pixel
-            decorative
-            size={18}
-            color="var(--color-white)"
-            eyeColor="var(--color-accent)"
-            expression={pixelHover ? "happy" : "default"}
-            bob={pixelHover && !reducedMotion}
-          />
-        </button>
+        <div className={styles.controls}>
+          <ThemeToggle />
 
-        <button
-          type="button"
-          className={styles.menuButton}
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-expanded={menuOpen}
-          aria-controls="nav-sheet"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-        >
-          <span className={cn(styles.bar, menuOpen && styles.barTop)} />
-          <span className={cn(styles.bar, menuOpen && styles.barBottom)} />
-        </button>
+          <button
+            type="button"
+            className={styles.askPixel}
+            onClick={() => (chatOpen ? closeChat() : openChat({ source: "header" }))}
+            onPointerEnter={() => setPixelHover(true)}
+            onPointerLeave={() => setPixelHover(false)}
+            aria-expanded={chatOpen}
+          >
+            Ask Pixel
+            <Pixel
+              decorative
+              size={18}
+              color="var(--color-white)"
+              eyeColor="var(--color-accent)"
+              expression={pixelHover ? "happy" : "default"}
+              bob={pixelHover && !reducedMotion}
+            />
+          </button>
+
+          <button
+            type="button"
+            className={styles.menuButton}
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="nav-sheet"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+          >
+            <span className={cn(styles.bar, menuOpen && styles.barTop)} />
+            <span className={cn(styles.bar, menuOpen && styles.barBottom)} />
+          </button>
+        </div>
       </nav>
 
       <AnimatePresence>
@@ -162,12 +182,12 @@ export default function NavBar() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.32, delay: 0.04 * i, ease: "easeOut" }}
                 >
-                  <Link
+                  <ShutterNavLink
                     href={link.href}
                     // Closing on the click that navigates, rather than in an
                     // effect watching the pathname — the sheet is dismissed by
                     // a user action, so it belongs in the handler for it.
-                    onClick={() => setMenuOpen(false)}
+                    onNavigate={() => setMenuOpen(false)}
                     className={cn(
                       styles.sheetLink,
                       isCurrent(pathname, link.href) && styles.sheetLinkCurrent
@@ -177,7 +197,7 @@ export default function NavBar() {
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     {link.label}
-                  </Link>
+                  </ShutterNavLink>
                 </motion.li>
               ))}
             </ul>

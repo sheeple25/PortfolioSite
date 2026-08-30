@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { track } from "@vercel/analytics";
 import { usePrefersReducedMotion } from "@/lib/hooks";
+import { useShutterLink } from "@/components/chrome/Shutter";
 import styles from "./IndexCard.module.css";
 
 /**
@@ -35,6 +36,8 @@ export default function IndexCard({
   index: number;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const href = `${basePath}/${slug}`;
+  const shutterClick = useShutterLink(href);
 
   return (
     <motion.li
@@ -53,9 +56,12 @@ export default function IndexCard({
       {recommended && <p className={styles.flag}>Recommended</p>}
 
       <Link
-        href={`${basePath}/${slug}`}
+        href={href}
         className={styles.link}
-        onClick={() => {
+        onClick={(event) => {
+          // Closes the index header before the route changes; a modified click
+          // is left alone and opens a new tab as usual.
+          shutterClick(event);
           // Only `/projects` is a "project click" in the analytics sense —
           // the same card renders `/writing`'s index too.
           if (basePath === "/projects") {

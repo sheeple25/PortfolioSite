@@ -1,34 +1,156 @@
 /*
  * The frame every index page sits in.
  *
+ * Two bands, and the relationship between them is the point. The header section
+ * is a full window tall. The sheet holding the list or grid is then pulled back
+ * up over the header's bottom band by `--index-peek`, so a row and a half of
+ * content is already showing at rest. The header is *not* shortened to make
+ * room — the sheet rides on top of it, which is what lets the header keep a
+ * full window of ground for a background to work in.
+ *
  * Index pages deliberately drop the three-track reading shell that documents
  * use. That layout exists to hold a contents rail and an annotation margin
  * against a fixed reading measure — an index has neither, and forcing a grid
- * of covers through a 42rem measure left the tiles too small to read. Here the
- * content takes the full page width instead.
+ * of covers through a 42rem measure left the tiles too small to read.
  */
 
-.shell {
-  width: min(var(--page-max), 100% - 2 * var(--page-gutter));
-  margin-inline: auto;
-  padding-top: clamp(2rem, 5vw, 4.5rem);
+.page {
+  /*
+   * How far the sheet rides up over the header. The one dial for the whole
+   * arrangement: raise it and more content shows at rest, lower it and the
+   * header keeps more of its own ground.
+   *
+   * A viewport fraction rather than a row count on purpose. `/archive` is a
+   * two-column masonry whose tiles cycle through several aspect ratios, so
+   * there is no uniform row height to count one-and-a-half of; a fraction
+   * lands in about the right place there and holds on the other two indexes,
+   * whose rows are a different height again.
+   */
+  --index-peek: 30svh;
+
+  /*
+   * `--index-header-ground` and `--index-header-ink` are declared in
+   * globals.css rather than here, because `.index-ground` on the document has
+   * to read the same values to retint the fixed chrome that lives outside this
+   * subtree.
+   */
+  /*
+   * The ground is the whole page's, not the header band's. The header section
+   * does not stop where the content starts — it runs on underneath it, and the
+   * tiles sit directly on it with nothing between. An opaque panel under the
+   * content would cut a hard horizon across the page, which is exactly what
+   * this is not.
+   */
+  background: var(--index-header-ground);
+  color: var(--index-header-ink);
+
+  /*
+   * Retint the tokens the content reads through, rather than restyling each
+   * piece. The tile captions, the corner note and the empty state all resolve
+   * their colours from these, so overriding them here carries the whole index
+   * onto the dark ground at once — the same technique `.hero-chrome` uses on
+   * the site bar in globals.css.
+   */
+  --color-muted: color-mix(in srgb, var(--index-header-ink) 60%, transparent);
+  --color-accent: var(--index-header-ink);
+  --color-charcoal: var(--index-header-ink);
+  --color-border: color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+
+  padding-bottom: clamp(4rem, 10vw, 8rem);
 }
 
 /*
- * Title on the left, standfirst on the right — the two held apart rather than
- * stacked, so the head of the page reads as one band instead of a column of
- * text. The right column is capped so the line length stays readable however
- * wide the window gets.
+ * `svh` — the *small* viewport height — rather than `vh` or `dvh`. On mobile
+ * `vh` measures the window with the browser's toolbars collapsed, so a `100vh`
+ * header is taller than what is actually on screen at rest and the peek is
+ * pushed below the fold, which is the one thing this layout must not do. `dvh`
+ * resizes as the toolbars come and go, which would make the sheet slide during
+ * a scroll. `svh` is the height that is always visible.
  */
-.header {
+/*
+ * The masthead band. It carries the ground explicitly as well as `.page`, so
+ * that the snapshot the shutter closes is opaque rather than transparent — a
+ * panel closing on nothing reads as the page blinking out.
+ */
+.headerSection {
+  position: relative;
+  min-height: 100svh;
+  background: var(--index-header-ground);
+  /* The background bleeds to all four edges and must not escape them. */
+  overflow: hidden;
+  isolation: isolate;
+  /*
+   * Runs to the top of the window under the site header, the same way a case
+   * study's banner does, so the two read as the same kind of surface.
+   */
+  margin-top: calc(var(--nav-height) * -1);
+  padding-top: var(--nav-height);
+}
+
+/*
+ * The texture slot. A video, a canvas or an animated gradient goes here; the
+ * child is stretched to the section on the assumption it wants to fill it.
+ */
+.background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.background > * {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * Sits between the texture and the masthead, fading the ground colour out
+ * from full strength at the top down to nothing by the point the intro's
+ * last line ends — so whatever the background slot holds stays legible
+ * behind the title/standfirst without flattening the rest of the header.
+ */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* Purely visual — must not steal the pan/zoom/drag gestures the
+     background slot's content (e.g. WorkGraph's SVG) still needs. */
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--index-header-ground) 90%, transparent) 0%,
+    color-mix(in srgb, var(--index-header-ground) 68%, transparent) 24%,
+    color-mix(in srgb, var(--index-header-ground) 28%, transparent) 42%,
+    transparent 62%
+  );
+}
+
+/*
+ * The masthead keeps its place at the top of the section. Everything below it
+ * is deliberately empty — that negative space is the reason the section is a
+ * full window tall rather than only as tall as its type.
+ */
+.masthead {
+  position: relative;
+  z-index: 1;
+  width: min(var(--page-max), 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding-top: clamp(2rem, 5vw, 4.5rem);
+
+  /*
+   * Title on the left, standfirst on the right — the two held apart rather than
+   * stacked, so the head of the page reads as one band instead of a column of
+   * text. The right column is capped so the line length stays readable however
+   * wide the window gets.
+   */
   display: grid;
   grid-template-columns: 1fr minmax(0, 30rem);
   align-items: start;
   column-gap: clamp(2rem, 6vw, 6rem);
-  padding-bottom: clamp(3rem, 7vw, 5.5rem);
 }
 
 .title {
+  color: var(--index-header-ink);
   font-family: var(--font-space-grotesk);
   font-weight: 700;
   font-size: clamp(2.4rem, 5.5vw, 4.1rem);
@@ -41,7 +163,8 @@
   font-family: var(--font-newsreader);
   font-size: clamp(1.05rem, 1.5vw, 1.35rem);
   line-height: 1.45;
-  color: var(--color-accent);
+  /* Held back from the title so the two still read as a pair on the dark ground. */
+  color: color-mix(in srgb, var(--index-header-ink) 78%, transparent);
   text-wrap: pretty;
   margin: 0;
   /* Sits on the title's own line rather than its cap-height. */
@@ -49,11 +172,93 @@
 }
 
 /*
- * Below this the two halves can't share a line without the standfirst becoming
- * a narrow ragged column, so they stack.
+ * The sheet: everything below the header, lifted over it by the peek.
+ *
+ * Opaque rather than transparent. The tiles on `/archive` would survive
+ * floating over a moving background, but `/writing` and `/projects` are rows of
+ * type and would not — so the sheet carries the page ground with it and its top
+ * edge becomes the horizon the content peeks over.
+ */
+/*
+ * The content, lifted over the header's bottom band by the peek. Transparent:
+ * the page ground is already behind it and runs on down past the last tile.
+ */
+.sheet {
+  position: relative;
+  z-index: 1;
+  margin-top: calc(var(--index-peek) * -1);
+  /*
+   * No padding above the first row. Any here comes out of the peek, so the
+   * token stops meaning "how much content shows" and starts meaning "how much
+   * content shows, less some padding" — and the header's own empty band is
+   * already all the separation the masthead needs.
+   */
+}
+
+.sheet > * {
+  width: min(var(--page-max), 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+}
+
+/*
+ * The masthead spans the full index width, but the list is prose and has to
+ * stay at a readable line length — so it keeps the reading measure the
+ * documents themselves use rather than stretching to the container.
+ */
+.list {
+  list-style: none;
+  max-width: var(--measure);
+}
+
+.empty {
+  padding: 3rem 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 1rem;
+}
+
+.empty code {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+}
+
+/*
+ * Sits exactly where a document's annotation panel does — same tokens, same
+ * corner — so the mascot's voice arrives in one place across the whole section.
+ * See `.panel` in components/pixel/screen/notes.module.css.
+ */
+.note {
+  position: fixed;
+  right: calc(var(--shell-inset) + env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--corner-inset-block) + var(--corner-lift, 0px) + var(--companion-size) +
+      2.5rem + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: 45;
+  width: var(--notes-width);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--color-charcoal);
+}
+
+/* No margin left to sit in at this width — the list is the page. */
+@media (max-width: 1080px) {
+  .note {
+    display: none;
+  }
+}
+
+/*
+ * Below this the two halves of the masthead can't share a line without the
+ * standfirst becoming a narrow ragged column, so they stack.
  */
 @media (max-width: 60rem) {
-  .header {
+  .masthead {
     grid-template-columns: minmax(0, 1fr);
     row-gap: 1.25rem;
   }
@@ -61,5 +266,21 @@
   .intro {
     padding-top: 0;
     max-width: 34rem;
+  }
+}
+
+/*
+ * A short window has no room to give a full screen to the header and still show
+ * the peek, so the header stops being full-height and the sheet sits under it
+ * normally.
+ */
+@media (max-height: 34rem) {
+  .headerSection {
+    min-height: auto;
+    padding-bottom: clamp(3rem, 7vw, 5.5rem);
+  }
+
+  .sheet {
+    margin-top: 0;
   }
 }

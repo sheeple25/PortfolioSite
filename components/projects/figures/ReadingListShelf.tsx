@@ -1,7 +1,7 @@
 "use client";
 
 import { OpenBook, Row, Shelf, Spine } from "@/components/bookshelf/Shelf";
-import type { SpineStyle } from "@/lib/bookshelf/spine";
+import { SHOW_SPINE_IMAGERY, type SpineStyle } from "@/lib/bookshelf/spine";
 import { READING_LIST, type ReadingListEntry } from "@/lib/projects/readingList";
 import type { DiagramProps } from "./index";
 import styles from "./ReadingListShelf.module.css";
@@ -41,6 +41,8 @@ function spineStyle(entry: ReadingListEntry): SpineStyle {
     tracking: spine.tracking ?? "0.02em",
     caseStyle: spine.caseStyle === "upper" ? "upper" : "normal",
     fontSize: spine.fontSize ?? "0.8rem",
+    band: spine.band,
+    mark: spine.mark,
   };
 }
 
@@ -56,6 +58,7 @@ export default function ReadingListShelf({ label }: DiagramProps) {
           label={entry.spineLabel ?? entry.title}
           title={`${entry.title}${entry.year ? ` (${entry.year})` : ""}`}
           spine={spineStyle(entry)}
+          coverImage={SHOW_SPINE_IMAGERY ? entry.cover : undefined}
           onSelect={open}
         />
       )}

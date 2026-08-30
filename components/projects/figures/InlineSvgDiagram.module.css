@@ -1,0 +1,56 @@
+/*
+ * The backing panel every generated figure sits on — see `--fig-stage` /
+ * `--fig-ink` in `case.module.css`: a pale card with dark ink in light mode,
+ * the artwork's original dark panel with white ink in dark mode. The replay
+ * button reads through `--fig-ink` rather than a literal white so it stays
+ * visible against either.
+ */
+.stage {
+  position: relative;
+  background: var(--fig-stage, #1e1e1e);
+  border-radius: 4px;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  overflow: hidden;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.replay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--fig-ink, #fff) 60%, transparent);
+  background: color-mix(in srgb, var(--fig-ink, #fff) 8%, transparent);
+  opacity: 0.5;
+  transition: opacity 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.stage:hover .replay,
+.replay:hover,
+.replay:focus-visible {
+  opacity: 1;
+  color: var(--fig-accent, #ffa554);
+  background: color-mix(in srgb, var(--fig-ink, #fff) 14%, transparent);
+}
+
+.replay:focus-visible {
+  outline: 2px solid var(--fig-accent, #ffa554);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .replay {
+    opacity: 0.65;
+  }
+}

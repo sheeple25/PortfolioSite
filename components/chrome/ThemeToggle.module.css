@@ -1,102 +1,30 @@
 /*
- * A switch, not an icon button: a pill track with both glyphs printed on it
- * and a knob that slides between them, so the current theme is legible from
- * the control's *position* rather than only from which glyph is showing.
- *
- * It is fixed page chrome rather than a header child — the header row has to
- * end at "Ask Pixel" — so it rides in the strip directly under the nav on
- * every route, aligned to the same page gutter the header's right edge uses.
- * `z-index` sits under the header (40) and over the bottom edge (30), and the
- * backdrop blur is what keeps it legible over whatever scrolls beneath it.
+ * A single icon button, in-flow in the header next to "Ask Pixel" — not a
+ * track-and-knob switch. See ThemeToggle.tsx for why the glyph itself is
+ * always the destination theme rather than a status indicator. Sized to
+ * match `.menuButton` in NavBar.module.css so the header's icon controls
+ * share one footprint.
  */
 .toggle {
-  position: fixed;
-  top: calc(var(--nav-height) + 0.35rem);
-  right: var(--page-gutter);
-  z-index: 35;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  width: 3.1rem;
-  height: 1.7rem;
-  padding: 0;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-radius: 999px;
-  border: 1px solid var(--color-border-strong);
-  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
-  color: var(--color-charcoal);
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 8px;
+  color: var(--color-muted);
+  transition: color 0.18s ease, background-color 0.18s ease;
 }
 
 .toggle:hover,
 .toggle:focus-visible {
-  border-color: var(--color-accent);
-}
-
-/*
- * The knob. Half the track's inner width, so the two rest positions leave
- * exactly one glyph uncovered at a time.
- */
-.knob {
-  position: absolute;
-  top: 50%;
-  left: 0.15rem;
-  width: 1.3rem;
-  height: 1.3rem;
-  border-radius: 50%;
-  background: var(--color-bg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-  transform: translate(0, -50%);
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.18s ease;
-}
-
-/* Both glyphs sit under the knob and stay put; only their opacity shifts, so
-   the inactive one reads as a hint rather than a second active state. */
-.sun,
-.moon {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  transition: opacity 0.25s ease;
-}
-
-.sun {
-  left: 0.3rem;
-  opacity: 0.45;
-}
-
-.moon {
-  right: 0.3rem;
-  opacity: 1;
-}
-
-/*
- * `.dark` lands on `<html>`, well above this switch, so the flip has to be
- * targeted through a global ancestor selector rather than a scoped class.
- */
-:global(.dark) .toggle {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-:global(.dark) .knob {
-  transform: translate(1.3rem, -50%);
-}
-
-:global(.dark) .sun {
-  opacity: 1;
-}
-
-:global(.dark) .moon {
-  opacity: 0.45;
+  color: var(--color-charcoal);
+  background: var(--color-border);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .knob,
-  .sun,
-  .moon {
-    transition: opacity 0.01ms linear;
+  .toggle {
+    transition: none;
   }
 }

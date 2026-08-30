@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import ArchiveGrid, { type ArchiveTile } from "@/components/archive/ArchiveGrid";
-import IndexShell from "@/components/chrome/IndexShell";
+import TileGrid, { type Tile } from "@/components/index/TileGrid";
+import IndexShell, { IndexEmpty } from "@/components/chrome/IndexShell";
 import { getArchiveSummaries } from "@/lib/archive";
 import { formatDate } from "@/lib/format";
-import styles from "./page.module.css";
 
 const TITLE = "Archive.";
 const INTRO =
@@ -23,8 +22,9 @@ export const metadata: Metadata = {
 
 export default function ArchiveIndexPage() {
   const entries = getArchiveSummaries();
+  const pick = entries.find((entry) => entry.meta.recommended);
 
-  const tiles: ArchiveTile[] = entries.map((entry) => ({
+  const tiles: Tile[] = entries.map((entry) => ({
     slug: entry.slug,
     title: entry.meta.title,
     description: entry.meta.description,
@@ -33,20 +33,23 @@ export default function ArchiveIndexPage() {
     term: entry.meta.term ?? formatDate(entry.meta.date),
     cover: entry.meta.cover,
     coverAlt: entry.meta.coverAlt,
+    coverVideo: entry.meta.coverVideo,
+    logo: entry.meta.logo,
+    logoInvert: entry.meta.logoInvert,
+    logoWidth: entry.meta.logoWidth,
   }));
 
   return (
-    <main className={styles.page}>
-      <IndexShell title={TITLE} intro={INTRO}>
-        {tiles.length === 0 ? (
-          <p className={styles.empty}>
-            Nothing here yet. Entries live in <code>content/archive</code> and
-            appear the moment one lands.
-          </p>
-        ) : (
-          <ArchiveGrid items={tiles} />
-        )}
-      </IndexShell>
-    </main>
+    <IndexShell
+      title={TITLE}
+      intro={INTRO}
+      note={pick ? <>Start with {pick.meta.title}&hellip;</> : null}
+    >
+      {tiles.length === 0 ? (
+        <IndexEmpty noun="Entries" dir="content/archive" />
+      ) : (
+        <TileGrid items={tiles} basePath="/archive" />
+      )}
+    </IndexShell>
   );
 }

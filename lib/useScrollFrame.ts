@@ -5,7 +5,7 @@ import { useEffect } from "react";
 /**
  * One scroll listener for the whole page.
  *
- * Before this, `/traces-entry` ran six independent scroll subscriptions —
+ * Before this, the Traces case study ran six independent scroll subscriptions —
  * `NavBar`, `Toc`, `ReaderContext`, and three in the entry lab — each with its
  * own `requestAnimationFrame` and its own geometry reads. Every callback read
  * layout after another may already have written to it, which forces a

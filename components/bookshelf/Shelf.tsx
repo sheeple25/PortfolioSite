@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { LayoutGroup, motion } from "motion/react";
-import { FONT_VAR, spineMetrics, type SpineStyle } from "@/lib/bookshelf/spine";
+import { FONT_VAR, spineMetrics, withAlpha, type SpineStyle } from "@/lib/bookshelf/spine";
 import coverSizes from "@/lib/bookshelf/cover-sizes.json";
 import styles from "./shelf.module.css";
 
@@ -50,6 +50,7 @@ export function Spine({
   label,
   title,
   spine,
+  coverImage,
   onSelect,
 }: {
   id: string;
@@ -57,6 +58,11 @@ export function Spine({
   /** The `title` attribute — the tooltip, not the book's title. */
   title: string;
   spine: SpineStyle;
+  /** The book's own cover art. Rotated 90deg to run the length of the spine,
+   *  scaled (aspect ratio kept) to cover it and cropped where it runs off
+   *  the spine's width, scrimmed under `spine.bg` — real per-book imagery,
+   *  not a flat colour. */
+  coverImage?: string;
   onSelect: () => void;
 }) {
   const { height, width } = spineMetrics({
@@ -66,7 +72,7 @@ export function Spine({
     tracking: spine.tracking,
   });
 
-  const style: CSSProperties = { height, width, background: spine.bg, color: spine.fg };
+  const style: CSSProperties = { height, width, backgroundColor: spine.bg, color: spine.fg };
   const labelStyle: CSSProperties = {
     fontFamily: FONT_VAR[spine.font],
     fontWeight: spine.weight,
@@ -85,9 +91,39 @@ export function Spine({
       title={title}
       onClick={onSelect}
     >
+      {coverImage && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- decorative,
+              dynamically sized/rotated crop; not the LCP-eligible content image */}
+          <img
+            src={coverImage}
+            alt=""
+            aria-hidden
+            className={styles.coverImg}
+            style={{ width: height, height: width }}
+          />
+          <span
+            className={styles.scrim}
+            style={{ backgroundColor: withAlpha(spine.bg, 0.62) }}
+            aria-hidden
+          />
+        </>
+      )}
+      {spine.band && (
+        <span className={styles.band} style={{ background: spine.band }} aria-hidden />
+      )}
       <span className={styles.spineLabel} style={labelStyle}>
         {label}
       </span>
+      {spine.mark && (
+        <span
+          className={styles.mark}
+          style={{ fontFamily: FONT_VAR.mono, color: spine.fg }}
+          aria-hidden
+        >
+          {spine.mark}
+        </span>
+      )}
     </button>
   );
 }

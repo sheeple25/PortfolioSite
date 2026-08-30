@@ -1,7 +1,7 @@
 "use client";
 
 import { OpenBook, Row, Shelf, Spine } from "@/components/bookshelf/Shelf";
-import { hash, type SpineStyle } from "@/lib/bookshelf/spine";
+import { hash, SHOW_SPINE_IMAGERY, type SpineStyle } from "@/lib/bookshelf/spine";
 import {
   PERSONAL_READING_LIST,
   type PersonalBook,
@@ -91,6 +91,7 @@ export default function Bookshelf({
           label={book.title}
           title={`${book.title} — ${book.author}`}
           spine={spineStyle(book)}
+          coverImage={SHOW_SPINE_IMAGERY ? book.coverPath : undefined}
           onSelect={open}
         />
       )}

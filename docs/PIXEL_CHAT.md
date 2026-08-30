@@ -10,6 +10,8 @@ A chat interface powered by Claude, branded as Pixel (the site's existing mascot
 
 ---
 
+**The sequenced work queue now lives in `docs/PIXELBOT_BUILD.md`** — every PixelBot item from this file, the SOP, `docs/TODO.md` and the case-study docs, compiled in one place with the current code state checked against it. This file remains the record of decisions and why they were made.
+
 ## Status
 
 Scoping complete for v1 (this session, 2026-08-26). The code that exists so far (`app/api/chat/route.ts`, `components/pixel/PixelSidebar.tsx`, `lib/pixel/system-prompt.ts`) was a **spike to confirm the Claude API key and streaming pipeline work end-to-end** — it does not yet reflect the SOP (no FAQ block, no guard rails, no tone, no redirect-linking, no InScreen/InChat split). The real build starts from the v1 scope below, reusing that plumbing.

@@ -29,6 +29,20 @@ export const FONT_VAR = {
 
 export type SpineFont = keyof typeof FONT_VAR;
 
+/** Flip to `false` to fall back to flat-colour spines, no cover art. */
+export const SHOW_SPINE_IMAGERY = true;
+
+/** `#rrggbb` (or `#rgb`) → `rgb(r g b / a)` — scrims real cover art under a
+ *  book's hand-picked colour instead of hiding it under a flat block. */
+export function withAlpha(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "");
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgb(${r} ${g} ${b} / ${alpha})`;
+}
+
 /** Everything that decides how one spine looks. */
 export type SpineStyle = {
   bg: string;
@@ -39,6 +53,10 @@ export type SpineStyle = {
   tracking: string;
   caseStyle: "upper" | "normal";
   fontSize: string;
+  /** Accent stripe at the spine's foot — an imprint band, hand-picked per book. */
+  band?: string;
+  /** Short glyph at the foot (a volume numeral, a status mark) — 1–3 characters. */
+  mark?: string;
 };
 
 /** `.spine`'s `padding-block`, both edges, in rem. */

@@ -74,9 +74,12 @@ export type DisclosureProps = {
  * frames draw, since every section in them is open) and a closed one offers
  * EXPAND.
  *
- * The panel is removed with `display: none` rather than unmounted. Its content
- * is static either way, and leaving it in the DOM keeps in-page search and the
- * reader's own measurement of the section working while it's shut.
+ * The panel is collapsed with a `grid-template-rows` transition rather than
+ * unmounted or snapped to `display: none` — see `.disclosurePanelWrap` in
+ * `case.module.css`. Its content is static either way, and leaving it in the
+ * DOM keeps in-page search and the reader's own measurement of the section
+ * working while it's shut. `inert` while closed keeps it from taking focus or
+ * being read by a screen reader mid-collapse.
  */
 export function Disclosure({
   title,
@@ -110,11 +113,14 @@ export function Disclosure({
       </div>
       <div
         id={panelId}
-        className={`${styles.disclosurePanel} ${
-          open ? "" : styles.disclosurePanelClosed
+        className={`${styles.disclosurePanelWrap} ${
+          open ? "" : styles.disclosurePanelWrapClosed
         }`}
+        aria-hidden={!open}
       >
-        {children}
+        <div className={styles.disclosurePanel} inert={!open}>
+          {children}
+        </div>
       </div>
     </section>
   );

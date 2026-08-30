@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
+import { useShutterLink } from "@/components/chrome/Shutter";
 import { ReaderProvider, useReader } from "@/components/writing/ReaderContext";
 import Contents, { sectionIds, type ContentsRow } from "./Contents";
 import {
   useHeroChrome,
   useImmersiveChrome,
+  useNavAccent,
   useSiteChromeSync,
 } from "./useImmersiveChrome";
 import styles from "./case.module.css";
@@ -47,6 +50,9 @@ export type Palette = Partial<{
   wall: string;
 }>;
 
+/** `.page`'s own default for `--tp` in `case.module.css` — Loco Lavatory's. */
+const DEFAULT_ACCENT = "#1e1e1e";
+
 function paletteVars(p?: Palette): React.CSSProperties {
   if (!p) return {};
   const vars: Record<string, string> = {};
@@ -56,6 +62,23 @@ function paletteVars(p?: Palette): React.CSSProperties {
   if (p.stage) vars["--tp-stage"] = p.stage;
   if (p.wall) vars["--tp-wall"] = p.wall;
   return vars as React.CSSProperties;
+}
+
+/**
+ * The way back, wired to the shutter so it plays the same gesture in reverse:
+ * the banner closes upward and the index header opens in its place. A plain
+ * `<Link>` underneath, so the href, prefetching and modified clicks all still
+ * behave — the handler only takes over the ordinary left click.
+ */
+function BackLink({ href, label }: { href: string; label: string }) {
+  const onClick = useShutterLink(href);
+
+  return (
+    <Link href={href} className={styles.backLink} onClick={onClick}>
+      <span aria-hidden="true">&larr;</span>
+      {label}
+    </Link>
+  );
 }
 
 /** Props a beat takes so the contents rail can scroll to it and track it. */
@@ -95,6 +118,10 @@ export type CaseShellProps = {
    * far, which is this default.
    */
   heroDepth?: number;
+  /** Index this project hangs off. Every case study is Work today. */
+  backHref?: string;
+  /** What that index is called, in the reader's words rather than the route's. */
+  backLabel?: string;
   children: (at: Anchor) => React.ReactNode;
 };
 
@@ -104,6 +131,8 @@ export default function CaseShell({
   palette,
   marginNote,
   heroDepth = 480,
+  backHref = "/projects",
+  backLabel = "Work",
   children,
 }: CaseShellProps) {
   /*
@@ -113,6 +142,11 @@ export default function CaseShell({
   const { chromeVisible, railsVisible } = useImmersiveChrome();
   useSiteChromeSync(chromeVisible, railsVisible);
 
+  // Same fallback as `.page`'s own `--tp` below, so a palette-less project
+  // (Loco Lavatory) still gives the pill its correct near-black rather than
+  // leaving it on the site's default blue.
+  useNavAccent(palette?.accent ?? DEFAULT_ACCENT);
+
   /*
    * The banner runs to the top edge under the header, so the header goes white
    * for as long as the banner is still behind it.
@@ -121,6 +155,20 @@ export default function CaseShell({
 
   return (
     <main className={styles.page} style={paletteVars(palette)}>
+      {/*
+        The way back, over the banner's top-left.
+        
+        It earns its place because of the transition, not in spite of it. The
+        shutter only runs on an in-page navigation — the browser's own back
+        button and swipe gesture carry no transition type and cut straight to
+        the index — so without a link here the reader's obvious way back is also
+        the one way that never shows the animation.
+        
+        Outside the banner element, so the banner's own `overflow: hidden` does
+        not clip it and it does not travel with the panel as that rolls up.
+      */}
+      <BackLink href={backHref} label={backLabel} />
+
       {banner}
 
       <ReaderProvider sectionIds={sectionIds(contents)}>

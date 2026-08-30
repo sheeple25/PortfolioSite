@@ -20,6 +20,10 @@ export type SpineStyle = {
   tracking?: string;
   caseStyle?: "upper" | "normal";
   fontSize?: string;
+  /** Accent stripe at the spine's foot — an imprint band, hand-picked per book. */
+  band?: string;
+  /** Short glyph at the foot (a volume numeral, a status mark) — 1–3 characters. */
+  mark?: string;
 };
 
 export type ReadingListEntry = {
@@ -60,6 +64,9 @@ export const READING_LIST: ReadingListEntry[] = [
       italic: true,
       tracking: "0.02em",
       caseStyle: "normal",
+      // First of the three positions the thesis stands on — see the
+      // POSITIONS card row above this shelf in Foundation.tsx.
+      mark: "01",
     },
   },
   {
@@ -80,6 +87,7 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.06em",
       caseStyle: "upper",
       fontSize: "0.78rem",
+      mark: "02",
     },
   },
   {
@@ -100,6 +108,7 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.08em",
       caseStyle: "upper",
       fontSize: "0.72rem",
+      mark: "03",
     },
   },
   {
@@ -121,6 +130,7 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.01em",
       caseStyle: "upper",
       fontSize: "0.95rem",
+      band: "#1c3a5e",
     },
   },
   {
@@ -141,6 +151,7 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.03em",
       caseStyle: "normal",
       fontSize: "0.85rem",
+      band: "#3f6b35",
     },
   },
   {
@@ -180,6 +191,9 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.04em",
       caseStyle: "upper",
       fontSize: "0.85rem",
+      // Gold band ties the two volumes together as one series.
+      band: "#c9a227",
+      mark: "I",
     },
   },
   {
@@ -198,6 +212,8 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.04em",
       caseStyle: "upper",
       fontSize: "0.85rem",
+      band: "#c9a227",
+      mark: "II",
     },
   },
   {
@@ -216,6 +232,8 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.03em",
       caseStyle: "upper",
       fontSize: "0.72rem",
+      // Rejected from the corpus — shared with Multispecies Cities below.
+      mark: "✕",
     },
   },
   {
@@ -235,6 +253,7 @@ export const READING_LIST: ReadingListEntry[] = [
       tracking: "0.01em",
       caseStyle: "normal",
       fontSize: "0.82rem",
+      mark: "✕",
     },
   },
 ];

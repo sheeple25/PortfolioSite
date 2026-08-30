@@ -3,16 +3,17 @@ import {
   Space_Grotesk,
   JetBrains_Mono,
   Newsreader,
-  Waiting_for_the_Sunrise,
 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { PixelCompanion, PixelProvider, PixelSidebar } from "@/components/pixel";
 import LabMenu from "@/components/dev/LabMenu";
 import BottomEdge from "@/components/chrome/BottomEdge";
+import SectionGround from "@/components/chrome/SectionGround";
+import { ShutterProvider } from "@/components/chrome/Shutter";
+import { INDEX_ROUTES } from "@/components/chrome/sections";
 import Footer from "@/components/chrome/Footer";
 import NavBar from "@/components/chrome/NavBar";
 import StickerVote from "@/components/chrome/StickerVote";
-import ThemeToggle from "@/components/chrome/ThemeToggle";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -33,13 +34,6 @@ const newsreader = Newsreader({
   // 600 is the section-heading weight on `/writing`; 400 sets the body.
   weight: ["400", "500", "600"],
   variable: "--font-newsreader",
-});
-
-/** The hand Pixel annotates in on `/writing`. Single weight — it has only one. */
-const waitingForTheSunrise = Waiting_for_the_Sunrise({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-waiting-for-the-sunrise",
 });
 
 /**
@@ -91,7 +85,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${newsreader.variable} ${waitingForTheSunrise.variable}`}
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${newsreader.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -106,39 +100,51 @@ export default function RootLayout({
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}})()`,
+            /*
+             * The index ground goes on before first paint for the same reason
+             * the theme does: an effect runs after the first frame, so a cold
+             * load of an index would flash the light default first. The route
+             * list is interpolated from `sections.ts` rather than written out
+             * here, so the two cannot drift.
+             */
+            __html: `(function(){try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");if(${JSON.stringify(
+              INDEX_ROUTES,
+            )}.indexOf(location.pathname)>-1)document.documentElement.classList.add("index-ground")}catch(e){}})()`,
           }}
         />
       </head>
       <body id="top">
+        {/* Keeps the index ground in step with the route. Renders nothing. */}
+        <SectionGround />
+
         {/*
-          Pixel is mounted here rather than per-page so it survives client-side
-          navigation — the sprite keeps its idle timer, gaze and blink across
-          route changes instead of remounting cold on every link.
+          The shutter wraps the nav bar as well as the page, because the bar's
+          own links drive it too — mounted per page it could only ever animate a
+          move that started inside the page.
         */}
-        <PixelProvider>
-          <NavBar />
+        <ShutterProvider>
           {/*
-            Deliberately not inside <NavBar>: the header row ends at "Ask
-            Pixel", which has to stay the rightmost thing in it. The theme
-            switch is fixed page chrome instead, sitting in the strip just
-            below the header on every route.
+            Pixel is mounted here rather than per-page so it survives
+            client-side navigation — the sprite keeps its idle timer, gaze and
+            blink across route changes instead of remounting cold on every link.
           */}
-          <ThemeToggle />
-          {/*
-            `.appMain` is the flex child that grows, which is what holds the
-            footer at the bottom of pages too short to fill the viewport.
-          */}
-          <div className="appMain">{children}</div>
-          <Footer />
-          <BottomEdge />
-          {/*
-            Fixed-position, not part of this flow — opening it widens `body`'s
-            margin-right (globals.css) to push the page over instead.
-          */}
-          <PixelSidebar />
-          <PixelCompanion />
-        </PixelProvider>
+          <PixelProvider>
+            <NavBar />
+            {/*
+              `.appMain` is the flex child that grows, which is what holds the
+              footer at the bottom of pages too short to fill the viewport.
+            */}
+            <div className="appMain">{children}</div>
+            <Footer />
+            <BottomEdge />
+            {/*
+              Fixed-position, not part of this flow — opening it widens `body`'s
+              margin-right (globals.css) to push the page over instead.
+            */}
+            <PixelSidebar />
+            <PixelCompanion />
+          </PixelProvider>
+        </ShutterProvider>
         {/*
           Fixed to the left edge — Pixel's sidebar and companion both live on
           the right (above), so the left is the one side left for chrome.

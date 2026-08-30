@@ -3,6 +3,7 @@ import Fig031 from "./Fig031";
 import Fig041 from "./Fig041";
 import Fig141 from "./Fig141";
 import Fig161 from "./Fig161";
+import FigMethodology from "./FigMethodology";
 import FigProjOverview from "./FigProjOverview";
 import FigDoubleDoubleDiamond from "./FigDoubleDoubleDiamond";
 import Fig351Book from "./Fig351Book";
@@ -23,6 +24,7 @@ export const DIAGRAMS: Record<string, ComponentType<DiagramProps>> = {
   "fig-0-4-1": Fig041,
   "fig-1-4-1": Fig141,
   "fig-1-6-1": Fig161,
+  "fig-methodology": FigMethodology,
   "fig-proj-overview": FigProjOverview,
   "fig-double-diamond": FigDoubleDoubleDiamond,
   "fig-3-5-1": Fig351Book,

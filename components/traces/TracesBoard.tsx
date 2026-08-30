@@ -77,9 +77,10 @@ export type BoardProps = {
  *  - the diagrams stay as extracted crops; the typography is rebuilt as real
  *    text so it reflows
  *
- * The board's display face is a marker hand we don't have. `Waiting for the
- * Sunrise` is already loaded for Pixel's annotations on /writing and stands in
- * for it.
+ * The board's display face is a marker hand we don't have. No custom font
+ * stands in for it — the marker-hand classes (`.hand`, `.handLarge`,
+ * `.introKicker`, `.introTitle`, `.introLine`) fall back to the system
+ * `cursive` face.
  *
  * This file is the running order and nothing else. Each beat is its own file
  * under `./sections`, owning its own markup and its own content; what they

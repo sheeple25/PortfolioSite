@@ -5,10 +5,11 @@ import type { WritingSummary } from "@/lib/writing/types";
 /*
  * Data model for the Work/Archive knowledge graph.
  *
- * Three node types, per the design call already made: Projects, Domain tags
- * (`tags:` in frontmatter) and Skills/Tools tags (`skills:`), the latter two
- * bundled as one visual category but kept as distinct graph types here since
- * a domain and a skill can share a label without meaning the same thing.
+ * Four node types: Projects, Domain tags (`tags:`), Skill tags (`skills:`)
+ * and Tool tags (`tools:`) — what a project *is about*, what it *demonstrates
+ * you can do*, and what you *used to make it*, kept as three separate tag
+ * types since a label can plausibly appear in more than one column ("CAD" as
+ * a skill, "SolidWorks" as the tool) without meaning the same node.
  * Location/collaborator metadata is deliberately *not* a node type — it rides
  * along on the project node for a hover/click detail panel to read.
  *
@@ -36,7 +37,7 @@ export type ProjectGraphNode = {
 };
 
 export type TagGraphNode = {
-  type: "domain" | "skill";
+  type: "domain" | "skill" | "tool";
   id: string;
   label: string;
 };
@@ -88,7 +89,7 @@ function toProjectNode(summary: WritingSummary, featured: boolean): ProjectGraph
 function addTagEdges(
   project: ProjectGraphNode,
   labels: string[] | undefined,
-  type: "domain" | "skill",
+  type: "domain" | "skill" | "tool",
   tagNodes: Map<string, TagGraphNode>,
   edges: GraphEdge[]
 ) {
@@ -119,6 +120,7 @@ export function getProjectGraph(): ProjectGraph {
       projectNodes.push(node);
       addTagEdges(node, summary.meta.tags, "domain", tagNodes, edges);
       addTagEdges(node, summary.meta.skills, "skill", tagNodes, edges);
+      addTagEdges(node, summary.meta.tools, "tool", tagNodes, edges);
     }
   }
 

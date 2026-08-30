@@ -45,11 +45,8 @@
 /* ---------- closed spine ---------- */
 
 .spine {
+  position: relative;
   flex-shrink: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-block: 0.75rem;
   border: none;
   border-radius: 1px 1px 0 0;
   cursor: pointer;
@@ -57,7 +54,59 @@
     transform 0.18s ease,
     filter 0.18s ease,
     box-shadow 0.18s ease;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  overflow: hidden;
+  /* Edge gradient — fakes the spine's rounded surface catching light. Any
+     cover imagery (.coverImg, .scrim below) sits underneath this. */
+  background-image: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.09),
+    rgb(255 255 255 / 0.09) 10%,
+    transparent 22%,
+    transparent 78%,
+    rgb(0 0 0 / 0.11) 90%,
+    rgb(0 0 0 / 0.11)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.06),
+    inset 0 1px 0 rgb(255 255 255 / 0.16);
+}
+
+/*
+ * The book's own cover art, rotated 90deg to run along the spine.
+ *
+ * Sized *pre-rotation* to width=spine-height / height=spine-width (set
+ * inline, swapped) — a wide, short box. `object-fit: cover` scales the
+ * source uniformly (aspect ratio kept) so its dominant axis — here, the
+ * cover's own width — matches the box's width exactly with zero waste;
+ * the other axis (the cover's height) ends up larger than the box and is
+ * centre-cropped by the box's edges. That's the point: the spine's full
+ * length gets real, undistorted cover art, and the cover's own vertical
+ * range is what runs off-frame and gets clipped by `.spine`'s
+ * `overflow: hidden` below, not squashed to fit.
+ */
+.coverImg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* A site-wide `img { max-width: 100% }` reset resolves against this
+     element's containing block — the spine's own (narrow) width — and was
+     clamping the pre-rotation width down to it. Both overridden here since
+     `.coverImg` (one class) outranks that bare-tag rule regardless of the
+     inline width/height already set on the element. */
+  max-width: none;
+  max-height: none;
+  transform: translate(-50%, -50%) rotate(90deg);
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+/* Tints the cover art in the book's own hand-picked colour so the title
+   stays legible over it. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .spine:hover,
@@ -68,10 +117,40 @@
   outline: none;
 }
 
+/* Positioned absolutely (rather than left to flex + align-items) because
+   align-items' cross-axis resolution against a vertical-rl item is
+   unreliable across browsers — this pins it exactly: top of the book,
+   centred left-right, regardless of that quirk. */
 .spineLabel {
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
   writing-mode: vertical-rl;
   white-space: nowrap;
   line-height: 1;
+}
+
+/* An imprint band at the spine's foot — like a publisher's colour block. */
+.band {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 0.3rem;
+}
+
+/* A volume numeral or status glyph, set just above the band (or the bare
+   foot, if there isn't one) — the closest thing to a colophon this gets. */
+.mark {
+  position: absolute;
+  left: 50%;
+  bottom: 0.5rem;
+  transform: translateX(-50%);
+  font-size: 0.55rem;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  opacity: 0.65;
+  pointer-events: none;
 }
 
 /* ---------- open book (inline, mid-shelf) ---------- */

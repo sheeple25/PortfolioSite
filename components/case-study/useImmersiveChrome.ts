@@ -115,6 +115,31 @@ export function useHeroChrome(depth: number) {
 }
 
 /**
+ * Fills the Ask Pixel pill with the project's own accent for as long as this
+ * page is mounted — Traces' magenta, Unflattening's orange, Loco Lavatory's
+ * near-black, whatever `palette.accent` (or its `#1e1e1e` fallback) resolves
+ * to. Not scroll-linked like `useHeroChrome` above: the pill's colour is a
+ * property of which page you're on, not of where on it you've scrolled to.
+ *
+ * Written onto `<html>` rather than the header element directly, for the same
+ * reason `useHeroChrome` uses a class: it reaches `NavBar` from outside its
+ * subtree (see `RootLayout` — the header and the page are siblings), and an
+ * inline style always wins over the `:root` default in `globals.css` without
+ * needing `!important`.
+ */
+export function useNavAccent(accent: string) {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--nav-pixel-accent", accent);
+
+    // Leaving the lab must not strand the rest of the site on this accent.
+    return () => {
+      root.style.removeProperty("--nav-pixel-accent");
+    };
+  }, [accent]);
+}
+
+/**
  * Drives the site's own chrome from the state above.
  *
  * Two classes on `<html>`; the rules that respond to them live in

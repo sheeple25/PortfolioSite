@@ -1,116 +1,190 @@
 /*
  * Fixed to the left edge, vertically centred — the right edge already
- * belongs to Pixel's sidebar and companion (PixelSidebar.module.css,
- * PixelCompanion.module.css), so this is the one side left free. `left`
- * sits slightly negative so a sliver of the tab is clipped by the viewport
- * edge, reading as a tab tucked in rather than a card floating free.
+ * belongs to Pixel's sidebar and companion (chat/PixelSidebar.module.css,
+ * PixelCompanion.module.css), so this is the one side left free.
  *
- * `pointer-events: none` on the wrapper and back to `auto` on the tab itself,
- * same pattern as `.companion`/`.hitArea` in PixelCompanion.module.css — only
- * the tab should ever intercept a click or drag.
+ * `left` sits slightly negative so both badges are partly clipped by the
+ * viewport edge — read as tucked in rather than floating free — but shallow
+ * enough that the visible, grabbable majority of each badge sits clear of
+ * the ~20px strip iOS/Android reserve for the edge-swipe-back gesture. A
+ * touch drag that starts on the visible badge shouldn't fight that gesture;
+ * the click/tap fallback (see StickerVote.tsx) is the safer path regardless.
+ *
+ * Real (non-zero) box, sized to the fan's actual bounding area — needed for
+ * two things `top: 55%; transform: translateY(-50%)` and a zero-size anchor
+ * would both break: centering the fan on that 55% mark via `-50%` of its
+ * *own* height, and `app/globals.css`'s `.rails-hidden [data-chrome="rail"]`
+ * rule, which slides this off-screen via `translateY(115%)` — also a
+ * percentage of this element's own height, so it silently stops moving
+ * anything if the height is 0. `pointer-events: none` here (back to `auto`
+ * on `.badge` itself below) is the same wrapper/control split every other
+ * piece of fixed chrome on this site uses — see `.hitArea`/`.companion` in
+ * `PixelCompanion.module.css`.
  */
-.wrap {
+.rail {
   position: fixed;
-  left: -9px;
+  left: -12px;
   top: 55%;
   transform: translateY(-50%);
+  width: 4.4rem;
+  height: 6.1rem;
   z-index: 45;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
   pointer-events: none;
 }
 
-.tab {
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.9rem 0.6rem 0.9rem 1rem;
-  background: var(--color-white);
-  border: 1px solid var(--color-border-strong);
-  border-left: none;
-  border-radius: 0 10px 10px 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  color: var(--color-ink-soft);
+.badge {
+  position: absolute;
+  left: 0;
+  width: 4.4rem;
+  height: 4.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
   touch-action: none;
-  transition: color 0.18s ease, border-color 0.18s ease;
+  pointer-events: auto;
 }
 
-.tab:hover,
-.tab:focus-visible {
-  color: var(--color-charcoal);
-  border-color: var(--color-muted);
+/* The fan itself: badges anchored to opposite ends of `.rail`'s taller box,
+   overlapping through the middle — reads as one card held slightly behind
+   the other, rather than two badges stacked apart with a gap. */
+.badgeUp {
+  top: 0;
+  z-index: 2;
 }
 
-.tab:disabled {
+.badgeDown {
+  top: 1.7rem;
+  z-index: 1;
+}
+
+.badge:disabled {
   cursor: default;
 }
 
-.tab:disabled:hover {
-  color: var(--color-ink-soft);
-  border-color: var(--color-border-strong);
+.badgeShape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.16));
+  transition: filter 0.2s ease;
 }
 
-/* Once a page's vote is in, the tab settles to a quieter "thanks" state
-   rather than disappearing — still visible, just no longer inviting a drag. */
-.tabVoted {
-  opacity: 0.6;
+/* `filter: drop-shadow` (not `box-shadow`) so the shadow hugs the scalloped
+   silhouette instead of the badge's rectangular bounding box. */
+.badgeDragging .badgeShape,
+.badge:active:not(:disabled) .badgeShape {
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.3));
 }
 
-.label {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-family: var(--font-jetbrains-mono);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
+.badgeFace {
+  fill: #fdfbf7;
+  stroke-width: 2.5;
 }
 
-.icon {
-  display: inline-flex;
+.badgeUp .badgeFace {
+  stroke: var(--color-accent);
+}
+
+.badgeDown .badgeFace {
+  stroke: var(--color-ink-soft);
+}
+
+.badgeContent {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.badgeUp .badgeContent {
   color: var(--color-accent);
 }
 
-/* The two vote targets. Hidden until a drag is in progress (mounted by
-   AnimatePresence), stacked above/below the tab in normal flow so the tab
-   visually approaches whichever one it's dragged toward. */
-.zone {
-  pointer-events: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 999px;
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+.badgeDown .badgeContent {
+  color: var(--color-ink-soft);
 }
 
-.zoneArmed {
-  color: var(--color-white);
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+.badgeLabel {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/*
+ * The permanent mark a vote leaves behind. `.plantedLayer` is a zero-size,
+ * unpositioned anchor at the document origin (not inside `.rail`, which is
+ * `position: fixed` and would anchor a child's `top`/`left` to the viewport
+ * instead of the page) — its child positions itself in page coordinates via
+ * inline `top`/`left`, so it stays attached to that spot on the content as
+ * the page scrolls, like a sticker actually left there.
+ */
+.plantedLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.badgePlanted {
+  position: absolute;
+  /*
+   * `left`/`top` (set inline in StickerVote.tsx) mark the drop point as a
+   * top-left corner by default — this margin re-centers the badge on that
+   * point instead. Not a transform: Motion drives `x`/`y` on this element as
+   * genuine pixel drag offsets (dragging to reposition after placement), and
+   * those wouldn't compose reliably with a percentage-based centering
+   * transform on the same axis.
+   */
+  margin-left: -2.2rem;
+  margin-top: -2.2rem;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.badgePlanted .badgeShape {
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.22));
 }
 
 @media (max-width: 640px) {
-  .tab {
-    padding: 0.7rem 0.5rem 0.7rem 0.8rem;
+  .rail {
+    width: 3rem;
+    height: 4.2rem;
   }
 
-  .zone {
-    width: 1.8rem;
-    height: 1.8rem;
+  .badge {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .badgeDown {
+    top: 1.2rem;
+  }
+
+  .badgePlanted {
+    margin-left: -1.5rem;
+    margin-top: -1.5rem;
+  }
+
+  .badgeLabel {
+    font-size: 0.52rem;
   }
 }
 
 @media print {
-  .wrap {
+  .rail,
+  .plantedLayer {
     display: none;
   }
 }

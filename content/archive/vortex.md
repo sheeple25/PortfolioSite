@@ -13,6 +13,9 @@ skills:
   - Ply-Split Braiding
   - Structural Prototyping
   - Furniture Design
+# No `tools:` list — this one is hand-craft (braiding, physical structural
+# prototyping), not software-led, and nothing in the body names specific
+# equipment. Add one if there's a named tool/rig worth surfacing.
 cover: /archive/vortex-hero.webp
 coverAlt: The Vortex stool — a braided cotton seat suspended in a teak and chain tensegrity frame.
 titleEffect: weave

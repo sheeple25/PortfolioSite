@@ -227,8 +227,13 @@ function readFrontmatter(
     timeline: typeof data.timeline === "string" ? data.timeline : undefined,
     team: typeof data.team === "string" ? data.team : undefined,
     skills: Array.isArray(data.skills) ? data.skills.map(String) : undefined,
+    tools: Array.isArray(data.tools) ? data.tools.map(String) : undefined,
     cover: typeof data.cover === "string" ? data.cover : undefined,
     coverAlt: typeof data.coverAlt === "string" ? data.coverAlt : undefined,
+    coverVideo: typeof data.coverVideo === "string" ? data.coverVideo : undefined,
+    logo: typeof data.logo === "string" ? data.logo : undefined,
+    logoInvert: data.logoInvert === true,
+    logoWidth: typeof data.logoWidth === "number" ? data.logoWidth : undefined,
     titleEffect:
       typeof data.titleEffect === "string" ? data.titleEffect : undefined,
   };

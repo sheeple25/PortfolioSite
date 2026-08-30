@@ -12,6 +12,102 @@
   border-radius: 0.75rem;
   background: var(--color-white);
   overflow: hidden;
+
+  /*
+   * Per-node-type palette, read by `.node[data-type=…]` below and by the
+   * legend's inline `style`. Defined here (not read straight off the
+   * ambient `--color-*` tokens) because IndexShell's `.page` retargets
+   * `--color-accent` and `--color-charcoal` to the *same* ink token for the
+   * rest of the dark-ground index chrome — which silently made featured and
+   * archive projects the same colour. `.frameFill` below overrides every one
+   * of these for the dark-ground context; these are the framed panel's own
+   * light-background defaults.
+   */
+  --node-featured: var(--color-accent);
+  --node-archive: var(--color-charcoal);
+  --node-domain: var(--color-border-strong);
+  --node-skill: var(--color-muted);
+  --node-tool: var(--color-muted);
+}
+
+/*
+ * The Work index header's background slot: same graph, no panel chrome —
+ * fills the header edge to edge and sits behind the masthead rather than as
+ * a bordered card in the flow. Legend/detail/expand retint to the header's
+ * dark ground since `--color-white` reads as a literal white card otherwise.
+ */
+.frameFill {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  /* Node labels and the detail panel's secondary lines read this token; the
+     index-wide retint above only reassigns the tokens WorkGraph doesn't use
+     (charcoal/accent/muted/border), so it's set here directly instead. */
+  --color-ink-soft: color-mix(in srgb, var(--index-header-ink) 72%, transparent);
+
+  /*
+   * The dark-ground palette. Featured work gets the one warm colour in the
+   * set — it's the curated four, so it's meant to catch the eye first —
+   * everything else stays in a cool/neutral family so it doesn't compete.
+   * Values are literal, not further `--color-*` tokens, since those are the
+   * exact things this override exists to route around.
+   */
+  --node-featured: #ffb066;
+  --node-archive: var(--index-header-ink);
+  --node-domain: color-mix(in srgb, var(--index-header-ink) 46%, transparent);
+  --node-skill: #8fb2ff;
+  --node-tool: #7fe0bd;
+}
+
+.frameFill .legend,
+.frameFill .detail,
+.frameFill .expandButton {
+  background: color-mix(in srgb, var(--index-header-ground) 70%, transparent);
+  border-color: color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+  color: var(--index-header-ink);
+}
+
+/*
+ * The legend/detail/expand chrome is plain HTML, sized in real rem — it
+ * doesn't scale with the SVG's viewBox the way nodes and labels do, so at
+ * full-bleed hero size the framed panel's tuning (8-9px type) would sit like
+ * a tiny sticker in the corner of a much bigger surface. Scaled up here to
+ * match.
+ */
+.frameFill .expandButton {
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.frameFill .legend {
+  right: 1.5rem;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.frameFill .detail {
+  left: 1.25rem;
+  bottom: 1.25rem;
+  right: auto;
+  max-width: min(22rem, calc(100% - 2.5rem));
+  padding: 0.9rem 1.1rem;
+  border-radius: 0.7rem;
+}
+
+.frameFill .detailTitle {
+  font-size: 1.05rem;
+}
+
+.frameFill .detailLine {
+  font-size: 0.9rem;
 }
 
 .frameExpanded {
@@ -64,6 +160,15 @@
   opacity: 0.4;
 }
 
+/* A bit more present at full-bleed hero scale, where it's meant to read as
+   a deliberate texture rather than the framed panel's quiet placeholder
+   grid. Still `--color-border-strong` (unmodified by the dark-ground
+   retint), which lands as a warm light tan — reads well against the near-
+   black ground without needing its own colour override. */
+.frameFill .dot {
+  opacity: 0.55;
+}
+
 .edge {
   stroke: var(--color-border);
   stroke-width: 1;
@@ -82,29 +187,44 @@
   opacity: 0.3;
 }
 
+/* Colour lives here, once, on the type switch — the glow and the icon below
+   both just inherit it via `currentColor`/`color: inherit`. */
+.node[data-type="project"] {
+  color: var(--node-archive);
+}
+
+.node[data-type="project"][data-featured="true"] {
+  color: var(--node-featured);
+}
+
+.node[data-type="domain"] {
+  color: var(--node-domain);
+}
+
+.node[data-type="skill"] {
+  color: var(--node-skill);
+}
+
+.node[data-type="tool"] {
+  color: var(--node-tool);
+}
+
 .nodeHit {
   fill: transparent;
   pointer-events: all;
 }
 
-.nodeIcon {
+/* A soft halo in the node's own colour, behind the icon — legibility
+   against the dot-grid and gradient scrim without a hard-edged badge. */
+.nodeGlow {
+  fill: currentColor;
+  opacity: 0.16;
   pointer-events: none;
 }
 
-.nodeIcon[data-type="project"] {
-  color: var(--color-charcoal);
-}
-
-.nodeIcon[data-type="project"][data-featured="true"] {
-  color: var(--color-accent);
-}
-
-.nodeIcon[data-type="domain"] {
-  color: var(--color-border-strong);
-}
-
-.nodeIcon[data-type="skill"] {
-  color: var(--color-muted);
+.nodeIcon {
+  color: inherit;
+  pointer-events: none;
 }
 
 .nodeLabel {
@@ -114,17 +234,75 @@
   pointer-events: none;
 }
 
+/*
+ * Domain/skill nodes are their own label now — no icon, no circle, just the
+ * word. `font-size` is set inline per-node (`tagFontSize()` in the
+ * component, `dims.width`-relative) rather than here, so it always matches
+ * the width `nodeRadius()` estimated for hit-testing and collision.
+ */
+.nodeTagText {
+  font-family: var(--font-jetbrains-mono);
+  fill: currentColor;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+/* Domain reads as a tag/chip — short, upper-cased, tracked — so it stays
+   visually distinct from skill's longer sentence-case phrases even where
+   the colour alone might not (e.g. dimmed state). */
+.nodeTagDomain {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* The opaque backdrop chip behind a real software logo — see the `tool`
+   render branch in WorkGraph.tsx for why this can't just be `currentColor`
+   like `.nodeGlow`. */
+.nodeLogoChip {
+  fill: #f4f2ea;
+  stroke: var(--color-border);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+/* Fallback for a tool with no logo in the icon set: a plain initials badge
+   in the node's own colour instead of a fabricated mark. */
+.nodeToolBadge {
+  fill: currentColor;
+  pointer-events: none;
+}
+
+.nodeToolInitials {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  fill: #1b1f16;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+/*
+ * A vertical sidebar on the right edge, centred rather than pinned to a
+ * corner — it used to sit top-left, which in fill mode landed underneath
+ * the site's own floating nav bar (the header bleeds up behind it) and got
+ * visually clipped. Vertical-centre keeps it clear of both the nav bar up
+ * top and the bottom-left detail panel.
+ */
 .legend {
   position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  right: 3rem;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
   z-index: 1;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.7rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: 0.4rem;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
   background: color-mix(in srgb, var(--color-white) 85%, transparent);
   backdrop-filter: blur(4px);
   font-family: var(--font-jetbrains-mono);
@@ -165,4 +343,18 @@
 .detailLine {
   font-size: 0.75rem;
   color: var(--color-ink-soft);
+}
+
+/*
+ * Below phone width the header is tall and narrow — the opposite of the
+ * ~4:3 canvas this is laid out in — so `xMidYMid slice` would crop most of
+ * the graph away instead of just trimming the edges. Rather than solve
+ * responsive re-layout here, fill mode steps aside and the header falls
+ * back to its flat ground; the masthead was already designed to stand on
+ * that alone.
+ */
+@media (max-width: 40rem) {
+  .frameFill {
+    display: none;
+  }
 }

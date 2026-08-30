@@ -12,6 +12,9 @@ skills:
   - Furniture Design
   - Load Simulation
   - Sheet Metal Fabrication
+# Confirmed from the body text below ("Solidworks simulation drove the rest").
+tools:
+  - Solidworks
 cover: /archive/mizan-hero.webp
 coverAlt: The Mizan shelf, an aluminium slide-fit shelving system.
 titleEffect: assemble

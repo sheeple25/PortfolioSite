@@ -2,8 +2,7 @@ import Link from "next/link";
 import type { ComponentProps } from "react";
 import type { Components, ExtraProps } from "hast-util-to-jsx-runtime";
 import Figure from "./Figure";
-import MarginNote from "./notes/MarginNote";
-import NoteRef from "./notes/NoteRef";
+import { MarginNote, NoteRef } from "@/components/pixel";
 
 /**
  * Element overrides for rendered markdown.

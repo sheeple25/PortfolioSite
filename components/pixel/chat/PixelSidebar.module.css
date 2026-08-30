@@ -1,0 +1,304 @@
+/*
+ * Full-height, flush to the viewport edge. `position: fixed` rather than a
+ * flex sibling of `body` — a sticky flex item with flex-shrink:0 resolves to
+ * 0 width in Chrome in this layout (confirmed by bisecting the properties
+ * directly in devtools), so the page is instead pushed over by a
+ * `margin-right` on `body` itself (see the `:has()` rule in globals.css)
+ * rather than by flex distribution. Width animates between 0 and
+ * `--sidebar-width`; the inner wrapper stays a fixed width throughout so
+ * text reflows once rather than visibly squishing as the panel opens.
+ */
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 55;
+  width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--sidebar-bg);
+  transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.open {
+  width: var(--sidebar-width);
+}
+
+.inner {
+  width: var(--sidebar-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.open .inner {
+  opacity: 1;
+  transition-delay: 0.08s;
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  /* Lines up with the page's own top padding — see BACK/CONTENTS on a reading page. */
+  padding: 2.25rem var(--sidebar-pad) 0;
+  height: var(--nav-height);
+}
+
+.title {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.headerActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.iconButton {
+  display: inline-flex;
+  color: var(--color-ink-soft);
+  transition: color 0.18s ease, opacity 0.18s ease;
+}
+
+.iconButton:hover,
+.iconButton:focus-visible {
+  color: var(--color-charcoal);
+}
+
+.iconButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.75rem var(--sidebar-pad);
+}
+
+.greetingBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.greeting {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-space-grotesk);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.quickReplies {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.quickReplies button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.9rem;
+  color: var(--color-ink-soft);
+  transition: color 0.18s ease;
+}
+
+.quickReplies button:hover,
+.quickReplies button:focus-visible {
+  color: var(--color-charcoal);
+}
+
+.quickReplies button svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.quickReplies button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.userBubble {
+  align-self: flex-end;
+  max-width: 90%;
+  min-width: 0;
+  background: var(--color-white);
+  color: var(--color-charcoal);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.assistantText {
+  min-width: 0;
+  color: var(--color-ink-soft);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 1rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.typing {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.inputRow {
+  flex-shrink: 0;
+  position: relative;
+  padding: 1rem var(--sidebar-pad) 1.75rem;
+}
+
+.input {
+  width: 100%;
+  background: var(--color-white);
+  border-radius: 8px;
+  padding: 0.75rem 2.5rem 0.75rem 0.9rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.9rem;
+  color: var(--color-charcoal);
+}
+
+.input::placeholder {
+  color: var(--color-muted);
+}
+
+.input:disabled {
+  opacity: 0.7;
+}
+
+.sendButton {
+  position: absolute;
+  right: calc(var(--sidebar-pad) + 0.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+.sendButton:disabled {
+  opacity: 0.4;
+}
+
+.limitNotice {
+  flex-shrink: 0;
+  margin: 1rem var(--sidebar-pad) 1.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  background: var(--color-white);
+  color: var(--color-ink-soft);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------- the disclaimer */
+
+/*
+ * Behind the `i` button. The SOP asks for a real disclaimer — that PixelBot is
+ * an LLM, that it can be wrong, and that it does not speak for Vidush in the
+ * legal sense. This used to be a `title` tooltip on a button that did nothing.
+ */
+.disclaimer {
+  margin: 0 var(--sidebar-pad);
+  padding: 0.9rem 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.disclaimer p {
+  margin: 0 0 0.6rem;
+}
+
+.disclaimer button {
+  padding: 0;
+  font: inherit;
+  font-weight: 500;
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------ links in replies */
+
+/*
+ * Pixel points visitors at pages by writing the path in a sentence; these are
+ * those paths, made clickable. Underlined rather than coloured-only so they
+ * read as links against the reply's own colour.
+ */
+.messageLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+  transition: color 0.18s ease;
+}
+
+.messageLink:hover,
+.messageLink:focus-visible {
+  color: var(--color-accent);
+}
+
+/* --------------------------------------------------------------- mobile */
+
+/*
+ * Full screen below the breakpoint. The narrow-panel version left a strip of
+ * page down one side and read as a mistake on a phone; there is also no room
+ * to push the page aside, so `globals.css` drops the body margin at the same
+ * width.
+ */
+@media (max-width: 40rem) {
+  .sidebar {
+    width: 0;
+  }
+
+  .open {
+    width: 100vw;
+    width: 100dvw;
+  }
+
+  .inner {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@media print {
+  .sidebar {
+    display: none;
+  }
+}

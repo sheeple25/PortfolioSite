@@ -55,7 +55,10 @@ Open <http://localhost:3000>.
 │   └── status.module.css    # Shared by error / loading / not-found
 ├── components/
 │   ├── chrome/              # NavBar, Footer and the animated Logo/loading mark
-│   ├── pixel/               # The mascot: sprite data, renderer, context, hooks
+│   ├── pixel/               # PixelBot — ONE module, one public surface (index.ts)
+│   │   ├── AGENTS.md        #   read before touching: do not edit as a side effect
+│   │   ├── chat/            #   InChat — the "Ask Pixel" sidebar
+│   │   └── screen/          #   InScreen — annotations in the right-hand column
 │   ├── writing/             # The essay reader
 │   │   ├── figures/         #   inline SVG diagrams, addressed from markdown
 │   │   ├── notes/           #   bold-word triggers and the annotations they open
@@ -139,7 +142,8 @@ rest, which is the old behaviour.
 
 **Notes.** `[NOTE anchors: body]` defines an annotation. The comma-separated
 `anchors` are bold words that become buttons; clicking one opens the annotation
-above Pixel in the bottom-right margin — never before. Anchors match anywhere in
+above Pixel in the bottom-right margin — never before. This is PixelBot's
+InScreen surface; it lives in `components/pixel/screen/`. Anchors match anywhere in
 the document, so `**de-future**` in the last section can point at a note written
 in the first:
 
@@ -182,7 +186,7 @@ preview, body, headings, notes — and MDX only hands back one opaque component.
 ## Dev sandboxes
 
 The routes under `app/(labs)` — `/pixel-lab`, `/text-lab`, `/effects-lab`,
-`/stl-lab`, `/traces-board`, `/traces-entry` — are working surfaces, not
+`/stl-lab`, `/traces-board` — are working surfaces, not
 portfolio pages. They are reachable from the **labs** menu in the top-right
 corner, which only renders in development. All are safe to delete.
 
@@ -197,7 +201,9 @@ to `LAB_ROUTES` in `lib/site.ts`, which is the single list the labs menu and
 Notes that track work in progress live in `docs/`, not the repo root:
 
 - `docs/TODO.md` — what's next.
-- `docs/PIXEL_CHAT.md` — the Pixel chat build log and architecture.
+- `docs/PIXELBOT_BUILD.md` — PixelBot's work queue, and where other features
+  file requests against it rather than editing the module.
+- `docs/PIXEL_CHAT.md` — PixelBot's decision record (why things are as they are).
 - `docs/KNOWN_BUGS.md` — open question marks, not confirmed bugs.
 
 ## Deployment

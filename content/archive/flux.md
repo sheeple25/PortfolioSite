@@ -13,6 +13,12 @@ skills:
   - Mechanism Design
   - CAD Modelling
   - Prototyping
+# DRAFT — the body text below never names a package. "CAD Modelling" above
+# and "CAD" in the role line justify guessing *a* CAD tool; Solidworks is
+# reused here because it's the one already confirmed elsewhere (Mizan) for
+# this kind of work, not because there's direct evidence for Flux. Verify.
+tools:
+  - Solidworks
 cover: /archive/flux-hero.webp
 coverAlt: The Flux nameplate, its ferrofluid display lit against a dark desk.
 titleEffect: ferrofluid
