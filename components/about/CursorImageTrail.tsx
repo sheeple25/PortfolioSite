@@ -21,6 +21,17 @@ import styles from "./CursorImageTrail.module.css";
  * Positions are read straight off the pointer event and applied with GSAP's
  * `x`/`y` (a transform, not `top`/`left`), so nothing here ever triggers
  * layout — only compositing.
+ *
+ * The trail can be scoped to one region with `bounds`. That listens on the
+ * given element rather than on `window`, so images only pop while the pointer
+ * is over it — on `/about` that is Act I, and the trail falls silent the
+ * moment the reader drops into the interest band, where a second layer of
+ * scattered images would fight the cutouts for the same job.
+ *
+ * Scoping deliberately does *not* move the overlay inside that element. The
+ * layer stays fixed and full-viewport, so a pop near the region's edge spills
+ * past it instead of being clipped into a hard rectangle, and the pool's
+ * coordinates stay plain `clientX`/`clientY` with no offset maths.
  */
 
 /** How far the pointer has to travel before the next image pops. */
@@ -32,7 +43,24 @@ const HOLD_S = 0.35;
 /** Scatter around the exact pointer point, so a straight sweep doesn't line the images up like beads. */
 const JITTER = 26;
 
-export default function CursorImageTrail({ images }: { images: string[] }) {
+export default function CursorImageTrail({
+  images,
+  bounds,
+}: {
+  images: string[];
+  /**
+   * Confine the trail to one element. Omit — or pass `null` while it is still
+   * resolving — for the whole window.
+   *
+   * The element itself rather than a ref object, because this is a dependency
+   * of the listener effect and a ref can't be one: `ref.current` is null on
+   * the first pass and populating it later doesn't re-render, so the effect
+   * would bail once and never re-run. Callers hold it in state and pass the
+   * setter as the ref callback (`ref={setActOne}`), which makes the node's
+   * arrival an ordinary state change the effect can depend on.
+   */
+  bounds?: HTMLElement | null;
+}) {
   const poolRef = useRef<(HTMLDivElement | null)[]>([]);
   const reducedMotion = usePrefersReducedMotion();
   const hasFinePointer = useMediaQuery("(hover: hover) and (pointer: fine)");
@@ -40,6 +68,8 @@ export default function CursorImageTrail({ images }: { images: string[] }) {
 
   useEffect(() => {
     if (!active) return;
+
+    const target: HTMLElement | Window = bounds ?? window;
 
     let lastX = -Infinity;
     let lastY = -Infinity;
@@ -89,13 +119,13 @@ export default function CursorImageTrail({ images }: { images: string[] }) {
         );
     };
 
-    window.addEventListener("pointermove", onMove);
+    target.addEventListener("pointermove", onMove as EventListener);
     const pool = poolRef.current;
     return () => {
-      window.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointermove", onMove as EventListener);
       pool.forEach((node) => node && gsap.killTweensOf(node));
     };
-  }, [active, images]);
+  }, [active, images, bounds]);
 
   if (!active) return null;
 

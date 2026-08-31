@@ -28,7 +28,11 @@ import Why from "./sections/Why";
  * same one Loco Lavatory and Unflattening are built on. Everything below is
  * what is genuinely Traces': its magenta, its wall of failure modes, its beats.
  *
- * The old board translation is still rendered, untouched, at `/traces-board`.
+ * This page replaced an earlier "board" translation that lived at
+ * `/traces-board` under the old `app/(labs)` sandboxes. That build, and the
+ * board scans it read its figures off, were removed with the labs — recover
+ * them from git history if the original layout is ever wanted again. The data
+ * itself was not lost: the figures below carry the same digitised numbers.
  */
 
 /** Traces' magenta. Every accent on the page reads through these four tokens. */
@@ -71,10 +75,13 @@ const INSTITUTIONS: Institution[] = [
 /**
  * The spine.
  *
- * The frame numbers these 00–08 but skips 05; that is a slip rather than a
- * statement, so the numbering here is sequential. The four `[PROCESS]` rows all
- * point at the teaser standing in for the unwritten research write-up, which is
- * where a reader following them should actually land.
+ * The frame numbered these 00–08 with four `[PROCESS]` rows — Research,
+ * Findings, Analysis, Briefcraft. Findings is folded into Research below
+ * (both are the interview write-up; splitting them was two tabs for one
+ * body of content), and Briefcraft is dropped rather than kept as an empty
+ * tab — it never had anything behind it and one more disclosure nobody opens
+ * isn't worth the rail row. See `Process.tsx` for what Research and Analysis
+ * actually hold now.
  */
 const CONTENTS: ContentsRow[] = [
   { num: "00", title: "Context", target: "s-context" },
@@ -83,9 +90,7 @@ const CONTENTS: ContentsRow[] = [
   { num: "03", title: "The Fix: Traces", target: "s-traces" },
   { num: "04", title: "What Came Of It", target: "s-outcome" },
   { num: "05", title: "Research", tag: "[Process]", target: "s-process" },
-  { num: "06", title: "Findings", tag: "[Process]", target: "s-process" },
-  { num: "07", title: "Analysis", tag: "[Process]", target: "s-process" },
-  { num: "08", title: "Briefcraft", tag: "[Process]", target: "s-process" },
+  { num: "06", title: "Analysis", tag: "[Process]", target: "s-process" },
 ];
 
 const NEIGHBOURS = [

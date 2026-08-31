@@ -1,6 +1,6 @@
-import { getArchiveSummaries } from "@/lib/archive";
+import { getEntries, getEntry, linkHrefFor } from "@/lib/entries";
+import type { ResolvedEntry } from "@/lib/entries/types";
 import { getDecisionLogs } from "@/lib/pixel/decisions";
-import { getProjectSummaries } from "@/lib/projects";
 import { getWritingSummaries } from "@/lib/writing";
 import { CONTACT_EMAIL, SITE_DESIGNATION, SITE_NAME, SOCIAL_LINKS } from "@/lib/site";
 
@@ -27,6 +27,31 @@ function describe(
 ): string {
   return items
     .map((item) => `- "${item.meta.title}" (${base}/${item.slug}): ${item.meta.description}`)
+    .join("\n");
+}
+
+/**
+ * Projects, with the path each one actually answers on.
+ *
+ * Pixel's whole job is handing a visitor a link that works, so the href comes
+ * from `lib/entries` rather than being assembled from the section — Work and
+ * Archive share a URL space now, and an entry can move between them.
+ *
+ * A `peek` entry has no page of its own: its path is the index it opens from,
+ * and the line says so, because otherwise Pixel would promise a case study
+ * that isn't there and the visitor would land on a grid wondering why.
+ */
+function describeEntries(entries: ResolvedEntry[]): string {
+  return entries
+    .map((entry) => {
+      const note =
+        entry.mode === "peek"
+          ? " — opens as a card on that index, no separate page"
+          : entry.mode === "link"
+            ? " — hosted elsewhere, the link leaves the site"
+            : "";
+      return `- "${entry.meta.title}" (${linkHrefFor(entry)}): ${entry.meta.description}${note}`;
+    })
     .join("\n");
 }
 
@@ -148,7 +173,14 @@ function describeDecisions(): string {
 
   const body = logs
     .map((log) => {
-      const parts = [`### ${log.slug} (/${log.collection}/${log.slug})`];
+      /*
+       * The path comes from the registry, not from the log's own `collection`
+       * field — that field predates Work and Archive sharing a URL space and
+       * would send a visitor to a redirect for anything since moved.
+       */
+      const entry = getEntry(log.slug);
+      const path = entry ? linkHrefFor(entry) : `/projects/${log.slug}`;
+      const parts = [`### ${log.slug} (${path})`];
       if (log.process) parts.push(`What ${SITE_NAME} did:
 ${log.process}`);
       if (log.decisions) parts.push(log.decisions);
@@ -163,8 +195,8 @@ ${body}`;
 
 /** Everything that is identical for every visitor. Marked cacheable. */
 export function buildStablePrompt(): string {
-  const projects = getProjectSummaries();
-  const archive = getArchiveSummaries();
+  const projects = getEntries("work");
+  const archive = getEntries("archive");
   const writing = getWritingSummaries();
 
   const sections = [
@@ -173,10 +205,10 @@ export function buildStablePrompt(): string {
     `${SITE_NAME} is a ${SITE_DESIGNATION}. Reach him at ${CONTACT_EMAIL}, or via /contact.`,
     describeLinks() && `Profiles:\n${describeLinks()}`,
     projects.length
-      ? `Current work (these have full pages):\n${describe(projects, "/projects")}`
+      ? `Current work:\n${describeEntries(projects)}`
       : "No project pages are published yet.",
     archive.length
-      ? `Archive — earlier work, also with pages:\n${describe(archive, "/archive")}`
+      ? `Archive — earlier work, kept for the thinking behind it:\n${describeEntries(archive)}`
       : "",
     writing.length ? `Writing:\n${describe(writing, "/writing")}` : "",
     describeDecisions() && `## Decision logs\n${describeDecisions()}`,

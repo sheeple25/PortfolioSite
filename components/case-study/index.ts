@@ -19,7 +19,7 @@
 export { default as CaseShell } from "./CaseShell";
 export type { CaseShellProps, Palette, Anchor } from "./CaseShell";
 
-export { default as Banner, BannerImage, Stickers } from "./Banner";
+export { default as Banner, BannerImage, BannerVideo, Stickers } from "./Banner";
 export type { MetaField, Institution } from "./Banner";
 
 export { default as Contents, sectionIds } from "./Contents";

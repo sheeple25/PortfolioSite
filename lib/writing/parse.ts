@@ -524,3 +524,77 @@ export function parseWritingDocument(
     showsPrivate: visible.some((section) => section.private),
   };
 }
+
+/**
+ * The document as one run of plain prose — headings and paragraphs, in order,
+ * with the structure thrown away.
+ *
+ * For anything that wants the words but not the shape of them. The `/writing`
+ * header texture is the only caller today: it types the recommended essay out
+ * as its background, and needs a single continuous string to walk through.
+ *
+ * Private sections are dropped on exactly the rule the reader uses, so a
+ * section that is held back from the page can never surface in the background
+ * of it. Directives, code and rules are dropped too — none of them read as
+ * prose once their markup is gone.
+ */
+export function plainTextFromMarkdown(
+  source: string,
+  { includePrivate = false }: { includePrivate?: boolean } = {},
+): string {
+  const { body } = splitFrontmatter(source);
+  const root = toMdast.parse(body) as Root;
+
+  const parts: string[] = [];
+  /** Depth of the heading whose private section we're inside, or null. */
+  let skipDepth: number | null = null;
+  let headingDepth = 0;
+  /**
+   * Where in `parts` the heading we just took sits. The `<!-- private -->`
+   * marker arrives *after* its heading, so the heading has to be retractable.
+   */
+  let openHeading: number | null = null;
+
+  for (const node of root.children) {
+    if (node.type === "heading") {
+      // Subheadings of a private section are part of it; a sibling ends it.
+      if (skipDepth !== null && node.depth > skipDepth) continue;
+      skipDepth = null;
+      headingDepth = node.depth;
+
+      const heading = mdastToString(node).trim();
+      openHeading = heading ? parts.push(heading) - 1 : null;
+      continue;
+    }
+
+    if (node.type === "html") {
+      if (!includePrivate && PRIVATE_MARKER.test(node.value.trim())) {
+        skipDepth = headingDepth;
+        if (openHeading !== null) parts.splice(openHeading, 1);
+      }
+      openHeading = null;
+      continue;
+    }
+
+    openHeading = null;
+    if (skipDepth !== null) continue;
+    if (node.type === "code" || node.type === "thematicBreak") continue;
+
+    const text = mdastToString(node).trim().replace(/\s+/g, " ");
+    if (!text) continue;
+    if (
+      NOTE_DIRECTIVE.test(text) ||
+      FIGURE_DIRECTIVE.test(text) ||
+      PLACEHOLDER_DIRECTIVE.test(text) ||
+      PREVIEW_MARKER.test(text) ||
+      EXPANDED_MARKER.test(text)
+    ) {
+      continue;
+    }
+
+    parts.push(text);
+  }
+
+  // Two spaces between blocks: the only paragraph break a single run can keep.
+  return parts.join("  ");
+}

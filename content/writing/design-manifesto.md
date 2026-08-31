@@ -2,7 +2,7 @@
 title: Design Manifesto
 subtitle: A brief explanation of my outlook on and approach to design.
 description: A working definition of design as the act of enacting intention upon a subject — what separates the designed from the barely-designed, what makes design good, and what I want mine to be.
-date: 2026-02-14
+date: 2026-03-14
 version: v4
 recommended: true
 tags:

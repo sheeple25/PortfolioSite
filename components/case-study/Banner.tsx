@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { useShutter } from "@/components/chrome/Shutter";
+import { usePrefersReducedMotion } from "@/lib/hooks";
 import { scallopedCirclePath } from "@/lib/scallopedCirclePath";
 import styles from "./case.module.css";
 
@@ -151,6 +152,44 @@ export function BannerImage({
   return (
     <div className={styles.bannerImage}>
       <Image src={src} alt={alt} fill priority={priority} sizes="100vw" />
+    </div>
+  );
+}
+
+/**
+ * A looping video banner texture — Kobble's gradient loop, so far the only
+ * project whose brand texture actually moves rather than being a still or a
+ * text wall. Same fill/crop as `BannerImage` (`.bannerImage`'s shared rules
+ * in `case.module.css`); the only difference is the element underneath.
+ *
+ * Autoplay convention matches the index tile's own video cover
+ * (`components/index/TileGrid.tsx`): muted, looped, `playsInline`, and off
+ * entirely under `prefers-reduced-motion` — falling back to `poster` as a
+ * still frame rather than a blank box.
+ */
+export function BannerVideo({
+  src,
+  poster,
+  alt = "",
+}: {
+  src: string;
+  /** A still frame shown before playback starts, and in place of it under reduced motion. */
+  poster?: string;
+  alt?: string;
+}) {
+  const reducedMotion = usePrefersReducedMotion();
+
+  return (
+    <div className={styles.bannerImage}>
+      <video
+        src={src}
+        poster={poster}
+        autoPlay={!reducedMotion}
+        loop={!reducedMotion}
+        muted
+        playsInline
+        aria-label={alt}
+      />
     </div>
   );
 }

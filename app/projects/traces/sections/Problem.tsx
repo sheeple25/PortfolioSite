@@ -93,7 +93,7 @@ export default function Problem({
        * new one — 80 to 62 to 78 — which is both sturdier and a better read of
        * what the switch is doing.
        */}
-      <div id="failure-evidence" role="tabpanel">
+      <div id="failure-evidence" role="tabpanel" className={styles.evidence}>
         <div className={styles.stats}>
           {failure.stats.map((s, i) => (
             <Stat key={i} {...s} />

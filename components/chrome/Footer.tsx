@@ -150,27 +150,41 @@ export default function Footer() {
         </nav>
       </div>
 
-      <div className={styles.baseline}>
-        <div className={styles.baselineLeft}>
-          <p className={styles.copyright}>
-            &copy; {year} {SITE_NAME}
-          </p>
-          {lastCommit && (
-            <p className={styles.signal}>
-              <span className={styles.signalDot} aria-hidden="true" />
-              Last shipped {formatRelativeTime(lastCommit.isoDate)}
-              {" · "}
-              <span className={styles.signalHash}>{lastCommit.shortHash}</span>{" "}
-              {lastCommit.subject}
+      {/*
+        The track is not decoration: it is the box that clamps the sticky row
+        inside it, which is what keeps it from riding up over the block above
+        on a short band. See `.baselineTrack` in the stylesheet.
+
+        `data-footer-baseline` is how BottomEdge finds the row itself. It
+        sticks to the bottom of the viewport, so it — not the panel's top edge,
+        which is halfway up the screen once the footer is open — is what the
+        fixed corner furniture should come to rest on.
+      */}
+      <div className={styles.baselineTrack}>
+        <div className={styles.baseline} data-footer-baseline>
+          <div className={styles.baselineLeft}>
+            <p className={styles.copyright}>
+              &copy; {year} {SITE_NAME}
             </p>
-          )}
+            {lastCommit && (
+              <p className={styles.signal}>
+                <span className={styles.signalDot} aria-hidden="true" />
+                Last shipped {formatRelativeTime(lastCommit.isoDate)}
+                {" · "}
+                <span className={styles.signalHash}>
+                  {lastCommit.shortHash}
+                </span>{" "}
+                {lastCommit.subject}
+              </p>
+            )}
+          </div>
+          <a className={styles.top} href="#top">
+            Back to top
+            <span className={styles.topArrow} aria-hidden="true">
+              &uarr;
+            </span>
+          </a>
         </div>
-        <a className={styles.top} href="#top">
-          Back to top
-          <span className={styles.topArrow} aria-hidden="true">
-            &uarr;
-          </span>
-        </a>
       </div>
     </footer>
   );

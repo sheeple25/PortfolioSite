@@ -1,13 +1,13 @@
 /**
- * One-off generator for the stl-lab test asset — a regular icosahedron
+ * Generator for the STL viewer's test asset — a regular icosahedron
  * (12 vertices, 20 triangular facets) emitted as ASCII STL.
  *
  * No external model is downloaded; the geometry is the standard closed-form
  * icosahedron construction (golden-ratio rectangles), scaled up so it reads
- * clearly at typical camera distances in the lab scene.
+ * clearly at typical camera distances in `components/stl/Scene.tsx`.
  *
  * Run with: node scripts/generate-test-stl.mjs
- * Writes: public/stl-lab/icosahedron.stl
+ * Writes: public/stl/icosahedron.stl (the default model for `StlViewer`)
  */
 
 import fs from "fs";
@@ -101,7 +101,7 @@ for (const [ia, ib, ic] of faces) {
 
 lines.push("endsolid icosahedron");
 
-const outDir = path.join(__dirname, "..", "public", "stl-lab");
+const outDir = path.join(__dirname, "..", "public", "stl");
 fs.mkdirSync(outDir, { recursive: true });
 const outPath = path.join(outDir, "icosahedron.stl");
 fs.writeFileSync(outPath, lines.join("\n") + "\n", "utf8");

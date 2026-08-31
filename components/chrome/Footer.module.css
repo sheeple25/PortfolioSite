@@ -1,20 +1,31 @@
 /*
- * The footer as its own room: a dark panel lifted off the bottom of the page
+ * The footer as its own room: a black panel lifted off the bottom of the page
  * rather than a lighter continuation of it, with a shadow cast up onto the
  * content above. Everything below reads against this
- * charcoal ground, so the local custom properties re-point the same names
+ * ground, so the local custom properties re-point the same names
  * `.column`, `.document`, etc. already reach for (`--color-charcoal` as
  * "ink", `--color-muted`/`--color-border-strong` as translucent whites) —
  * child rules don't need their own dark-mode overrides, they just keep using
  * the tokens they already had.
  *
  * Every one of those re-pointed values is a literal, not a reference to a
- * palette token, and that is the point: the panel is charcoal in both themes,
- * so its type has to stay light in both themes. Pointing the ink at
- * `--color-bg` tracked the theme and turned the text near-black on a
- * near-black ground in dark mode. `--color-accent` is left alone too — it's
- * the site's blue in both themes now, so there's nothing here left to guard
- * against.
+ * palette token, and that is the point: the panel is black in both themes, so
+ * its type has to stay light in both themes. Pointing the ink at `--color-bg`
+ * tracked the theme and turned the text near-black on a near-black ground in
+ * dark mode.
+ *
+ * `--color-accent` is the one exception, and it is re-pointed on purpose:
+ * every blue in here — the document buttons, the download arrows, the commit
+ * dot and hash, the back-to-top arrow — now follows `--nav-pixel-accent`, the
+ * same page-scoped accent the logo above it already uses (Traces' magenta,
+ * Unflattening's orange). `--nav-pixel-accent` is written onto `<html>` by
+ * `useNavAccent`, so reading it here is reading an inherited computed value,
+ * not a cycle with the `:root` definition that points the other way.
+ *
+ * `--footer-accent` is the escape hatch above it: a page whose accent is too
+ * dark to survive a black ground (a case study with no `palette`, which falls
+ * back to near-black `#1e1e1e`) can set that one property and leave the rest
+ * of the chain alone.
  */
 .footer {
   margin-top: auto;
@@ -23,10 +34,52 @@
   --color-border-strong: rgba(247, 247, 247, 0.26);
   --color-border: rgba(247, 247, 247, 0.12);
   --color-ink-soft: rgba(247, 247, 247, 0.75);
-  background: #1e1e1e;
+  --color-accent: var(--footer-accent, var(--nav-pixel-accent, #0047ff));
+
+  /*
+   * The panel's own bottom padding, named because `.baseline` has to pin
+   * itself the same distance off the bottom of the *viewport* while the panel
+   * runs past it. Two places, one number.
+   */
+  --footer-pad-bottom: 2.25rem;
+
+  /*
+   * The gap between the two rows, and the floor under it. `.baselineTrack`
+   * starts here, so this is also what sets the panel's natural height — the
+   * height of the band at the moment the bottom row lands and before any of
+   * the runway has been spent.
+   */
+  --footer-row-gap: clamp(3.5rem, 6vw, 5.5rem);
+
+  background: #000000;
   color: var(--color-charcoal);
-  box-shadow: 0 -32px 56px -36px rgba(0, 0, 0, 0.35);
-  padding: clamp(2.75rem, 5vw, 4.5rem) var(--page-gutter) 1.75rem;
+  box-shadow: 0 -32px 56px -36px rgba(0, 0, 0, 0.55);
+  padding: clamp(3.5rem, 6vw, 5.5rem) var(--page-gutter)
+    var(--footer-pad-bottom);
+
+  /*
+   * The footer is 60svh tall and the last thing in the document, so its bottom
+   * edge only meets the bottom of the viewport at maximum scroll. Everything
+   * above that point, the panel's bottom runs off-screen and what you actually
+   * see is a black band that grows upward as you scroll — from nothing, to the
+   * height of the content, to the full 60svh.
+   *
+   * That growth *is* the expansion, and it costs no JS: the extra height over
+   * the content is the scroll runway that drives it. `.baseline` sticks itself
+   * to the bottom of the viewport (see below) so the bottom row arrives with
+   * the panel's leading edge rather than waiting at the far end of the runway,
+   * which is what makes the band read as a normal-height footer that then
+   * opens upward instead of as one tall panel sliding in.
+   *
+   * `svh`, not `dvh`: a dynamic unit would re-lay the panel out every time a
+   * mobile toolbar hid itself, mid-scroll. It matches the `100svh` on `body`.
+   *
+   * `min-height` rather than `height` so a short viewport — where the content
+   * alone is taller than 60svh — grows the panel instead of crushing it.
+   */
+  min-height: 60svh;
+  display: flex;
+  flex-direction: column;
 }
 
 .inner {
@@ -173,8 +226,50 @@
   color: inherit;
 }
 
+/*
+ * The rail the bottom row sticks along, and the reason it can't collide with
+ * the row above it.
+ *
+ * A sticky element is clamped by its containing block, so with `.baseline` as
+ * a direct child of the panel that clamp was the panel's whole content box —
+ * its ceiling was the *top* of the footer. While the band was still shorter
+ * than the two rows put together, sticky was free to haul the bottom row up
+ * over `.inner`, and did.
+ *
+ * This track is a real element spanning only the space below `.inner`, so it
+ * becomes the containing block and its top edge is the ceiling instead. The
+ * bottom row can rise to `--footer-row-gap` beneath the block above it and no
+ * further; before that it simply waits down the page and slides in with the
+ * panel. Neither `padding` on the panel nor a margin on the row itself can do
+ * this — the clamp follows the box, so the box is what had to change.
+ *
+ * `flex: 1` is what makes it a rail rather than a wrapper: it takes all the
+ * slack the runway opens up, which is what used to be `space-between` on the
+ * panel.
+ */
+.baselineTrack {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin-top: var(--footer-row-gap);
+}
+
+/*
+ * The bottom row rides the bottom of the viewport, not the bottom of the
+ * panel. Because the panel is taller than the screen's share of it until the
+ * very end of the scroll, its own bottom edge — and this row's flow position
+ * with it — sits below the fold for the whole approach; sticky pulls the row
+ * back up to rest `--footer-pad-bottom` off the bottom of the screen.
+ *
+ * The handover in each direction is seamless, and not by tuning: at the moment
+ * the band is exactly tall enough to hold both rows, the track's ceiling and
+ * the sticky target resolve to the same line. At maximum scroll the panel's
+ * bottom edge and the viewport's coincide and they agree again.
+ */
 .baseline {
-  margin-top: clamp(2.5rem, 5vw, 4rem);
+  position: sticky;
+  bottom: var(--footer-pad-bottom);
   display: flex;
   align-items: flex-end;
   justify-content: space-between;

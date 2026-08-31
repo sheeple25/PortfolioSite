@@ -1,0 +1,157 @@
+.act {
+  margin-top: 4rem;
+}
+
+.heading {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+/*
+ * The band. A loose horizontal scatter, which is the shape the whole structure
+ * is named for — the cutouts should read as objects put down near each other
+ * rather than as a row of buttons, and the panel below is where the reading
+ * happens.
+ *
+ * The scatter is a per-item offset (see `.cutout`), not a change of layout:
+ * the items are still evenly distributed along the row, then nudged off that
+ * line. That keeps the spacing legible at any width while breaking the
+ * alignment, which a genuinely random layout would not.
+ *
+ * `padding-block` reserves room for the vertical half of the offset so a
+ * raised cutout can't collide with the heading above or the caption below.
+ * It assumes offsets stay inside roughly ±1.5rem — see the registry.
+ *
+ * `flex-wrap` rather than a scroller: there will only ever be a handful of
+ * these, and a row that wraps to two lines on a narrow screen is better than
+ * one that hides its last entry off the right edge where nobody looks.
+ */
+.band {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: center;
+  padding-block: 2rem;
+}
+
+/*
+ * `--lift` is the hover nudge, composed into the same `transform` as the
+ * scatter offset rather than declared separately. Two rules both setting
+ * `transform` would mean the hover replaced the offset and the cutout jumped
+ * back onto the line the moment the pointer touched it.
+ */
+.cutout {
+  --lift: 0rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-muted);
+  opacity: 0.5;
+  transform: translate(var(--dx, 0), calc(var(--dy, 0rem) + var(--lift)))
+    rotate(var(--rot, 0deg));
+  transition:
+    opacity 220ms ease,
+    color 220ms ease,
+    transform 220ms ease;
+}
+
+.cutout:hover {
+  opacity: 0.85;
+  --lift: -0.35rem;
+}
+
+.cutoutOpen {
+  opacity: 1;
+  color: var(--color-charcoal);
+}
+
+.cutout:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 6px;
+}
+
+/*
+ * `image-rendering: pixelated` matters for the `art` case, where a small
+ * pixel-art source is scaled up: the default smooth resampling would blur
+ * exactly the thing that makes it pixel art. It is harmless on the inline
+ * SVG sprite, which is already crisp by way of `shapeRendering`.
+ */
+.art {
+  display: block;
+  width: 56px;
+  height: 56px;
+  image-rendering: pixelated;
+}
+
+.label {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.caption {
+  margin: 1.25rem 0 1rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--color-ink-soft);
+  /* Reserved for two lines so a longer caption can't shift the panel down. */
+  min-height: 2.7em;
+}
+
+/*
+ * The shared slot.
+ *
+ * One fixed height for every interest, set here and nowhere else. This is the
+ * central decision of Act II: switching interests must never change the
+ * page's geometry, so the panel does not grow to fit its contents and its
+ * contents do not get to ask it to. Panels that overrun scroll internally;
+ * panels with less to say leave space.
+ *
+ * `clamp` rather than a single value so the slot still adapts to the viewport
+ * — what has to stay constant is the height *between interests*, not across
+ * every screen size.
+ */
+.panel {
+  height: clamp(22rem, 52vh, 30rem);
+  overflow: hidden;
+}
+
+/*
+ * Only the transition goes. The scatter itself is layout, not motion, so it
+ * stays — clearing `transform` here would snap all four cutouts back into a
+ * neat row for anyone with the preference set.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .cutout {
+    transition: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .band {
+    gap: 1.5rem;
+    justify-content: space-between;
+  }
+
+  .art {
+    width: 44px;
+    height: 44px;
+  }
+
+  .panel {
+    height: clamp(22rem, 60vh, 30rem);
+  }
+}

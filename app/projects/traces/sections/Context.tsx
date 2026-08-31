@@ -1,12 +1,15 @@
 import { Fragment } from "react";
 import styles from "@/components/case-study/case.module.css";
-import { CASE_ASSETS } from "@/components/case-study";
+import { CASE_ASSETS, Disclosure } from "@/components/case-study";
 
 /**
  * Beat 00 — the lede and the observation chain under it.
  *
- * The one beat in the frame with no COLLAPSE control on it: it is the page's
- * opening statement, so there is nothing to fold away.
+ * The lede and chain carry no fold of their own — this is the page's opening
+ * statement, always visible. The formal design brief sits underneath them in
+ * its own collapsed sub-disclosure, the same pattern Fix.tsx uses for "How
+ * does it work?": the informal version is what a reader passing through
+ * gets, the brief is for one who stops to ask.
  */
 
 /*
@@ -49,10 +52,6 @@ export default function Context({
 }) {
   return (
     <section className={styles.beat} id={id} ref={anchorRef}>
-      {/*
-       * Placeholder copy, verbatim from the frame — the lede has not been
-       * written yet. Left in rather than invented so the gap stays obvious.
-       */}
       <p className={styles.lede}>
         Design research project exploring how technology shapes relationships, resulting in Traces — a reimagined dating solution tested on campus.
       </p>
@@ -74,6 +73,29 @@ export default function Context({
           </Fragment>
         ))}
       </div>
+
+      {/*
+       * The design brief, condensed from the board's own Project Brief /
+       * Product Brief pair (`source/traces-extract/traces_extract.txt`).
+       * Folded by default, the same way Fix.tsx tucks "How does it work?"
+       * under the three refusals — the lede above already carries the page's
+       * opening statement, so this is the formal version for a reader who
+       * stops to ask, not a replacement for it.
+       */}
+      <Disclosure title="Read the design brief" tone="sub" defaultOpen={false}>
+        <p className={styles.proseSmall}>
+          <strong className={styles.proseStrong}>Problem area.</strong>{" "}
+          Initiating romantic connections online feels high-pressure,
+          low-trust and detached from how relationships naturally begin
+          offline.
+        </p>
+        <p className={styles.proseSmall}>
+          <strong className={styles.proseStrong}>Intervention.</strong> The
+          intervention aims to augment — not replace — the natural ways
+          relationships begin in real life, weaving technology in as a
+          scaffold rather than a substitute.
+        </p>
+      </Disclosure>
     </section>
   );
 }

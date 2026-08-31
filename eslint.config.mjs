@@ -85,11 +85,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Pulled in via the shadcn CLI from Bklit UI / React Bits. Not hand-authored,
-    // re-pullable with `shadcn add`, and not linted against this project's
-    // stricter hook rules upstream — fix at the source, not here.
+    // Pulled in via the shadcn CLI from the Bklit UI registry (see
+    // `components.json`). Not hand-authored, re-pullable with `shadcn add`, and
+    // not linted against this project's stricter hook rules upstream — fix at
+    // the source, not here.
     "components/charts/**",
-    "components/Aurora.tsx",
   ]),
 ]);
 

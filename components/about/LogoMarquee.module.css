@@ -1,0 +1,130 @@
+/*
+ * Held to the same content measure as the masthead and sheet
+ * (`min(var(--page-max), 100% - 2 * var(--page-gutter))`, both rem/vw-based so
+ * this scales with the page the same way as everything else does under zoom),
+ * centred rather than full-bleed. The loop itself doesn't care how wide the
+ * viewport clips it to — the track always translates by exactly -50% of its
+ * own width, not the window's — so narrowing this to the content column shows
+ * no seam. The mask fades it to fully transparent at both edges instead of
+ * cutting it, so logos arrive at 0% and leave at 0% rather than popping.
+ */
+.viewport {
+  position: relative;
+  overflow: hidden;
+  width: min(var(--page-max), 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 3vw, 2.5rem);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 15%,
+    #000 85%,
+    transparent
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  animation: logo-marquee 38s linear infinite;
+}
+
+/*
+ * Exactly -50% — the track is the list twice, so half a track is one full
+ * list, and the loop point lands on an identical frame. See the note in the
+ * component.
+ */
+@keyframes logo-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Hovering holds it still so a name can actually be read. */
+.viewport:hover .track {
+  animation-play-state: paused;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: clamp(3rem, 7vw, 6rem);
+  /* Half the gap again, so the seam between the two copies is spaced like
+     every other pair rather than butting up. */
+  padding-inline-end: clamp(3rem, 7vw, 6rem);
+  list-style: none;
+  margin: 0;
+}
+
+.item {
+  flex: none;
+}
+
+/*
+ * Height-locked with an auto width: these come in very different aspect
+ * ratios (PwC's viewBox is square, CEPT's is roughly 3:1), so matching on
+ * height is the only thing that makes them read as one row.
+ *
+ * Greyed and dimmed because this sits on the header's ground under the
+ * title — seven sets of brand colours there would out-shout the masthead.
+ * Knocked out to plain black by default: the header ground is light in light
+ * mode, and a black mark reads there the way the inverted white one reads on
+ * the dark ground `.dark` below switches to.
+ *
+ * 80px is roughly 3.3x the row's previous 24px height — at least the 300%
+ * asked for, with `max-width` scaled up the same amount so the widest logos
+ * (IndianRailways) don't dominate the row.
+ */
+.logo {
+  display: block;
+  height: 80px;
+  width: auto;
+  max-width: 420px;
+  filter: grayscale(1) brightness(0);
+  opacity: 0.42;
+  transition: opacity 200ms ease;
+}
+
+:global(.dark) .logo {
+  filter: grayscale(1) brightness(0) invert(1);
+}
+
+.logo:hover {
+  opacity: 0.85;
+}
+
+/*
+ * A marquee is motion with no user control, so reduced motion doesn't get a
+ * slower version — it gets a static, wrapping row of the same logos.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .track > *:last-child {
+    display: none;
+  }
+
+  .row {
+    flex-wrap: wrap;
+    row-gap: 1.25rem;
+  }
+
+  .logo {
+    transition: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .logo {
+    height: 60px;
+    max-width: 260px;
+  }
+}

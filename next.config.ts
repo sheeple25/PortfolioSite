@@ -1,31 +1,50 @@
 import type { NextConfig } from "next";
 
 /**
- * Route files ending `.dev.tsx` resolve as routes in development and are
- * invisible to a production build.
- *
- * This is what keeps `app/(labs)` out of production. The previous arrangement
- * guarded the group with `notFound()` inside its layout, which hid the labs'
- * markup but left the routes prerendered (they answered 200, not 404) and left
- * their whole dependency tail — three, @react-three, gsap, ogl, matter-js,
- * @visx — in the production module graph. Dropping the extension drops the
- * routes, so nothing downstream of them is reachable to build.
+ * Route resolution.
  *
  * Per the Next docs (`03-api-reference/05-config/01-next-config-js/
  * pageExtensions.md`), this list governs *all* route resolution, so it has to
  * name every extension any route file in the project uses. Every route file
  * here is `.tsx`; `js`/`jsx` are deliberately absent, and adding a `.js` route
  * would mean adding it back.
+ *
+ * This used to carry a `dev.tsx` extension in development only, which is what
+ * kept the `app/(labs)` sandboxes out of production builds. The labs are gone,
+ * so the split is too — but the mechanism is worth remembering if a dev-only
+ * route is ever wanted again: naming an extension here is what makes a route
+ * file resolve at all, so dropping it drops the route and everything
+ * downstream of it from the module graph.
  */
-const LAB_EXTENSION = "dev.tsx";
 const ROUTE_EXTENSIONS = ["tsx", "ts"];
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  pageExtensions:
-    process.env.NODE_ENV === "development"
-      ? [...ROUTE_EXTENSIONS, LAB_EXTENSION]
-      : ROUTE_EXTENSIONS,
+  pageExtensions: ROUTE_EXTENSIONS,
+
+  /**
+   * Every project now lives at `/projects/<slug>`, whichever index lists it.
+   *
+   * An entry's section — Work or Archive — is a curation decision that can
+   * change (see `lib/entries/registry.ts`), so it can't also decide the URL:
+   * promoting a project would silently break every link to it. One canonical
+   * address, and the old archive paths redirect to it permanently.
+   *
+   * `/archive` itself is untouched — `:slug` requires a segment — and remains
+   * the Archive index.
+   */
+  async redirects() {
+    return [
+      {
+        // `[^./]+` excludes filenames — anything with a dot in it, like
+        // `traces-loop.mp4` — so this only catches page slugs and leaves
+        // `public/archive/*` assets to be served normally.
+        source: "/archive/:slug([^./]+)",
+        destination: "/projects/:slug",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

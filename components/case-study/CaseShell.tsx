@@ -6,6 +6,7 @@ import { ReaderProvider, useReader } from "@/components/writing/ReaderContext";
 import Contents, { sectionIds, type ContentsRow } from "./Contents";
 import {
   useHeroChrome,
+  useFooterAccent,
   useImmersiveChrome,
   useNavAccent,
   useSiteChromeSync,
@@ -146,6 +147,11 @@ export default function CaseShell({
   // (Loco Lavatory) still gives the pill its correct near-black rather than
   // leaving it on the site's default blue.
   useNavAccent(palette?.accent ?? DEFAULT_ACCENT);
+
+  // The footer can't take that same fallback: its ground is black, so the
+  // near-black would read as no accent at all. Palette-less projects get the
+  // site blue down there instead.
+  useFooterAccent(palette?.accent);
 
   /*
    * The banner runs to the top edge under the header, so the header goes white

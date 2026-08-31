@@ -30,17 +30,18 @@
    * repeated in two stylesheets.
    */
   /*
-   * The index pages' ground — `/projects`, `/archive`, `/writing`.
+   * The index pages' ground — `/projects`, `/archive`, `/writing`, `/about`.
    *
-   * A warm near-black rather than the earlier olive green, chosen to sit in
-   * the same family as the site's actual dark-mode ground (`#171310` /
-   * `#f3ecdf` below) — an always-dark hero that no longer looks like a
-   * mismatched colour if it's on screen right as someone toggles dark mode.
-   * Independent of that toggle on purpose: this stays constant either way,
-   * it just happens to now share its palette instead of clashing with it.
+   * Tracks the same light/dark swap as `--color-bg`/`--color-charcoal` (and is
+   * numerically identical to them in both themes) rather than aliasing those
+   * tokens with `var()`: `.index-ground` below writes `--color-bg` *from* this
+   * token, and referencing `--color-bg` back from here would make the two
+   * properties circular on the same element, which computes both to invalid.
+   * Restating the literals instead avoids that while still tracking `.dark`
+   * below.
    */
-  --index-header-ground: #17130f;
-  --index-header-ink: #f3ecdf;
+  --index-header-ground: #f7f7f7;
+  --index-header-ink: #1e1e1e;
 
   --nav-height: 5rem;
   --page-max: 76rem;
@@ -304,6 +305,11 @@ button {
   --color-ink-soft: #cabfa4;
 
   --sidebar-bg: #1c1712;
+
+  /* See the note on these in `:root` — same warm near-black/near-white pair
+     the index ground always used, now scoped to dark mode instead of fixed. */
+  --index-header-ground: #17130f;
+  --index-header-ink: #f3ecdf;
 }
 
 @theme inline {
@@ -370,6 +376,12 @@ button {
     opacity 240ms ease;
 }
 
+/* Set by PacmanCursor only on fine-pointer devices — see PacmanCursor.tsx. */
+.custom-cursor-active,
+.custom-cursor-active * {
+  cursor: none;
+}
+
 .chrome-hidden [data-chrome="header"] {
   transform: translateY(-115%);
   opacity: 0;
@@ -405,7 +417,8 @@ button {
  *
  * `NavBar` is deliberately transparent until the page scrolls, so a full-bleed
  * hero puts its charcoal wordmark and grey links directly onto the hero's
- * colour. Set by `useHeroChrome` (see `app/(labs)/traces-entry`) while the hero
+ * colour. Set by `useHeroChrome` (`components/case-study/useImmersiveChrome.ts`)
+ * while the hero
  * is still behind the bar, and removed the moment it scrolls clear.
  *
  * No rule here names a nav link. Every colour in `NavBar.module.css` already
@@ -413,21 +426,27 @@ button {
  * wordmark, the links and the current-page marker together — including
  * anything added to the bar later.
  *
- * The Ask Pixel pill is deliberately left out of this: it fills with
- * `--nav-pixel-accent`, which already tracks the project you're on (see
- * `--nav-pixel-accent` in the `:root` block above), and forcing it white here
- * would fight that with a second, scroll-linked colour on top.
+ * Everything keyed to `--nav-pixel-accent` — the Ask Pixel pill, the logo mark
+ * (`Logo.module.css`), the current-page link (`NavBar.module.css`) and
+ * PixelBots (`Pixel.tsx`'s default `color`) — is deliberately left out of this.
+ * That variable already tracks the project you're on (see `--nav-pixel-accent`
+ * in the `:root` block above) and is meant to read the same everywhere it
+ * appears on a given page; forcing any one of them white here while the others
+ * keep the project's accent would put them out of sync for as long as the hero
+ * (or an index's dark header ground, which sets this same class) is in view.
  */
 /*
  * Set on `<html>` for as long as an index page is mounted (see `IndexShell`).
  *
- * The index carries its own dark ground, but several pieces of site chrome are
- * fixed elements in the root layout — `BottomEdge` most visibly — and so sit
- * outside the page's subtree entirely. A token override scoped to `.page`
- * cannot reach them, and `BottomEdge` washing the foot of the window in
- * `--color-bg` laid a pale band across the bottom of the dark index. Moving the
- * override up to the document reaches every one of them, and takes the body's
- * own background (and so the overscroll area) with it.
+ * The index carries its own ground — the same light/dark pair as the rest of
+ * the site (see `--index-header-ground` above), not a fixed dark hero — but
+ * several pieces of site chrome are fixed elements in the root layout —
+ * `BottomEdge` most visibly — and so sit outside the page's subtree entirely.
+ * A token override scoped to `.page` cannot reach them, and `BottomEdge`
+ * washing the foot of the window in `--color-bg` laid a mismatched band across
+ * the bottom of the index otherwise. Moving the override up to the document
+ * reaches every one of them, and takes the body's own background (and so the
+ * overscroll area) with it.
  */
 .index-ground {
   --color-bg: var(--index-header-ground);

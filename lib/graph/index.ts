@@ -1,6 +1,5 @@
-import { getProjectSummaries } from "@/lib/projects";
-import { getArchiveSummaries } from "@/lib/archive";
-import type { WritingSummary } from "@/lib/writing/types";
+import { getEntries, linkHrefFor } from "@/lib/entries";
+import type { ResolvedEntry } from "@/lib/entries/types";
 
 /*
  * Data model for the Work/Archive knowledge graph.
@@ -13,10 +12,9 @@ import type { WritingSummary } from "@/lib/writing/types";
  * Location/collaborator metadata is deliberately *not* a node type — it rides
  * along on the project node for a hover/click detail panel to read.
  *
- * Pulls from both `getProjectSummaries()` (the featured Work set) and
- * `getArchiveSummaries()` (the catch-all), so the graph is always built from
- * every project that exists, not just the curated four — that's what lets
- * Work read as "subselection of a broader pool."
+ * Pulls from `getEntries()` with no section filter, so the graph is always
+ * built from every project that exists rather than just the curated few —
+ * that's what lets Work read as "subselection of a broader pool."
  */
 
 export type ProjectGraphNode = {
@@ -25,8 +23,16 @@ export type ProjectGraphNode = {
   slug: string;
   title: string;
   subtitle?: string;
-  /** In `content/projects` (the curated set) rather than `content/archive`. */
+  /** Listed under Work rather than the Archive. Drives node size and colour. */
   featured: boolean;
+  /**
+   * Where clicking the node goes, resolved by `lib/entries`. Built there and
+   * not here: this used to be assembled as `/${featured ? "projects" :
+   * "archive"}/${slug}`, which assumed a project's URL followed the index it
+   * appeared on. It doesn't — every entry lives at `/projects/<slug>` — and an
+   * entry whose content is external has no page of ours at all.
+   */
+  href: string;
   place?: string;
   role?: string;
   team?: string;
@@ -67,15 +73,17 @@ function tagSlug(label: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function toProjectNode(summary: WritingSummary, featured: boolean): ProjectGraphNode {
-  const { meta } = summary;
+function toProjectNode(entry: ResolvedEntry): ProjectGraphNode {
+  const { meta } = entry;
   return {
     type: "project",
-    id: `project:${summary.slug}`,
-    slug: summary.slug,
+    id: `project:${entry.slug}`,
+    slug: entry.slug,
     title: meta.title,
     subtitle: meta.subtitle,
-    featured,
+    featured: entry.section === "work",
+    /* See `linkHrefFor` — page, then external link, then the listing index. */
+    href: linkHrefFor(entry),
     place: meta.place,
     role: meta.role,
     team: meta.team,
@@ -109,19 +117,12 @@ export function getProjectGraph(): ProjectGraph {
   const edges: GraphEdge[] = [];
   const projectNodes: ProjectGraphNode[] = [];
 
-  const collections: Array<{ summaries: WritingSummary[]; featured: boolean }> = [
-    { summaries: getProjectSummaries(), featured: true },
-    { summaries: getArchiveSummaries(), featured: false },
-  ];
-
-  for (const { summaries, featured } of collections) {
-    for (const summary of summaries) {
-      const node = toProjectNode(summary, featured);
-      projectNodes.push(node);
-      addTagEdges(node, summary.meta.tags, "domain", tagNodes, edges);
-      addTagEdges(node, summary.meta.skills, "skill", tagNodes, edges);
-      addTagEdges(node, summary.meta.tools, "tool", tagNodes, edges);
-    }
+  for (const entry of getEntries()) {
+    const node = toProjectNode(entry);
+    projectNodes.push(node);
+    addTagEdges(node, entry.meta.tags, "domain", tagNodes, edges);
+    addTagEdges(node, entry.meta.skills, "skill", tagNodes, edges);
+    addTagEdges(node, entry.meta.tools, "tool", tagNodes, edges);
   }
 
   return {

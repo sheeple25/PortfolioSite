@@ -55,6 +55,17 @@
   --color-accent: var(--index-header-ink);
   --color-charcoal: var(--index-header-ink);
   --color-border: color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+  /*
+   * `--color-ink-soft`/`--color-border-strong` were left off this list
+   * originally, which was invisible while the ground was always dark — both
+   * happen to land light-on-dark in `.dark`'s own ramp, which is what this
+   * ground always was. Now that the ground answers to the toggle, a light
+   * theme needs these retargeted too, same as the four above, or
+   * `IndexCard`'s description/meta text (and anything else on the sheet that
+   * reads them) renders dark-on-dark.
+   */
+  --color-ink-soft: color-mix(in srgb, var(--index-header-ink) 78%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--index-header-ink) 38%, transparent);
 
   padding-bottom: clamp(4rem, 10vw, 8rem);
 }
@@ -149,6 +160,18 @@
   column-gap: clamp(2rem, 6vw, 6rem);
 }
 
+/*
+ * The band under the masthead. Left un-constrained here on purpose — what
+ * goes in this slot (the logo marquee) holds itself to the content measure
+ * and centres itself, so a page that put something else here that genuinely
+ * wants the full window still could.
+ */
+.banner {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(2rem, 4vw, 3.5rem);
+}
+
 .title {
   color: var(--index-header-ink);
   font-family: var(--font-space-grotesk);
@@ -201,13 +224,19 @@
 }
 
 /*
- * The masthead spans the full index width, but the list is prose and has to
- * stay at a readable line length — so it keeps the reading measure the
- * documents themselves use rather than stretching to the container.
+ * The list previously kept the documents' own reading measure (`--measure`,
+ * 42rem) while `/projects` and `/archive` ran to the full `--page-max`. That
+ * made `/writing` visibly narrower than its sibling indexes, which is the one
+ * thing the four of them should agree on — so the measure is gone and every
+ * index's content field is now the same width.
+ *
+ * The line length that argument was protecting still matters, but it belongs
+ * to the row's own text rather than to the container, and it is already held
+ * there — `components/writing/IndexCard.module.css` caps the card's summary
+ * at 36rem, which is tighter than the measure this used to impose.
  */
 .list {
   list-style: none;
-  max-width: var(--measure);
 }
 
 .empty {

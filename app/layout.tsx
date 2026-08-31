@@ -5,8 +5,7 @@ import {
   Newsreader,
 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { PixelCompanion, PixelProvider, PixelSidebar } from "@/components/pixel";
-import LabMenu from "@/components/dev/LabMenu";
+import { PacmanCursor, PixelCompanion, PixelProvider, PixelSidebar } from "@/components/pixel";
 import BottomEdge from "@/components/chrome/BottomEdge";
 import SectionGround from "@/components/chrome/SectionGround";
 import { ShutterProvider } from "@/components/chrome/Shutter";
@@ -70,12 +69,6 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
 };
-
-/**
- * Statically false in a production build, so the bundler drops both the element
- * and the `LabMenu` module below. See the note in components/dev/LabMenu.tsx.
- */
-const SHOW_DEV_LABS = process.env.NODE_ENV === "development";
 
 export default function RootLayout({
   children,
@@ -143,6 +136,7 @@ export default function RootLayout({
             */}
             <PixelSidebar />
             <PixelCompanion />
+            <PacmanCursor />
           </PixelProvider>
         </ShutterProvider>
         {/*
@@ -150,7 +144,6 @@ export default function RootLayout({
           the right (above), so the left is the one side left for chrome.
         */}
         <StickerVote />
-        {SHOW_DEV_LABS && <LabMenu />}
         {/*
           Vercel Web Analytics: automatic pageviews site-wide, plus the
           `track()` custom events fired from IndexCard, Footer and

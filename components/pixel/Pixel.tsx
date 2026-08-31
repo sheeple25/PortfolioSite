@@ -44,7 +44,7 @@ export default function Pixel({
   lookX = 0,
   lookY = 0,
   size = 120,
-  color = "var(--color-accent, #0047ff)",
+  color = "var(--nav-pixel-accent, #0047ff)",
   eyeColor = "var(--color-charcoal, #1e1e1e)",
   bob = false,
   bobDelay = 0,

@@ -191,6 +191,7 @@
   font-weight: 400;
   line-height: 1.02;
   color: var(--tp-wall);
+  opacity: 0.75;
   user-select: none;
 }
 
@@ -869,6 +870,15 @@
   gap: 32px;
 }
 
+/*
+ * Uneven steps start at a shared y instead of floating on a common centre —
+ * see `Chain`'s `align` prop, and `ChainStep.grow`, which is the other half of
+ * levelling a row whose sentences are of very different lengths.
+ */
+.chainTop {
+  align-items: flex-start;
+}
+
 .chainStep {
   flex: 1 0 0;
   min-width: 0;
@@ -925,22 +935,81 @@
 /* ------------------------------------------------------------ subquestions -- */
 
 /*
- * A stacked list of label + sentence pairs — the shape a research question's
- * subquestions take when they're lenses read together rather than steps taken
- * in order. `Chain` was the closer-looking primitive but its arrows assert a
- * sequence these explicitly aren't, so this stays its own pair of classes
- * instead of forcing that fit.
+ * A tab strip, not a stacked list — the research question's five subquestions
+ * are lenses read one at a time rather than steps taken in order (`Chain`'s
+ * arrows would assert a sequence these explicitly refuse), and showing all
+ * five in full was the actual complaint: too much text to take in at once.
+ * So only the active subquestion's sentence renders; the rest are just their
+ * number and name, sitting in the strip as the control that swaps it.
+ *
+ * The strip and its answer sit inside `.subquestionBox` — a quiet `--tp-tint`
+ * card, the same wash `.fixCard` uses. The main question above is a paragraph
+ * in the page's own serif; without a boundary the subquestion's sentence
+ * right underneath it reads as more of the same paragraph rather than a
+ * separate, interactive thing. The box is what tells the reader "this part
+ * moves."
  */
-.subquestionList {
+.subquestionBox {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  border-radius: 8px;
+  background: var(--tp-tint);
 }
 
-.subquestion {
+.subquestionTabs {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+}
+
+.subquestionTab {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin: 0;
+  padding: 0 0 8px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  cursor: pointer;
+  transition: color 240ms ease, border-color 240ms ease;
+}
+
+.subquestionTab:hover {
+  color: var(--ink-soft);
+}
+
+.subquestionTab:focus-visible {
+  outline: 2px solid var(--tp);
+  outline-offset: 4px;
+}
+
+.subquestionTabActive {
+  color: var(--tp);
+  border-bottom-color: var(--tp);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subquestionTab {
+    transition: none;
+  }
+}
+
+/* Same fix as `.stat .label` below: the five answers run one to three lines
+ * (Extrapolation is one sentence, Analysis is two clauses), so switching tabs
+ * without a reserved height jumps the box — and anything under it on the
+ * page — by however many lines the new answer happens to wrap to. Fixed at
+ * three lines' worth of `.proseSmall`'s 1.35 line-height, the longest any
+ * answer here actually reaches. */
+.subquestionPanel {
+  min-height: 4.05em;
 }
 
 /* ------------------------------------------------------------- focus rows -- */
@@ -1051,11 +1120,30 @@
 
 /* ----------------------------------------------------------------- stats -- */
 
+/*
+ * The three failures' stat rows carry labels of very different lengths — "of
+ * users report burnout" is one line, "said dating app talking didn't go
+ * anywhere" is three — so switching failures shifted the chart underneath by
+ * however many lines the new label happened to wrap to. `.stat .label` below
+ * reserves a fixed three-line box so every failure's row holds the chart at
+ * the same height, whether or not that failure's label actually needs it.
+ */
 .stats {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
+}
+
+/*
+ * Wraps the stat row and the figure together, evidence for one selected
+ * failure. The gap is what keeps the figure from sitting flush under the
+ * last line of a three-line stat label.
+ */
+.evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .stat {
@@ -1093,6 +1181,13 @@
 .statAffix {
   font-weight: 400;
   font-size: 32px;
+}
+
+/* See the comment on `.stats` — reserves three lines regardless of how many
+ * this particular failure's label actually wraps to. Scoped to `.stat` so it
+ * doesn't touch `.label`'s other uses (the "01"/"02" and archetype rows). */
+.stat .label {
+  min-height: 3.9em;
 }
 
 @media (max-width: 720px) {
@@ -1301,12 +1396,17 @@
  * 773 x 378 box, so it is reproduced as a percentage-positioned overlay on a
  * box of the same ratio — it scales with the column instead of breaking under
  * it.
+ *
+ * Background is `.chart`'s own panel recipe rather than a literal white: the
+ * icons on it are painted with `var(--ink)`, which is near-black in light mode
+ * but flips to near-white in dark mode, so a fixed white panel would leave
+ * them unreadable against their own background once the site theme flips.
  */
 .cycle {
   position: relative;
   width: 100%;
   aspect-ratio: 773 / 378;
-  background: #ffffff;
+  background: color-mix(in srgb, var(--tp) 4%, var(--page-bg));
   overflow: hidden;
   /*
    * Makes the box a container, so the notes inside it can be sized in `cqw`
@@ -1372,7 +1472,7 @@
 
 .cycleArrow {
   height: auto;
-  background-color: #a0a0a0;
+  background-color: var(--ink-mute);
   opacity: 0.4;
 }
 
@@ -1537,6 +1637,48 @@
   }
 }
 
+/* ------------------------------------------------------------ process grid -- */
+
+/*
+ * A wrapping grid of small cards — the research themes and the archetype set
+ * inside the Process disclosures. `.fixRow`/`.outcomeRow` are built for a
+ * fixed set of three and never wrap; these sets run to seven and nine, so they
+ * need a grid that reflows instead.
+ */
+.processGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px 24px;
+}
+
+.processCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--tp-tint);
+}
+
+.processCardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--tp);
+  white-space: nowrap;
+}
+
+.processCardTitle {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 18px;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
 /* --------------------------------------------------------------- carousel -- */
 
 .carousel {
@@ -1687,6 +1829,42 @@
   color: var(--ink-soft);
 }
 
+/*
+ * The same row, boxed in the project's accent — `ActionRow`'s `cta`.
+ *
+ * A teaser row is a quiet line by design; a download the whole page is
+ * arguing towards should not be quiet. The wash is mixed against `--page-bg`
+ * rather than being `--tp-tint` (a flat 8% alpha) so the box holds its weight
+ * over both themes, and every colour in here still comes from `--tp`, so the
+ * box is orange on Unflattening and whatever the palette says elsewhere.
+ */
+.teaserCta {
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: clamp(1rem, 2.2vw, 1.5rem) clamp(1.25rem, 2.5vw, 2rem);
+  border: 1px solid color-mix(in srgb, var(--tp) 45%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tp) 12%, var(--page-bg));
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.teaserCta:hover {
+  border-color: var(--tp);
+  background: color-mix(in srgb, var(--tp) 18%, var(--page-bg));
+}
+
+.teaserCta .teaserLabel {
+  color: var(--ink);
+}
+
+.teaserCta .disclosureToggle {
+  color: var(--tp);
+}
+
+.teaserCta .disclosureToggle:hover {
+  color: var(--ink);
+}
+
 /* ---------------------------------------------------------- more projects -- */
 
 .more {
@@ -1780,9 +1958,23 @@
 
 /* -------------------------------------------------------- pixel's margin -- */
 
+/*
+ * Pinned directly above Pixel in the bottom-right corner — the same spot
+ * `AnnotationPanel` opens notes in on `/writing`. This used to be
+ * `position: sticky` inside `.marginRight`, which stuck it to that grid
+ * track's own inset (128px in from the edge) rather than the mascot's
+ * `--shell-inset`, so it landed beside Pixel instead of above him. Fixed and
+ * keyed off the same tokens `PixelCompanion`/`AnnotationPanel` use, it now
+ * shares their corner without measuring anything.
+ */
 .pixelNote {
-  position: sticky;
-  top: calc(100svh - 12rem);
+  position: fixed;
+  right: calc(var(--shell-inset) + env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--corner-inset-block) + var(--corner-lift, 0px) + var(--companion-size) +
+      2.5rem + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: 45;
   width: 240px;
   margin: 0;
   font-family: var(--mono);
@@ -1806,9 +1998,17 @@
   overflow: hidden;
 }
 
-.bannerImage img {
+.bannerImage img,
+.bannerImage video {
   object-fit: cover;
   object-position: 50% 35%;
+}
+
+/* `next/image`'s `fill` prop sizes the `img` itself; a plain `<video>` needs
+   it spelled out to fill the same absolutely-positioned `.bannerImage` box. */
+.bannerImage video {
+  width: 100%;
+  height: 100%;
 }
 
 /* --------------------------------------------------------------- steps -- */
@@ -1852,6 +2052,13 @@
 /* The chain arrow turned a quarter, masked the same way so it follows `--tp`. */
 .stepArrow {
   align-self: center;
+  /*
+   * The rotation is visual only — the box stays 48 wide and 15 tall in
+   * layout, so the arrow's drawn length (48px) overhangs its own row and the
+   * 16px list gap leaves it sitting on top of the steps. The margin is what
+   * actually opens the gap either side of it.
+   */
+  margin-block: 20px;
   width: 48px;
   height: 15px;
   rotate: 90deg;

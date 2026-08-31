@@ -39,8 +39,8 @@
 /*
  * The tint. The loader is a flat-colour-on-alpha raster, so flooding the
  * accent and compositing it into the frame's alpha replaces the baked colour
- * outright rather than shifting it — the result is exactly `--color-accent`,
- * matching `.triangle` below in both themes. `flood-color` lives here, not on
+ * outright rather than shifting it — the result is exactly `--nav-pixel-accent`,
+ * matching `.triangle` below on every page. `flood-color` lives here, not on
  * the `feFlood` element, so it can read the custom property.
  */
 .defs {
@@ -51,7 +51,7 @@
 }
 
 .defs feFlood {
-  flood-color: var(--color-accent);
+  flood-color: var(--nav-pixel-accent);
   flood-opacity: 1;
 }
 
@@ -74,8 +74,8 @@
  * it just loses its points.
  */
 .triangle {
-  fill: var(--color-accent);
-  stroke: var(--color-accent);
+  fill: var(--nav-pixel-accent);
+  stroke: var(--nav-pixel-accent);
   stroke-width: 10;
   stroke-linejoin: round;
   paint-order: stroke;

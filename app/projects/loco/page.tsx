@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { getCaseStudy } from "@/lib/caseStudies";
+import { getEntry } from "@/lib/entries";
 import LocoEntry from "./LocoEntry";
 
 /**
  * Loco Lavatory — a hand-built case study on the same chassis as Traces and
- * Unflattening. Metadata comes from `lib/caseStudies.ts`; see the note in
+ * Unflattening. Metadata comes from `lib/entries/registry.ts`; see the note in
  * `app/projects/traces/page.tsx`.
  */
 
-const study = getCaseStudy("loco");
+const study = getEntry("loco");
 
 export const metadata: Metadata = {
   title: study?.meta.title,

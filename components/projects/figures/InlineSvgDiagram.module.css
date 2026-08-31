@@ -54,3 +54,133 @@
     opacity: 0.65;
   }
 }
+
+/* ------------------------------------------------------------- focus view -- */
+
+/*
+ * The figure as a control. Reset to nothing visible — the stage around it
+ * already draws the panel — but it is a real `<button>`, so it tabs and it
+ * announces.
+ */
+.zoomTrigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: zoom-in;
+  text-align: left;
+}
+
+.zoomHint {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--fig-ink, #fff) 65%, transparent);
+  background: color-mix(in srgb, var(--fig-ink, #fff) 8%, transparent);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.stage:hover .zoomHint,
+.zoomTrigger:focus-visible .zoomHint {
+  opacity: 1;
+}
+
+.zoomTrigger:focus-visible {
+  outline: 2px solid var(--fig-accent, #ffa554);
+  outline-offset: 2px;
+}
+
+/*
+ * The overlay is portalled to `<body>`, so it sits outside the case study's
+ * token scope: `--fig-*` are inherited from `:root`/the theme rather than
+ * from the page's palette override, and the fallbacks below carry the rest.
+ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: rgba(10, 10, 10, 0.82);
+  backdrop-filter: blur(6px);
+  cursor: zoom-out;
+  animation: figureFade 0.16s ease;
+}
+
+@keyframes figureFade {
+  from {
+    opacity: 0;
+  }
+}
+
+.overlayStage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(100%, 1600px);
+  max-height: 100%;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  border-radius: 6px;
+  background: var(--fig-stage, #1e1e1e);
+  cursor: default;
+  overflow: auto;
+}
+
+.overlaySvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 82vh;
+  overflow: visible;
+}
+
+.overlayCaption {
+  margin: 0;
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--fig-ink, #fff) 60%, transparent);
+}
+
+.overlayClose {
+  position: absolute;
+  top: clamp(0.75rem, 2vw, 1.5rem);
+  right: clamp(0.75rem, 2vw, 1.5rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.18s ease;
+}
+
+.overlayClose:hover,
+.overlayClose:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    animation: none;
+  }
+}

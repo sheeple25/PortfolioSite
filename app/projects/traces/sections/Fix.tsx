@@ -1,5 +1,6 @@
 import styles from "@/components/case-study/case.module.css";
-import { Disclosure, Slot } from "@/components/case-study";
+import { Disclosure } from "@/components/case-study";
+import FigTracesFlow from "@/components/projects/figures/FigTracesFlow";
 
 /**
  * Beat 03 — "The Fix: Traces".
@@ -38,26 +39,44 @@ export default function Fix({
       </p>
 
       <div className={styles.fixRow}>
-        {PRINCIPLES.map((p) => (
-          <div key={p.num} className={styles.fixCard}>
-            <span className={styles.fixHead}>
-              <span>{p.num}</span>
-              <span>{p.name}</span>
-            </span>
-            <p className={styles.fixClaim}>{p.claim}</p>
-          </div>
-        ))}
+        {PRINCIPLES.map((p) => {
+          /*
+           * Forced onto two lines rather than left to wrap naturally: "No
+           * cold starts." wraps to two on its own at this card width while
+           * "No swiping." and "No profiles." sit on one, so the three cards
+           * held mismatched heights. Breaking every claim after its first
+           * word gives all three the same two-line shape.
+           */
+          const [firstWord, ...rest] = p.claim.split(" ");
+          return (
+            <div key={p.num} className={styles.fixCard}>
+              <span className={styles.fixHead}>
+                <span>{p.num}</span>
+                <span>{p.name}</span>
+              </span>
+              <p className={styles.fixClaim}>
+                {firstWord}
+                <br />
+                {rest.join(" ")}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
-      <Slot label="User flow chart" />
+      <FigTracesFlow label="User flow — you, your Trace, the system, and the pool of others" />
 
       {/*
        * A disclosure inside a disclosure. The frame gives this its own smaller
        * head and its own COLLAPSE control, so it folds independently of the
        * beat around it — the mechanics are for readers who want them, and the
        * three refusals above are the answer for readers who don't.
+       *
+       * Collapsed by default: the three refusals above already answer the
+       * beat for a reader passing through, and this is the mechanics for one
+       * who stops to ask.
        */}
-      <Disclosure title="How does it work?" tone="sub">
+      <Disclosure title="How does it work?" tone="sub" defaultOpen={false}>
         <p className={styles.proseSmall}>
           You as a user either play a situation (game like hypothetical) or
           upload a Trace (any piece of media that represents you). Based on your

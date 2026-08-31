@@ -45,7 +45,7 @@
   letter-spacing: 0.01em;
   color: var(--color-muted);
   /* The underline grows from the left rather than fading in. */
-  background-image: linear-gradient(var(--color-accent), var(--color-accent));
+  background-image: linear-gradient(var(--nav-pixel-accent), var(--nav-pixel-accent));
   background-repeat: no-repeat;
   background-position: 0 100%;
   background-size: 0% 1.5px;
@@ -59,14 +59,14 @@
 }
 
 .linkCurrent {
-  color: var(--color-accent);
+  color: var(--nav-pixel-accent);
   font-weight: 500;
   background-size: 0% 1.5px;
 }
 
 .linkCurrent:hover,
 .linkCurrent:focus-visible {
-  color: var(--color-accent);
+  color: var(--nav-pixel-accent);
   background-size: 0% 1.5px;
 }
 
@@ -85,7 +85,10 @@
  * page does — a case-study page overrides it on `<html>` for as long as it's
  * mounted (`useNavAccent`, called from `CaseShell`), so the pill picks up
  * Traces' magenta, Unflattening's orange, Loco Lavatory's near-black, with
- * nothing scroll- or hover-driven layered on top.
+ * nothing scroll- or hover-driven layered on top. The same variable now also
+ * drives the logo mark (`Logo.module.css`), the current-page link above and
+ * PixelBots (`Pixel.tsx`'s default `color`) — one project accent, one
+ * variable, so none of them can drift out of sync with this pill.
  */
 .askPixel {
   display: inline-flex;

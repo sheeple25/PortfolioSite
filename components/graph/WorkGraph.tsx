@@ -347,15 +347,33 @@ export default function WorkGraph({
 
     const behavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent(ZOOM_EXTENT)
+      // Matches the dot backdrop's own oversized rect/mask bounds (see the
+      // `<defs>` below) — clamping pan to exactly that region guarantees the
+      // dot grid always fills the viewport, at any zoom level in
+      // `ZOOM_EXTENT`, instead of the world eventually outrunning a
+      // fixed-size backdrop.
+      .extent([[0, 0], [dims.width, dims.height]])
+      .translateExtent([
+        [-1.5 * dims.width, -1.5 * dims.height],
+        [2.5 * dims.width, 2.5 * dims.height],
+      ])
       .filter((event: MouseEvent | WheelEvent | TouchEvent) => {
         // d3-zoom listens for the native mousedown itself, ahead of React's
         // delegated dispatch — a node's own `stopPropagation()` can't reach
         // it in time, so panning is switched off here instead whenever the
         // gesture starts on a node (its own pointer handlers own that drag).
         if ("button" in event && event.button) return false;
-        if ("ctrlKey" in event && event.ctrlKey && event.type !== "wheel") return false;
         const target = event.target;
-        return !(target instanceof Element && target.closest(`.${styles.node}`));
+        if (target instanceof Element && target.closest(`.${styles.node}`)) return false;
+
+        // A bare wheel is left alone entirely — it scrolls the page like any
+        // other content instead of fighting it for the gesture. Only a held
+        // Ctrl/Cmd zooms (a trackpad pinch also reports as a ctrlKey wheel
+        // event), the same modifier Figma/Maps use, so scrolling past the
+        // graph never gets hijacked into a zoom.
+        if (event.type === "wheel") return event.ctrlKey || event.metaKey;
+
+        return true;
       })
       .on("zoom", (event: D3ZoomEvent<SVGSVGElement, unknown>) => {
         setTransform({ x: event.transform.x, y: event.transform.y, k: event.transform.k });
@@ -365,9 +383,27 @@ export default function WorkGraph({
     selection.call(behavior);
     selection.on("dblclick.zoom", null);
 
+    // d3-zoom's own wheel handler only calls preventDefault() once it's
+    // decided the gesture actually changes the transform — on the first
+    // tick of a fresh gesture where the computed scale is already clamped
+    // to `ZOOM_EXTENT` (i.e. you keep scrolling past the min/max), it bails
+    // out before that call. One unprevented Ctrl/Cmd+wheel tick is all
+    // Chrome needs to kick off its native page-zoom, which then keeps going
+    // regardless of any later ticks that *do* get prevented. This listener
+    // is independent of d3-zoom's internal logic — it always blocks the
+    // browser gesture whenever the modifier is held over the graph.
+    const blockBrowserZoom = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) event.preventDefault();
+    };
+    svg.addEventListener("wheel", blockBrowserZoom, { passive: false });
+
     return () => {
       selection.on(".zoom", null);
+      svg.removeEventListener("wheel", blockBrowserZoom);
     };
+    // dims is derived from the `fill` prop, which is static for a mounted
+    // instance — no need to re-run this on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activeId = hoveredId ?? selectedId;
@@ -404,7 +440,7 @@ export default function WorkGraph({
 
   function handleActivate(node: SimNode) {
     if (node.type === "project") {
-      router.push(`/${node.featured ? "projects" : "archive"}/${node.slug}`);
+      router.push(node.href);
       return;
     }
     setSelectedId((current) => (current === node.id ? null : node.id));
@@ -474,7 +510,7 @@ export default function WorkGraph({
         // letterboxes to keep the whole 16:9 graph in view.
         preserveAspectRatio={fill ? "xMidYMid slice" : "xMidYMid meet"}
         role="img"
-        aria-label="Graph connecting projects to their domains, skills and tools — drag nodes, scroll to zoom, drag the background to pan"
+        aria-label="Graph connecting projects to their domains, skills and tools — drag nodes, hold Ctrl and scroll to zoom, drag the background to pan"
       >
         <defs>
           <pattern id="work-graph-dots" width="24" height="24" patternUnits="userSpaceOnUse">
@@ -674,7 +710,7 @@ export default function WorkGraph({
         ))}
       </div>
 
-      {activeNode && (
+      {activeNode ? (
         <div className={styles.detail}>
           <p className={styles.detailTitle}>
             {activeNode.type === "project" ? activeNode.title : activeNode.label}
@@ -685,6 +721,10 @@ export default function WorkGraph({
             </p>
           ))}
         </div>
+      ) : (
+        // Same corner as `.detail` above — the two never show at once, so
+        // the hint just steps aside once a node's own detail takes the slot.
+        <p className={styles.hint}>Ctrl + scroll to zoom</p>
       )}
     </div>
   );

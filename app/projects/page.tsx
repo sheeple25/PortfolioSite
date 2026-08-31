@@ -1,14 +1,31 @@
 import type { Metadata } from "next";
-import TileGrid, { type Tile } from "@/components/index/TileGrid";
-import { getProjectSummaries } from "@/lib/projects";
+import TileGrid from "@/components/index/TileGrid";
+import { toTile } from "@/components/index/toTile";
+import { getEntries } from "@/lib/entries";
 import { getProjectGraph } from "@/lib/graph";
-import { formatDate } from "@/lib/format";
 import IndexShell, { IndexEmpty } from "@/components/chrome/IndexShell";
+import Rebus, { RebusEmoji, RebusLogo } from "@/components/index/Rebus";
 import WorkGraph from "@/components/graph/WorkGraph";
 
 const TITLE = "Work.";
-const INTRO =
-  "Projects where the brief mattered as much as the outcome — research, systems and the things they produced.";
+/*
+ * The standfirst, written as a rebus: the marks are standing in for the words
+ * rather than decorating them, which is why they carry real `alt` text.
+ *
+ * Deliberately shorter than the sentence it replaces. At this size a line of
+ * prose would push the masthead's right column down past the fold, and the
+ * point of the rebus is that it is read at a glance rather than parsed.
+ */
+const INTRO = (
+  <Rebus>
+    A dating product for{" "}
+    <RebusLogo src="/logos/Kobble.svg" alt="Kobble" />, livelihoods for{" "}
+    <RebusLogo src="/logos/IFTC.svg" alt="In For The Cause" />, four client
+    briefs in four months at <RebusLogo src="/logos/PwC.svg" alt="PwC" />, and a
+    lavatory for an <RebusLogo src="/logos/IndianRailways.svg" alt="Indian Railways" />{" "}
+    <RebusEmoji label="locomotive">🚆</RebusEmoji>.
+  </Rebus>
+);
 
 export const metadata: Metadata = {
   title: "Work",
@@ -22,25 +39,18 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * The Work index — one of two filtered views over the entry registry.
+ *
+ * `section: "work"` is what puts a project here rather than in the Archive,
+ * and it is a curation decision held in `lib/entries/registry.ts`, not a
+ * consequence of where a file lives or how built-out it is. See the note at
+ * the top of `lib/entries/types.ts`.
+ */
 export default function ProjectsIndexPage() {
-  const projects = getProjectSummaries();
-  const pick = projects.find((project) => project.meta.recommended);
+  const entries = getEntries("work");
+  const pick = entries.find((entry) => entry.meta.recommended);
   const graph = getProjectGraph();
-
-  const tiles: Tile[] = projects.map((project) => ({
-    slug: project.slug,
-    title: project.meta.title,
-    description: project.meta.description,
-    place: project.meta.place,
-    // `term` is the display label; the exact date stands in until one is set.
-    term: project.meta.term ?? formatDate(project.meta.date),
-    cover: project.meta.cover,
-    coverAlt: project.meta.coverAlt,
-    coverVideo: project.meta.coverVideo,
-    logo: project.meta.logo,
-    logoInvert: project.meta.logoInvert,
-    logoWidth: project.meta.logoWidth,
-  }));
 
   return (
     <IndexShell
@@ -49,10 +59,10 @@ export default function ProjectsIndexPage() {
       note={pick ? <>Start with {pick.meta.title}&hellip;</> : null}
       background={<WorkGraph graph={graph} fill />}
     >
-      {tiles.length === 0 ? (
+      {entries.length === 0 ? (
         <IndexEmpty noun="Projects" dir="content/projects" />
       ) : (
-        <TileGrid items={tiles} basePath="/projects" />
+        <TileGrid items={entries.map(toTile)} />
       )}
     </IndexShell>
   );

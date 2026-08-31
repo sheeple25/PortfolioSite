@@ -11,10 +11,11 @@ import styles from "./FooterPlayground.module.css";
  * up, and can be dragged and flicked around. Nothing here is informational;
  * it's a fidget toy in the corner of the "separate space", not a control.
  *
- * Built on `matter-js`, following the pattern already proven in
- * `app/(labs)/effects-lab/page.tsx`: a closed box (walls just outside the
- * visible area so nothing rolls out of frame), sleeping disabled so the
- * scene never looks dead, and a mouse constraint for drag-to-throw. Reduced
+ * Built on `matter-js`: a closed box (walls just outside the visible area so
+ * nothing rolls out of frame), sleeping disabled so the scene never looks
+ * dead, and a mouse constraint for drag-to-throw. The pattern was first proven
+ * in the `/effects-lab` sandbox, since removed — this is now the only
+ * matter-js scene in the project. Reduced
  * motion settles the bodies once and paints a single static frame instead of
  * running the simulation — same trade-off the lab page makes, since a toy
  * that only half-responds to a drag would be worse than one that doesn't

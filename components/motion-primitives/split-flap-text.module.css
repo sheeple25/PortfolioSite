@@ -1,0 +1,191 @@
+/*
+ * Split-flap tiles, ported from React Bits' `SplitFlapText.css`
+ * (github.com/DavidHDev/react-bits, MIT) into a CSS module.
+ *
+ * Everything here is driven by the custom properties the component sets
+ * inline, so tile colour, text colour, size, gap and flip duration are the
+ * caller's to set and nothing in this file hard-codes the board's palette.
+ *
+ * Sizes are in `em` throughout, against the board's own `font-size`. That is
+ * what lets one `fontSize` prop scale a whole board — tile, split line, bevel
+ * and text shadow included — rather than needing a breakpoint per part.
+ */
+
+.board {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--split-flap-gap, 6px);
+  color: var(--split-flap-text-color, #f8fafc);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--split-flap-font-size, 52px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.035em;
+  white-space: pre;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile {
+  position: relative;
+  width: 0.78em;
+  height: 1.08em;
+  overflow: hidden;
+  border-radius: var(--split-flap-radius, 8px);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.16), transparent 44%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--split-flap-tile-color, #111827) 82%, white),
+      var(--split-flap-tile-color, #111827)
+    );
+  box-shadow:
+    0 0.035em 0.08em rgba(255, 255, 255, 0.08) inset,
+    0 -0.05em 0.1em rgba(0, 0, 0, 0.38) inset,
+    0 0.16em 0.38em rgba(0, 0, 0, 0.28);
+  perspective: 520px;
+  transform-style: preserve-3d;
+  isolation: isolate;
+}
+
+/* The hairline where the two halves meet — the thing that sells it as a flap. */
+.tile::before {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  top: calc(50% - 0.5px);
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18) 18%,
+    rgba(0, 0, 0, 0.64) 50%,
+    rgba(255, 255, 255, 0.14) 82%,
+    transparent
+  );
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 0 rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2) inset;
+  pointer-events: none;
+}
+
+.half,
+.flap {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 34%),
+    var(--split-flap-tile-color, #111827);
+  backface-visibility: hidden;
+}
+
+.halfTop,
+.flapFront {
+  top: 0;
+}
+
+.halfBottom,
+.flapBack {
+  bottom: 0;
+  background:
+    linear-gradient(0deg, rgba(255, 255, 255, 0.06), transparent 38%),
+    color-mix(in srgb, var(--split-flap-tile-color, #111827) 92%, black);
+}
+
+/*
+ * The glyph is drawn at double the half's height and pinned to the half's own
+ * edge, so the top half shows the character's top and the bottom half shows
+ * its bottom — one glyph split across two boxes rather than two glyphs.
+ */
+.char {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--split-flap-text-color, #f8fafc);
+  text-shadow:
+    0 0.025em 0 rgba(255, 255, 255, 0.16),
+    0 0.09em 0.16em rgba(0, 0, 0, 0.42);
+}
+
+.halfTop .char,
+.flapFront .char {
+  top: 0;
+}
+
+.halfBottom .char,
+.flapBack .char {
+  bottom: 0;
+}
+
+.flap {
+  z-index: 6;
+  will-change: transform, filter;
+  transform-style: preserve-3d;
+}
+
+.flapFront {
+  transform-origin: center bottom;
+  animation: split-flap-front var(--split-flap-flip-duration, 0.12s)
+    cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.flapBack {
+  transform-origin: center top;
+  transform: rotateX(90deg);
+  animation: split-flap-back var(--split-flap-flip-duration, 0.12s)
+    cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes split-flap-front {
+  0% {
+    transform: rotateX(0deg);
+    filter: brightness(1.08);
+  }
+  100% {
+    transform: rotateX(-90deg);
+    filter: brightness(0.52);
+  }
+}
+
+@keyframes split-flap-back {
+  0%,
+  45% {
+    transform: rotateX(90deg);
+    filter: brightness(0.58);
+  }
+  100% {
+    transform: rotateX(0deg);
+    filter: brightness(1);
+  }
+}
+
+/*
+ * The component already snaps to the target value under reduced motion, so
+ * these flaps shouldn't render at all — this is a belt-and-braces guard for
+ * the frame between a value changing and the component noticing.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .flap {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,299 @@
+/*
+ * Every colour here is a literal, not a token, and that is deliberate: the
+ * board is meant to read as a physical departure board sitting in the page, so
+ * it stays dark in light mode and dark mode alike. Wiring it to the theme
+ * tokens would invert it along with everything else and stop it being an
+ * object.
+ *
+ * The layout is four fixed bands — head, labels, columns, remarks — with only
+ * the columns flexing. That is what lets the board fill the shared interest
+ * panel exactly, with no slack anywhere.
+ */
+.board {
+  /*
+   * The four field tracks, declared once and used by both the label row and
+   * every departure row. Sharing them is what keeps a heading over the column
+   * it names: `auto` tracks sized independently on each grid drifted, because
+   * the word "Carrier" and a three-flap well are not the same width.
+   *
+   * Each is wide enough for the larger of its well and its label. At the
+   * current 1rem flap size a three-flap well is about 3rem and a six-flap one
+   * about 5.5rem; the tracks are set just past that so the flaps never touch
+   * the next column and "Carrier" still fits its own track.
+   *
+   * These scale with the flap `fontSize` set in the TSX — raise one and these
+   * have to follow, or the columns start colliding.
+   */
+  --field-3: 3.15rem;
+  --field-6: 5.7rem;
+  --field-gap: 1.1rem;
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  border-radius: 5px;
+  background: #0a0d11;
+  /* The case: a light top edge and a dark bottom one read as a bezel. */
+  border: 1px solid #20262e;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+  font-family: var(--font-jetbrains-mono);
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------- head */
+
+.head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0.45rem 0.5rem;
+  border-bottom: 1px solid #20262e;
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f4efe3;
+}
+
+/* Boxed, the way the glyph is boxed on the real boards. */
+.plane {
+  display: inline-grid;
+  place-items: center;
+  width: 1.15em;
+  height: 1.15em;
+  font-size: 0.85em;
+  border: 1px solid #4a545f;
+  border-radius: 2px;
+  color: #c8cfd8;
+}
+
+.clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.clockLabel {
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6d7581;
+}
+
+/* ----------------------------------------------------------------- labels */
+
+.labelRow {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.4rem 0.45rem 0.3rem;
+}
+
+/*
+ * The label track has to match `.rowButton`'s exactly or the headings drift
+ * off the columns they name. Both are `auto` tracks fed the same gap, and the
+ * flap wells below have fixed character widths, so they line up by
+ * construction rather than by tuning.
+ */
+.labels,
+.rowButton {
+  display: grid;
+  grid-template-columns:
+    var(--field-3) var(--field-3) var(--field-6) var(--field-3);
+  justify-content: start;
+  /*
+   * Both the label and the well sit at the start of their track, so a heading
+   * is left-aligned to the flaps beneath it rather than centred over them.
+   */
+  justify-items: start;
+  align-items: center;
+  gap: var(--field-gap);
+}
+
+.labels > span {
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6d7581;
+}
+
+/* ---------------------------------------------------------------- columns */
+
+.columns {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0 0.45rem;
+}
+
+/*
+ * No `gap` and no `justify-content` here on purpose. The rows themselves
+ * stretch to share the height (`flex: 1 1 0` below), so the column is always
+ * exactly full — which is the "no empty space" rule. A gap would reintroduce
+ * slack between the wells, and a real board's rows butt up against each other.
+ */
+.rows {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * One row = one physical well. `flex: 1 1 0` is what fills the face: however
+ * many rows there are, they divide the column's height between them, so a
+ * short list gives taller wells rather than a gap at the bottom.
+ */
+.row {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #14181e;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowButton {
+  width: 100%;
+  height: 100%;
+  background: none;
+  border: 0;
+  padding: 0 0.15rem;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  opacity: 0.9;
+  transition:
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.rowButton:hover,
+.rowButtonActive {
+  opacity: 1;
+  background: rgba(240, 169, 92, 0.09);
+}
+
+.rowButton:focus-visible {
+  outline: 1px solid #f0a95c;
+  outline-offset: -1px;
+}
+
+/*
+ * The bounding box each field's flaps sit inside — the recess a real board
+ * mounts its flap stack into. Inset shadow rather than a border so the flaps
+ * read as sitting *in* the case rather than on top of it.
+ */
+.well {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 4px;
+  border-radius: 2px;
+  background: #0d1116;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.75),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ---------------------------------------------------------------- remarks */
+
+.remarks {
+  flex: none;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.45rem 0.2rem;
+  border-top: 1px solid #20262e;
+  font-size: 0.62rem;
+  line-height: 1.4;
+  color: #9aa3ae;
+}
+
+.remarksLabel {
+  flex: none;
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6d7581;
+}
+
+/* Takes the slack so the paging counter stays pinned right. */
+.remarksText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paging {
+  flex: none;
+  letter-spacing: 0.1em;
+  color: #6d7581;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowButton {
+    transition: none;
+  }
+}
+
+/*
+ * Below this the head's clock no longer fits beside the title, and two
+ * columns of flap tiles can't both stay legible — the tiles would have to
+ * shrink past the point where the split line reads as a flap at all.
+ */
+@media (max-width: 52rem) {
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .labelRow,
+  .columns {
+    grid-template-columns: 1fr;
+  }
+
+  /* One set of labels is enough once the columns stack. */
+  .labelRow > *:last-child {
+    display: none;
+  }
+
+  /*
+   * Stacked, and the board scrolls internally rather than dropping the second
+   * column — hiding it would silently lose half the trips on a phone. The
+   * rows stop stretching here and take a floor height instead, because twenty
+   * rows dividing a phone-height panel between them would be unreadable.
+   */
+  .columns {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    gap: 0;
+  }
+
+  .row {
+    flex: 0 0 auto;
+    min-height: 1.55rem;
+  }
+}

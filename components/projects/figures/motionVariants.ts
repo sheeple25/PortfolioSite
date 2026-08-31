@@ -41,6 +41,29 @@ export const STROKE_FILL_VARIANTS: Variants = {
   }),
 };
 
+/*
+ * For `svg2jsx`'s `--stroke-draw`: a flattened Figma stroke (arrow, hand-drawn
+ * line) traced via a synthetic `stroke` in its own fill color, same as
+ * `STROKE_FILL_VARIANTS`. The difference is the stroke is only there to make
+ * the trace visible while `pathLength` animates — once the fill has faded in,
+ * a permanent full-opacity stroke sitting on top of a translucent fill reads
+ * as a wireframed outline instead of a normal solid-color shape, so this
+ * variant fades `strokeOpacity` back to 0 right after the fill settles.
+ */
+export const STROKE_DRAW_VARIANTS: Variants = {
+  hidden: { pathLength: 0, fillOpacity: 0, strokeOpacity: 1 },
+  visible: ({ i, fillOpacity }: { i: number; fillOpacity: number }) => ({
+    pathLength: 1,
+    fillOpacity,
+    strokeOpacity: 0,
+    transition: {
+      pathLength: { duration: 1.1, ease: EASE, delay: staggerDelay(i) },
+      fillOpacity: { duration: 0.6, ease: "easeOut", delay: staggerDelay(i) + 0.5 },
+      strokeOpacity: { duration: 0.4, ease: "easeOut", delay: staggerDelay(i) + 0.9 },
+    },
+  }),
+};
+
 export const FILL_VARIANTS: Variants = {
   hidden: { opacity: 0 },
   visible: (i: number) => ({

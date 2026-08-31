@@ -26,9 +26,9 @@ export const CONTACT_EMAIL = "vidush.gupta25@gmail.com";
  */
 export const NAV_LINKS = [
   { href: "/projects", label: "Work" },
-  { href: "/archive", label: "Archive" },
-  { href: "/writing", label: "Writing" },
   { href: "/about", label: "About" },
+  { href: "/writing", label: "Writing" },
+  { href: "/archive", label: "Archive" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
@@ -64,8 +64,7 @@ export const DOCUMENT_LINKS: ReadonlyArray<ExternalLink> = [
 
 /**
  * Static public routes, in nav order. `app/sitemap.ts` is generated from this
- * list plus the documents found in `content/writing`. The sandboxes under
- * `app/(labs)` are deliberately absent — they are noindex and shouldn't appear.
+ * list plus the documents found in `content/writing`.
  */
 export const ROUTES = [
   "/",
@@ -74,22 +73,4 @@ export const ROUTES = [
   "/writing",
   "/about",
   "/contact",
-] as const;
-
-/**
- * The dev sandboxes under `app/(labs)`, in menu order.
- *
- * One list, three consumers: `components/dev/LabMenu.tsx` renders it,
- * `app/robots.ts` disallows it, and the route files themselves are named
- * `page.dev.tsx` so `pageExtensions` in next.config.ts drops them from a
- * production build entirely. Adding a lab means adding it here — the previous
- * arrangement kept the menu and the robots list separately by hand, and they
- * had already drifted three routes apart.
- */
-export const LAB_ROUTES = [
-  { href: "/pixel-lab", label: "Pixel" },
-  { href: "/text-lab", label: "Text" },
-  { href: "/effects-lab", label: "Effects" },
-  { href: "/stl-lab", label: "STL" },
-  { href: "/traces-board", label: "Traces board" },
 ] as const;

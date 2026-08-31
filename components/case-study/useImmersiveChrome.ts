@@ -140,6 +140,33 @@ export function useNavAccent(accent: string) {
 }
 
 /**
+ * The same idea one floor down: the footer tints its blues from the page's
+ * accent too (see Footer.module.css), and it reads `--nav-pixel-accent` to do
+ * it — so by default the pill and the footer agree, and this hook is not
+ * needed at all.
+ *
+ * It exists for the one case where they must not agree. The footer's ground is
+ * black, and a palette-less project falls back to the pill's near-black
+ * `DEFAULT_ACCENT`, which down there is not a dark accent but an invisible
+ * one. Passing `undefined` pins the footer back to the site's own blue and
+ * leaves the pill on its near-black, which is the colour that project actually
+ * wants above the fold.
+ */
+export function useFooterAccent(accent: string | undefined) {
+  useEffect(() => {
+    const root = document.documentElement;
+
+    if (!accent) {
+      root.style.setProperty("--footer-accent", "#0047ff");
+    }
+
+    return () => {
+      root.style.removeProperty("--footer-accent");
+    };
+  }, [accent]);
+}
+
+/**
  * Drives the site's own chrome from the state above.
  *
  * Two classes on `<html>`; the rules that respond to them live in

@@ -160,6 +160,17 @@ export type ChainStep = {
    * "OBSERVATION" — deleting it instead drops that column by a label's height.
    */
   spacer?: boolean;
+  /**
+   * This step's share of the row, as a flex grow factor. Default 1 — every
+   * column equal.
+   *
+   * A chain of one-line clauses wants equal columns. A chain of sentences of
+   * very different lengths does not: at equal widths the long one runs to
+   * three times the height of the short one and the row reads as broken. Wrap
+   * height falls roughly as width rises, so weighting a step by how much text
+   * it carries is what actually levels the row.
+   */
+  grow?: number;
 };
 
 /**
@@ -183,13 +194,29 @@ function ChainArrow() {
  * number of steps, so the arrows are woven in at render time rather than being
  * part of a step.
  */
-export function Chain({ steps }: { steps: readonly ChainStep[] }) {
+export function Chain({
+  steps,
+  align = "center",
+}: {
+  steps: readonly ChainStep[];
+  /**
+   * How the columns sit against each other. `center` (default) is the frames'
+   * own treatment and is right when the steps are of a height. `top` starts
+   * every column at the same y, which is what a row of uneven steps needs —
+   * centred, uneven columns read as three things floating rather than three
+   * parallel claims.
+   */
+  align?: "center" | "top";
+}) {
   return (
-    <div className={styles.chain}>
+    <div className={align === "top" ? `${styles.chain} ${styles.chainTop}` : styles.chain}>
       {steps.map((step, i) => (
         <Fragment key={step.label + i}>
           {i > 0 ? <ChainArrow /> : null}
-          <div className={styles.chainStep}>
+          <div
+            className={styles.chainStep}
+            style={step.grow ? { flexGrow: step.grow } : undefined}
+          >
             <p
               className={styles.label}
               aria-hidden={step.spacer || undefined}
@@ -445,17 +472,27 @@ export function ActionRow({
   action,
   href,
   icon = "download",
+  cta = false,
 }: {
   label: string;
   action: string;
   href: string;
   icon?: "download" | "arrow";
+  /**
+   * Draws the row as a call to action — the accent wash, an accent rule, and
+   * the control set in the palette colour rather than the muted grey.
+   *
+   * For the row that is the point of the page rather than one more line of
+   * it: Unflattening's thesis download, where the reader who has come this far
+   * is exactly the reader who wants the document.
+   */
+  cta?: boolean;
 }) {
   const external = href.startsWith("http");
   const Icon = icon === "download" ? Download : ArrowRight;
 
   return (
-    <div className={styles.teaser}>
+    <div className={cta ? `${styles.teaser} ${styles.teaserCta}` : styles.teaser}>
       <p className={styles.teaserLabel}>{label}</p>
       <a
         className={styles.disclosureToggle}

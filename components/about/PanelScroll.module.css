@@ -1,0 +1,34 @@
+.scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * Centres the shelf in the slot so it sits on the same optical line the
+ * departure board fills, instead of hanging from the top of a panel it
+ * doesn't fill — the two are switched between in place, and a jump from a
+ * full-height board to a top-aligned shelf reads as the panel breaking.
+ *
+ * `margin-block: auto` rather than `justify-content: center`, deliberately:
+ * a centred flex item that grows taller than its container overflows in both
+ * directions and the top becomes unreachable by scrolling. Auto margins
+ * collapse to zero once there's no free space, so tall content still scrolls
+ * from its true top.
+ */
+.scroll > * {
+  margin-block: auto;
+  width: 100%;
+}
+
+@media (max-width: 40rem) {
+  .scroll {
+    padding: 1rem;
+  }
+}

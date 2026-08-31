@@ -81,10 +81,12 @@ export default function Fix({
       {/*
        * The frame's STL VIEWER FOR DESIGN IN VIEW block.
        *
-       * A real 3D viewer is being prototyped separately in `/stl-lab`; until
-       * that lands there is nothing to embed, and a still would be a different
-       * feature rather than a smaller version of this one. Tall, because the
-       * frame draws this block deeper than the others.
+       * The viewer itself is built and waiting: `components/stl/StlViewer.tsx`
+       * (orbit, zoom, axis gizmo, optional file picker). What is missing is the
+       * asset — there is no .stl of the unit to load, and a still would be a
+       * different feature rather than a smaller version of this one. Swap this
+       * `Slot` for `<StlViewer modelUrl="…" />` once the model exists. Tall,
+       * because the frame draws this block deeper than the others.
        */}
       <Slot label="STL viewer for design in view" tall />
 

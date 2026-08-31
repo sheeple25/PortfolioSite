@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ProjectMeta from "@/components/archive/ProjectMeta";
 import DocumentHeader from "@/components/writing/DocumentHeader";
 import { ReaderProvider } from "@/components/writing/ReaderContext";
 import SectionCard from "@/components/writing/SectionCard";
@@ -8,28 +9,46 @@ import Toc from "@/components/writing/Toc";
 import { AnnotationPanel, NotesProvider } from "@/components/pixel";
 import { ProcessNote } from "@/components/pixel/server";
 import prose from "@/components/writing/prose.module.css";
-import { getProjectDocument, getProjectSlugs } from "@/lib/projects";
+import { getEntry, getEntryDocument, getEntryDocumentSlugs } from "@/lib/entries";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import styles from "@/components/writing/documentPage.module.css";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
-/** Every project is known at build time, so an unknown slug is a 404. */
+/*
+ * The reading page for every markdown-backed entry, Work and Archive alike.
+ *
+ * There used to be two of these — `app/projects/[slug]` and
+ * `app/archive/[slug]` — differing only in which fields they drew. That split
+ * made an entry's URL a function of its section, which meant moving a project
+ * between the two changed its address. Both routes are now this one, and
+ * `/archive/<slug>` permanently redirects here, so `section` is free to change.
+ *
+ * The fields that used to be the archive route's alone — the credits block,
+ * the `term` masthead, the per-entry title animation — are all frontmatter, so
+ * they simply render when present. A Work entry that fills them in gets them.
+ */
+
+/** Every entry is known at build time, so an unknown slug is a 404. */
 export const dynamicParams = false;
 
+/**
+ * Markdown entries only. The three hand-built case studies are static routes
+ * of the same name (`app/projects/loco` and friends) and would collide.
+ */
 export function generateStaticParams() {
-  return getProjectSlugs().map((slug) => ({ slug }));
+  return getEntryDocumentSlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const doc = getProjectDocument(slug);
+  const doc = getEntryDocument(slug);
   if (!doc) return {};
 
-  const { title, description, date } = doc.meta;
+  const { title, description, date, cover } = doc.meta;
 
   return {
     title,
@@ -40,16 +59,22 @@ export async function generateMetadata({
       description,
       url: `/projects/${slug}`,
       publishedTime: date || undefined,
+      images: cover ? [{ url: cover }] : undefined,
     },
   };
 }
 
 export default async function ProjectPage({ params }: PageProps) {
   const { slug } = await params;
-  const doc = getProjectDocument(slug);
-  if (!doc) notFound();
+  const doc = getEntryDocument(slug);
+  const entry = getEntry(slug);
+  if (!doc || !entry) notFound();
 
   const sectionIds = doc.sections.map((section) => section.id);
+
+  /* Back to whichever index actually lists this entry. */
+  const backHref = entry.section === "work" ? "/projects" : "/archive";
+  const backLabel = entry.section === "work" ? "Work" : "Archive";
 
   return (
     <article className={styles.page}>
@@ -69,12 +94,29 @@ export default async function ProjectPage({ params }: PageProps) {
               <DocumentHeader
                 title={doc.meta.title}
                 subtitle={doc.meta.subtitle}
-                date={formatDate(doc.meta.date)}
+                /*
+                  `term` is the human label — "Fall 2024" — and `date` stays
+                  ISO for the sitemap, OG tags and sorting. Showing the term
+                  here as well as on the index card means there is exactly one
+                  field to edit when the wording changes.
+                */
+                date={doc.meta.term ?? formatDate(doc.meta.date)}
+                dateTime={doc.meta.date}
                 version={doc.meta.version}
                 readingMinutes={doc.readingMinutes}
                 showsPrivate={doc.showsPrivate}
-                backHref="/projects"
-                titleEffect="particles"
+                backHref={backHref}
+                backLabel={backLabel}
+                /* Falls back to the sitewide default when none is named. */
+                titleEffect={doc.meta.titleEffect ?? "particles"}
+              />
+
+              {/* Renders nothing when an entry has no credits recorded. */}
+              <ProjectMeta
+                role={doc.meta.role}
+                timeline={doc.meta.timeline}
+                team={doc.meta.team}
+                skills={doc.meta.skills}
               />
 
               {/*
@@ -102,8 +144,10 @@ export default async function ProjectPage({ params }: PageProps) {
                 <p className={styles.endMark} aria-hidden="true">
                   &lowast;
                 </p>
-                <Link href="/projects" className={styles.endLink}>
-                  More work
+                <Link href={backHref} className={styles.endLink}>
+                  {entry.section === "work"
+                    ? "More work"
+                    : "Back to the archive"}
                 </Link>
               </div>
             </div>

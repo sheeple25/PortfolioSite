@@ -19,9 +19,17 @@ import styles from "./IndexShell.module.css";
  * a card is clicked and back down as whatever was clicked. The shutter itself
  * is provided by the root layout, not here, so the nav bar can drive it too.
  *
- * The dark ground is likewise the root layout's job now (`SectionGround`);
- * adding and removing it with this component's own lifecycle flashed white on
- * every index-to-index move.
+ * The ground is likewise the root layout's job now (`SectionGround`); adding
+ * and removing it with this component's own lifecycle flashed white on every
+ * index-to-index move. It tracks light/dark mode the same as the rest of the
+ * site (`--index-header-ground`/`--index-header-ink` in globals.css), which is
+ * also why the header no longer needs its own scroll-linked `hero-chrome`
+ * retint of the nav bar: that class forced the bar's text to a literal white,
+ * which only worked back when this ground was always dark regardless of
+ * theme. Now that the ground and `--color-charcoal` swap together, the nav's
+ * own unforced colour already matches it at every scroll position, in both
+ * themes — the case-study banner (`CaseShell`, still always dark) is the one
+ * surface left that still sets `hero-chrome` itself.
  *
  * This exists as a component rather than as a stylesheet each page imports
  * because the three indexes have already drifted apart once. What is left in a
@@ -50,6 +58,31 @@ type IndexShellProps = {
    * for the flat ground.
    */
   background?: ReactNode;
+  /**
+   * The wash that fades the ground back in over the top of the header so the
+   * masthead keeps its contrast. On by default, because it is what makes a
+   * busy background (the Work index's force graph) safe to put type on.
+   *
+   * `/writing` turns it off: its texture is a field of near-invisible type
+   * that was never going to fight the title, and the scrim would have muted
+   * the whole top half of it for nothing.
+   */
+  scrim?: boolean;
+  /**
+   * A full-width band directly under the masthead, still inside the header.
+   * `/about` puts its logo marquee here. Omit and the header keeps the empty
+   * ground the other indexes have.
+   */
+  banner?: ReactNode;
+  /**
+   * Handed the header section's element as it mounts, and `null` as it goes.
+   *
+   * Exists for `/about`, whose cursor trail is scoped to the header band and
+   * therefore needs the node itself — the trail attaches its listener to that
+   * element rather than to the window. A callback rather than a ref object
+   * because the consumer holds it in state; see `CursorImageTrail`'s `bounds`.
+   */
+  onHeaderElement?: (el: HTMLElement | null) => void;
   children: ReactNode;
 };
 
@@ -58,52 +91,28 @@ export default function IndexShell({
   intro,
   note,
   background,
+  scrim = true,
+  banner,
+  onHeaderElement,
   children,
 }: IndexShellProps) {
   const shutter = useShutter();
   const headerRef = shutter?.panelRef;
 
   /*
-   * The site bar's colour. The header runs to the top of the window under the
-   * bar, on a ground dark enough that the bar's charcoal type disappears into
-   * it, so `hero-chrome` retints it white — the same class a case study's
-   * banner uses, so both surfaces behave identically.
+   * Hand the header element out to a consumer that needs it — `/about`, whose
+   * cursor trail is scoped to this band.
    *
-   * `rootMargin` pulls the top edge down by the bar's own height, which makes
-   * "intersecting" mean "still behind the bar" rather than "still on screen
-   * somewhere".
+   * Read from the shutter's ref in an effect rather than by attaching a second
+   * `ref` callback to the header: the ref object belongs to `useShutter`, and
+   * writing to a hook's return value is both a lint error and a real hazard
+   * (the hook, not this component, owns when that slot is valid). By the time
+   * effects run the node is attached, so reading it here is equivalent.
    */
   useEffect(() => {
-    const el = headerRef?.current;
-    if (!el) return;
-
-    const root = document.documentElement;
-    const nav = document.querySelector<HTMLElement>('[data-chrome="header"]');
-    const navHeight = nav?.offsetHeight ?? 0;
-
-    /*
-     * Set once up front rather than waiting for the observer's first callback.
-     * That callback lands a frame or so after paint, which is long enough to
-     * show a flash of charcoal type on the dark ground before it corrects.
-     */
-    root.classList.toggle(
-      "hero-chrome",
-      window.scrollY < el.offsetHeight - navHeight,
-    );
-
-    const observer = new IntersectionObserver(
-      ([entry]) => root.classList.toggle("hero-chrome", entry.isIntersecting),
-      { threshold: 0, rootMargin: `-${navHeight}px 0px 0px 0px` },
-    );
-
-    observer.observe(el);
-
-    return () => {
-      observer.disconnect();
-      // Leaving an index must not strand the rest of the site with white chrome.
-      root.classList.remove("hero-chrome");
-    };
-  }, [headerRef]);
+    onHeaderElement?.(headerRef?.current ?? null);
+    return () => onHeaderElement?.(null);
+  }, [headerRef, onHeaderElement]);
 
   return (
     <main className={styles.page}>
@@ -122,7 +131,7 @@ export default function IndexShell({
                 the title/intro for contrast — the slot's contract says
                 nothing about what it renders, so this covers video/canvas
                 fills too, not just the graph. */}
-            <div className={styles.scrim} aria-hidden="true" />
+            {scrim ? <div className={styles.scrim} aria-hidden="true" /> : null}
           </>
         ) : null}
 
@@ -130,6 +139,8 @@ export default function IndexShell({
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.intro}>{intro}</p>
         </div>
+
+        {banner ? <div className={styles.banner}>{banner}</div> : null}
       </motion.header>
 
       {/*

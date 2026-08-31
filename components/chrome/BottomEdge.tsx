@@ -39,14 +39,24 @@ export default function BottomEdge() {
     const root = document.documentElement;
 
     /*
-     * How far the footer has risen into the viewport. Anything pinned to the
-     * bottom-right is pushed up by exactly that much, so it comes to rest on
-     * the footer's top edge instead of sitting on top of it.
+     * How far up the fixed corner furniture has to sit to clear the footer.
+     *
+     * Measured from the footer's bottom row, not its top edge. The panel opens
+     * to 60svh as you reach the end of the page (see Footer.module.css), so its
+     * top edge ends up halfway up the screen — resting the mascot on that would
+     * fling it into the middle of the viewport. The bottom row sticks to the
+     * bottom of the viewport instead, which is the thing the furniture actually
+     * has to avoid overlapping; everything above it is the open panel.
      */
-    const footer = document.getElementById("site-footer");
-    const next = footer
-      ? Math.max(0, Math.round(viewport - footer.getBoundingClientRect().top))
+    const bar = document.querySelector("[data-footer-baseline]");
+    const next = bar
+      ? Math.max(0, Math.round(viewport - bar.getBoundingClientRect().top))
       : 0;
+
+    const footer = document.getElementById("site-footer");
+    const footerTop = footer
+      ? footer.getBoundingClientRect().top
+      : Number.POSITIVE_INFINITY;
 
     // Writing the property is a style recalculation; only pay for it on change.
     if (next !== lift.current) {
@@ -56,10 +66,10 @@ export default function BottomEdge() {
 
     const remaining = root.scrollHeight - y - viewport;
 
-    // `next` is how far the footer has risen into the viewport, so a zero
-    // there is precisely "the footer has not appeared yet". Reusing it
-    // keeps this to the one `getBoundingClientRect` already taken above.
-    const footerHidden = next === 0;
+    // The lift above can be zero while a sliver of the panel is already
+    // showing — its bottom row has further to travel than its top edge — so
+    // the fade has to ask the panel itself whether it has appeared.
+    const footerHidden = footerTop >= viewport;
 
     setOverflowing(remaining > SETTLED_PX && footerHidden);
   }, []);

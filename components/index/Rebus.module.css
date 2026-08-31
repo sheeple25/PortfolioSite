@@ -1,0 +1,52 @@
+/*
+ * Overrides the standfirst's own size from inside the slot, rather than the
+ * shell growing a size variant for one page's sake. `IndexShell` sets `.intro`
+ * on the paragraph; this span is its child, so it wins on specificity without
+ * needing `!important`.
+ */
+.rebus {
+  display: inline;
+  font-size: clamp(1.3rem, 2.1vw, 1.85rem);
+  line-height: 1.55;
+  /*
+   * Words and marks are held apart a little more than normal word-spacing, so
+   * a logo doesn't crowd the word before it — a rebus reads as a sequence of
+   * tokens, not as running prose.
+   */
+  word-spacing: 0.06em;
+}
+
+/*
+ * `1em`-relative, so the marks scale with the line rather than needing their
+ * own breakpoints. `vertical-align` nudges them onto the type's optical
+ * centre — baseline alignment sits a logo noticeably low next to lowercase.
+ */
+.logo {
+  display: inline-block;
+  height: 0.95em;
+  width: auto;
+  max-width: 5em;
+  vertical-align: -0.14em;
+  margin-inline: 0.16em;
+  /*
+   * Matched to the ink around them — a row of full-colour logos mid-sentence
+   * would read as advertising rather than as words. Knocked out to black by
+   * default, for the light header ground; `.dark` below inverts it to white
+   * for the dark one.
+   */
+  filter: grayscale(1) brightness(0);
+  opacity: 0.86;
+}
+
+:global(.dark) .logo {
+  filter: grayscale(1) brightness(0) invert(1);
+}
+
+.emoji {
+  display: inline-block;
+  font-size: 0.95em;
+  margin-inline: 0.1em;
+  /* Emoji sit high in their em box; this drops them onto the same line the
+     logos are on. */
+  vertical-align: -0.06em;
+}

@@ -1,3 +1,5 @@
+import { ENTRIES } from "@/lib/entries/registry";
+
 /**
  * Which routes are index pages, and which render a shutter panel.
  *
@@ -16,11 +18,27 @@ export function isIndexRoute(pathname: string) {
 }
 
 /**
+ * Slugs whose page is a hand-built `CaseShell` — the only project pages with a
+ * banner for the shutter to open.
+ *
+ * Taken from the registry rather than assumed, because `/projects/<slug>` no
+ * longer implies a case study: Work and Archive share that URL space, and the
+ * markdown-backed entries render `DocumentHeader` inside the reading shell
+ * instead. `lib/entries/registry.ts` imports nothing but types, so pulling it
+ * in here doesn't drag the content loader into the client bundle.
+ */
+const CASE_SHELL_SLUGS = new Set(
+  ENTRIES.filter((entry) => entry.source.kind === "page").map(
+    (entry) => entry.slug
+  )
+);
+
+/**
  * Whether the page at this route renders something the shutter can open.
  *
  * The indexes do (`IndexShell`'s header section), and so do the hand-built
  * case studies under `/projects/<slug>` (`CaseShell`'s banner). Nothing else
- * does: `/archive/<slug>` and `/writing/<slug>` are `DocumentHeader` pages
+ * does: markdown entries and `/writing/<slug>` are `DocumentHeader` pages
  * inside the reading shell, and `/contact` has no header of its own at all.
  *
  * A route matched here that turns out to have no panel is not an error — the
@@ -30,8 +48,6 @@ export function isIndexRoute(pathname: string) {
 export function hasShutterPanel(pathname: string) {
   if (isIndexRoute(pathname)) return true;
 
-  // Every project page is currently a case study; `content/projects` is empty,
-  // so there are no markdown projects on `/projects/[slug]` yet. If one lands,
-  // it will close without opening rather than break.
-  return /^\/projects\/[^/]+$/.test(pathname);
+  const slug = /^\/projects\/([^/]+)$/.exec(pathname)?.[1];
+  return slug !== undefined && CASE_SHELL_SLUGS.has(slug);
 }

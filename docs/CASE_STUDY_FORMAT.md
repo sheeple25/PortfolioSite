@@ -2,9 +2,9 @@
 
 How Traces, Loco Lavatory and Unflattening are built, and how to add the next one.
 
-**Status:** live. All three are real pages under the Work tab — they graduated
-out of `app/(labs)` and are the site's only version of this work. Copy is still
-being iterated on; the structure is settled.
+**Status:** live. All three are real pages under the Work tab and are the
+site's only version of this work. Copy is still being iterated on; the
+structure is settled.
 
 | Project | Route | Figma node | Accent |
 | --- | --- | --- | --- |
@@ -18,8 +18,8 @@ Each page lives at `app/projects/<slug>/`, with its route file, its
 `<Name>Entry.tsx` and its `sections/` colocated. The markdown documents they
 replaced — `content/projects/unflattening.md`, `content/archive/traces.md`,
 `content/archive/loco.md` — have been removed; their frontmatter now lives in
-`lib/caseStudies.ts`, which is what feeds the Work index, the knowledge graph,
-the sitemap and Pixel's system prompt. `/traces-board` remains a dev-only lab.
+`lib/entries/registry.ts`, which is what feeds the Work index, the knowledge
+graph, the sitemap and Pixel's system prompt.
 
 ---
 
@@ -221,10 +221,10 @@ title (e.g. "Loco Lavatory") wraps instead of colliding.
 2. `<Name>Entry.tsx` — `"use client"`, composes `CaseShell`. Copy
    `app/projects/traces/TracesEntry.tsx` as the model.
 3. `sections/*.tsx` for the beats, `*.content.ts` / `*.data.ts` for copy.
-4. Add the project to `CASE_STUDIES` in `lib/caseStudies.ts`, or it exists as a
-   URL but appears on no index, in no graph and in no sitemap, and Pixel will
-   not know it exists.
-5. Verify: `npx tsc --noEmit` and `npx eslint "app/(labs)/<name>-entry"`.
+4. Add the project to `ENTRIES` in `lib/entries/registry.ts` with
+   `source.kind: "page"`, or it exists as a URL but appears on no index, in no
+   graph and in no sitemap, and Pixel will not know it exists.
+5. Verify: `npx tsc --noEmit` and `npx eslint app/projects/<slug>`.
 
 **Do not** start a dev server if one is already on port 3000 — Turbopack's cache
 grows large and two servers fight over the port.
@@ -281,7 +281,7 @@ Monochrome by design — passes **no** palette. Content came from the former
 and files "Lead Designer" under `PROJ TYPE`. The archive entry and the CV page
 both said Jul–Sept 2024, Fall 2024, "Transport Design Intern". These look like
 Traces' values left behind when the frame was duplicated. **The page uses the
-archive entry's values**, now carried in `lib/caseStudies.ts`.
+archive entry's values**, now carried in `lib/entries/registry.ts`.
 Worth correcting the Figma frame.
 
 Carousel copy is written prose (grounded in the requirements list and
@@ -327,19 +327,18 @@ anything styled by class still goes through the tokens.
 
 1. `BarChart` with `orientation="horizontal"` + `stacked` miscomputes the final
    segment's width — the men's row rendered its 47% band at `x=287.5,
-   width=-32.5`, so half the bar silently didn't draw. `/traces-board` uses the
-   same config and **has this bug today**.
+   width=-32.5`, so half the bar silently didn't draw.
 2. `LineChart` forces a zero-based y-domain for all-positive data
    (`resolveTimeSeriesYDomain` returns `[0, max * 1.1]`, no floor prop), which
    flattens any series that doesn't start near zero.
 
 Both were worked around by drawing Traces' two charts as plain SVG rather than
-patching shared chart infrastructure mid-task. Worth fixing properly — item 1
-would also fix `/traces-board`.
+patching shared chart infrastructure mid-task. **Fixing them properly is the
+open decision**: Bklit is meant to be this site's chart system, and Traces'
+figures are meant to move back onto it. See `docs/FEATURES.md` → Charts.
 
 **A hydration warning in the dev overlay is a browser extension**, not the code
-— it injects `fdprocessedid` attributes and hits NavBar, ThemeToggle and
-LabMenu too.
+— it injects `fdprocessedid` attributes and hits NavBar and ThemeToggle too.
 
 ---
 

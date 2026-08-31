@@ -17,7 +17,7 @@ export type {
  * `lib/site.ts` has to be touched. Ordering is by `date` descending rather than
  * by a hand-kept list, so a new file lands in the right place on its own.
  *
- * The loading itself lives in `collection.ts`, which `lib/projects` shares.
+ * The loading itself lives in `collection.ts`, which `lib/entries` shares.
  */
 
 const writing = createDocumentCollection("writing");
@@ -30,3 +30,9 @@ export const getWritingSlugs = () => writing.getSlugs();
 
 /** `null` for an unknown slug, so the page can call `notFound()`. */
 export const getWritingDocument = (slug: string) => writing.getDocument(slug);
+
+/**
+ * A document's words as one continuous string, for the index's header texture.
+ * Private sections are already excluded. `null` for an unknown slug.
+ */
+export const getWritingProse = (slug: string) => writing.getProse(slug);

@@ -2,6 +2,7 @@
 
 import Banner, { type MetaField } from "@/components/case-study/Banner";
 import {
+  ActionRow,
   CaseShell,
   MoreProjects,
   type ContentsRow,
@@ -120,18 +121,28 @@ export default function UnflatteningEntry() {
           <Goal {...at("s-goal")} />
 
           {/*
-           * The frame's "See the full document / DOWNLOAD PDF" row is not
-           * rendered yet, and deliberately so.
+           * The frame's "See the full document / DOWNLOAD PDF" row.
            *
-           * It used to point at `/projects/unflattening` — the long-form
-           * markdown translation of the thesis. This page *is* that URL now,
-           * so the row would link to itself. There is still no thesis PDF
-           * under `public/` (`public/cv` holds only the CV), which leaves the
-           * row with nowhere true to go.
+           * The thesis itself now lives at `public/projects/
+           * unflattening-thesis.pdf`, copied in from the local-only
+           * `source/archive/` (which is gitignored, so a build machine never
+           * sees it — the served copy has to be committed, the same bargain
+           * `public/cv` makes).
            *
-           * The moment the PDF lands, this comes back as an `ActionRow` with
-           * that path and `icon="download"`, and nothing else moves.
+           * `download` on the anchor is what `icon="download"` already sets,
+           * so the file saves rather than opening the browser's PDF viewer.
+           *
+           * `cta` boxes it in the project's orange. Every other beat on this
+           * page argues towards the document; the row that hands it over
+           * shouldn't be set as quietly as a footnote.
            */}
+          <ActionRow
+            label="See the full document"
+            action="DOWNLOAD PDF"
+            href="/projects/unflattening-thesis.pdf"
+            icon="download"
+            cta
+          />
 
           <MoreProjects projects={NEIGHBOURS} />
         </>

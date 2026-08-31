@@ -368,7 +368,26 @@ surfaces in the normal review pass.
 
 | Date | Asked for | Who needed it | Worked around by | Status |
 |---|---|---|---|---|
-| — | *(none yet)* | | | |
+| 2026-08-30 | `lib/pixel/system-prompt.ts` updated to read the new unified entry registry | Work/Archive entry-model unification (`lib/entries/`) | **Not worked around — the module was edited.** The prompt imported `getProjectSummaries` and `getArchiveSummaries`; both modules were deleted in the refactor, so the file could not compile untouched and there was no version of the change that left it alone. Rule broken knowingly, recorded here rather than quietly. | Needs review |
+
+**Detail on the 2026-08-30 row**, since it is an edit rather than a request.
+Three changes, all confined to how projects are described:
+
+- The two deleted imports became `getEntries("work")` / `getEntries("archive")`.
+- A new `describeEntries()` replaces `describe()` for projects only (writing
+  still uses `describe()`). It takes each project's path from
+  `linkHrefFor(entry)` instead of gluing `/projects/` or `/archive/` onto a
+  slug — the two sections now share one URL space, so the old construction
+  would have handed visitors a redirect. It also appends a clause for the two
+  non-page modes, so Pixel does not offer a case study that does not exist:
+  `peek` → "opens as a card on that index, no separate page"; `link` →
+  "hosted elsewhere, the link leaves the site".
+- `describeDecisions()` takes its path from the registry rather than the log's
+  own `collection` field, which predates the shared URL space.
+
+Nothing else in the prompt was touched — no tone, guard-rail, purpose or
+output-rule text was read or changed. Wording of the new clauses has not been
+tested against a real conversation; that is the open item in `docs/TODO.md`.
 
 Add a row; don't edit the module.
 

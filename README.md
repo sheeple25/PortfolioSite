@@ -1,14 +1,22 @@
 # Portfolio Website
 
-Personal portfolio built with Next.js (App Router), wrapped in a sitewide navbar
-and footer. `/writing` is the first real section: a markdown-backed reader laid
-out in three columns — contents pinned left, a fixed reading measure in the
-middle, and a margin on the right where annotations open above **Pixel** when a
-bold word asks for one. Sections open on a preview and expand where you want
-them. The
-remaining pages are under-construction placeholders fronted by the same mascot,
-a hand-authored 24×24 sprite that follows the cursor, blinks, dozes off when
-ignored, and can be petted.
+Personal portfolio for Vidush Gupta, built with Next.js (App Router).
+
+**Work is the home page** — `/` redirects to `/projects`. Every project lives at
+`/projects/<slug>` whatever index lists it, and how each one is presented (a full
+case study, a card that slides over the index, or a link straight out) is two
+fields in one registry.
+
+The site is wrapped in a sitewide navbar and footer, a page transition that rolls
+one header shut and the next one open, and **Pixel** — a hand-authored 24×24
+mascot who follows the cursor, blinks, dozes off when ignored, reads annotations
+out of the margin, and answers questions about the work in a chat sidebar.
+
+> **Looking for what this site actually does?** → **[`docs/FEATURES.md`](docs/FEATURES.md)**
+> is the complete reference: every feature, where it lives, why it's there, and
+> what's still unfinished. This README is the short version.
+
+---
 
 ## Tech Stack
 
@@ -16,7 +24,13 @@ ignored, and can be petted.
 - **React 19**
 - **motion** — the animation library formerly published as `framer-motion`
 - **TypeScript** — strict, plus `noUnusedLocals` / `noUnusedParameters`
-- **CSS Modules** + a small set of custom properties in `app/globals.css`
+- **CSS Modules** + design tokens in `app/globals.css`
+- **@anthropic-ai/sdk** — Pixel's chat endpoint (Haiku 4.5)
+- **d3-force / d3-zoom** — the knowledge graph
+- **three / @react-three** — the STL viewer
+- **matter-js** — the footer's physics pit
+- **gsap** — the About page's cursor trail
+- **@visx** — via Bklit UI, the vendored chart set
 
 ## Getting Started
 
@@ -29,63 +43,123 @@ npm run dev
 
 Open <http://localhost:3000>.
 
+> Only run one dev server at a time — Turbopack's cache grows large and two
+> servers fight over port 3000.
+
+For Pixel's chat, set `ANTHROPIC_API_KEY` in `.env.local`. Everything else works
+without it.
+
+---
+
+## Feature summary
+
+The full account is in [`docs/FEATURES.md`](docs/FEATURES.md); this is the index.
+
+| Feature | What it is | Where | Status |
+| --- | --- | --- | --- |
+| **Entry registry** | One list; `mode` decides what a tile does, `section` decides which index it's on | `lib/entries/` | Shipped |
+| **Work index** | Curated index, knowledge graph as its header | `app/projects/` | Shipped |
+| **Archive index** | Second view over the same registry, ranked | `app/archive/` | Shipped |
+| **Knowledge graph** | Force-directed graph of projects × domains × skills × tools, built from frontmatter | `components/graph/`, `lib/graph/` | Data-complete, **unstyled** |
+| **Tile grid** | Two columns, unequal heights; names held back until hover | `components/index/TileGrid.tsx` | Shipped |
+| **Peek cards** | A large card slides over the index — more than a tile, less than a page, not a navigation | `components/index/PeekCard.tsx` | Shipped |
+| **Shutter transition** | One header rolls shut, the next opens. Navigation deferred until the close finishes | `components/chrome/Shutter.tsx` | Shipped |
+| **PixelBot — mascot** | 24×24 sprite; gaze, blink, idle sleep, nine expressions, pettable | `components/pixel/` | Shipped |
+| **PixelBot — InScreen** | Bold words in prose open annotations in the right margin | `components/pixel/screen/` | Shipped |
+| **PixelBot — InChat** | Streaming chat sidebar, audience-aware, rate-limited | `components/pixel/chat/`, `app/api/pixel/` | Shipped |
+| **PixelBot — process note** | "What he actually did", unprompted, on project open | `components/pixel/screen/ProcessNote.tsx` | **Placeholder** — logs empty |
+| **Sticker rating** | Drag a "Good"/"Bad" seal anywhere on the page and drop it; it stays where you left it | `components/chrome/StickerVote.tsx` | Shipped, **needs rework** |
+| **Pac-Man cursor** | Custom cursor on Pixel's sprite pipeline; chomps on click | `components/pixel/PacmanCursor.tsx` | Shipped |
+| **Dark mode** | Manual toggle, no flash, no `prefers-color-scheme` by design | `components/chrome/ThemeToggle.tsx` | Shipped |
+| **Animated titles** | Eight per-project title effects, each chosen to say what the project is | `components/archive/TitleEffect.tsx` | Shipped |
+| **Case-study chassis** | Banner, three-margin layout, contents rail, beat primitives | `components/case-study/` | Shipped |
+| **The reader** | Markdown → section tree; previews, expandables, notes, figures, contents rail | `lib/writing/`, `components/writing/` | Shipped |
+| **Inline SVG diagrams** | 12 animated thesis figures, replayable, full-screen | `components/projects/figures/` | Shipped |
+| **Bookshelf** | 21 Goodreads books, click a spine to open it | `components/about/`, `components/bookshelf/` | Shipped |
+| **Cursor image trail** | Images pop in behind the cursor (About only) | `components/about/CursorImageTrail.tsx` | Shipped, placeholder art |
+| **Footer** | Dark panel, "last shipped" stamp, draggable physics pit | `components/chrome/Footer.tsx` | Shipped, under review |
+| **STL viewer** | Orbit/zoom 3D model viewer with optional file upload | `components/stl/` | Built, **not mounted yet** |
+| **Charts** | Vendored Bklit UI chart set | `components/charts/` | Vendored, **unused** — see below |
+
+### The five things that need attention
+
+1. **The seven DecisionLogs in `content/decisions/` are all placeholders.** Two
+   Pixel surfaces render nothing as a result — and the Traces page was
+   deliberately trimmed on the assumption Pixel would carry that content.
+2. **Pixel can't yet say what you did on a project** — the top TODO item, blocked
+   on (1).
+3. **`mode: "link"` has no URLs.** The mechanism is wired end to end; the CEPT
+   portfolio addresses aren't recorded anywhere in the repo.
+4. **The sticker widget needs a function and appearance pass.**
+5. **Traces' charts should move onto Bklit UI** — the Figma frame calls for it and
+   the old board build used it, but two upstream bugs (a stacked horizontal
+   `BarChart` that drops its last segment, and a `LineChart` that forces a
+   zero-based y-domain) mean the live figures are hand-rolled SVG instead.
+
+---
+
 ## Project Structure
 
 ```
 ├── app/
-│   ├── (labs)/              # Dev-only sandboxes; no URL segment, all noindex
-│   │   ├── lab.module.css   #   chrome shared by every lab page
-│   │   ├── pixel-lab/       #   /pixel-lab — sprite sheet, gaze grid, size ramp
-│   │   └── text-lab/        #   /text-lab  — text-morph transition candidates
-│   ├── about/               # /about
+│   ├── about/               # /about — bookshelf + cursor trail (rest placeholder)
+│   ├── api/pixel/           # POST /api/pixel — Pixel's streaming chat endpoint
+│   ├── archive/             # /archive — the second index over the entry registry
 │   ├── contact/             # /contact
-│   ├── projects/            # /projects — the index, labelled "Work" in the nav
-│   │   └── [slug]/          #   /projects/… — one project, statically generated
+│   ├── projects/            # /projects — the Work index, and every project page
+│   │   ├── [slug]/          #   markdown-backed entries, via the reading shell
+│   │   ├── loco/            #   hand-built case study
+│   │   ├── traces/          #   hand-built case study
+│   │   └── unflattening/    #   hand-built case study
 │   ├── writing/             # /writing — the index
-│   │   └── [slug]/          #   /writing/… — one document, statically generated
-│   ├── layout.tsx           # Root layout: fonts, metadata, NavBar/Footer, Pixel
-│   ├── page.tsx             # /
+│   │   └── [slug]/          #   one document, statically generated
+│   ├── layout.tsx           # Root: fonts, metadata, chrome, Pixel, no-flash script
+│   ├── page.tsx             # / — redirects to /projects
 │   ├── error.tsx            # Root error boundary
 │   ├── loading.tsx          # Root Suspense fallback
 │   ├── not-found.tsx        # 404 — pins the mascot to its "dead" expression
 │   ├── icon.svg             # Favicon, generated from Pixel's own sprite mask
 │   ├── robots.ts            # robots.txt
-│   ├── sitemap.ts           # sitemap.xml, generated from lib/site.ts
-│   ├── globals.css          # Reset, colour tokens, font bindings
+│   ├── sitemap.ts           # sitemap.xml, from lib/site.ts + entries + writing
+│   ├── globals.css          # Reset, tokens, dark mode, chrome rules
 │   └── status.module.css    # Shared by error / loading / not-found
 ├── components/
-│   ├── chrome/              # NavBar, Footer and the animated Logo/loading mark
+│   ├── about/               # Bookshelf, CursorImageTrail
+│   ├── archive/             # ProjectMeta, TitleEffect (the 8 title animations)
+│   ├── bookshelf/           # Shelf furniture shared by both shelves
+│   ├── case-study/          # The chassis — see docs/CASE_STUDY_FORMAT.md
+│   ├── charts/              # Bklit UI, vendored via the shadcn CLI. Not hand-authored
+│   ├── chrome/              # NavBar, Footer, Shutter, IndexShell, StickerVote,
+│   │                        #   ThemeToggle, BottomEdge, SectionGround, Logo
+│   ├── graph/               # WorkGraph — the knowledge graph canvas
+│   ├── index/               # TileGrid, PeekCard, toTile — the index surfaces
+│   ├── motion-primitives/   # Reusable text animations, incl. particle-text
 │   ├── pixel/               # PixelBot — ONE module, one public surface (index.ts)
-│   │   ├── AGENTS.md        #   read before touching: do not edit as a side effect
+│   │   ├── AGENTS.md        #   READ FIRST: do not edit as a side effect
 │   │   ├── chat/            #   InChat — the "Ask Pixel" sidebar
 │   │   └── screen/          #   InScreen — annotations in the right-hand column
-│   ├── writing/             # The essay reader
-│   │   ├── figures/         #   inline SVG diagrams, addressed from markdown
-│   │   ├── notes/           #   bold-word triggers and the annotations they open
-│   │   ├── prose.module.css #   typography for rendered markdown
-│   │   ├── ReaderContext.tsx#   which sections are open + which is being read
-│   │   ├── SectionCard.tsx  #   heading, preview, expandable body
-│   │   └── Toc.tsx          #   contents rail on wide screens, sheet on narrow
-│   ├── motion-primitives/   # Reusable text animations, incl. particle-text
-│   ├── dev/                 # Dev-only UI (LabMenu), never shipped to production
-│   └── UnderConstruction.tsx# The placeholder page shared by the unbuilt routes
+│   ├── projects/figures/    # The 12 inline SVG thesis diagrams + reading shelf
+│   ├── stl/                 # StlViewer — 3D model viewer, built, not yet mounted
+│   └── writing/             # The essay reader: sections, TOC, figures, prose
 ├── content/
-│   ├── projects/            # The work — one .md file each
-│   └── writing/             # The documents themselves — one .md file each
+│   ├── decisions/           # DecisionLogs — feed Pixel's margin and prompt
+│   ├── projects/            # ONE markdown pool serving Work AND Archive
+│   └── writing/             # The essays
 ├── lib/
-│   ├── projects/            # The project registry, on the same loader
-│   ├── writing/             # Markdown -> section tree, and the doc registry
-│   ├── breakpoints.ts       # Breakpoints needed in JS as well as CSS
-│   ├── hooks.ts             # useMediaQuery and friends
-│   ├── utils.ts             # cn() — owned by the shadcn CLI, gets overwritten on `add`
-│   ├── format.ts            # formatDate()
-│   └── site.ts              # Site URL, nav links, socials, contact, route list
-├── public/
-│   └── site-loader.webp     # The loading animation; also the logo's hover state
-├── eslint.config.mjs        # Flat config for the ESLint CLI
-├── next.config.ts
-└── tsconfig.json
+│   ├── entries/             # THE registry — mode, section, resolution
+│   ├── graph/               # Graph data model, built from entry frontmatter
+│   ├── pixel/               # System prompt, limits, rate limiting, DecisionLogs
+│   ├── writing/             # Markdown -> section tree, and the collection loader
+│   ├── bookshelf/           # Spine geometry + measured cover sizes
+│   ├── site.ts              # Site URL, nav links, socials, contact, route list
+│   ├── useScrollFrame.ts    # ONE scroll listener for the whole page
+│   └── hooks.ts             # useMediaQuery, usePrefersReducedMotion, and friends
+├── scripts/                 # Build-step and one-off generators (see below)
+├── source/                  # Working material, not shipped: drafts, extracts, SoPs
+└── docs/                    # The working docs — start with FEATURES.md
 ```
+
+---
 
 ## Available Scripts
 
@@ -95,17 +169,35 @@ Open <http://localhost:3000>.
 - `npm run lint` — ESLint (`eslint .`)
 - `npm run typecheck` — `tsc --noEmit`
 
-Note that `next build` does **not** run ESLint — `next lint` was removed in
-Next.js 16, so linting and type-checking are separate steps.
+`next build` does **not** run ESLint — `next lint` was removed in Next.js 16, so
+linting and type-checking are separate steps.
 
-## Writing and Work
+`dev` and `build` both run two prebuild steps first: `copy-latest-cv.mjs` (copies
+the highest-versioned PDF out of `cv/`) and `generate-last-commit.mjs` (stamps
+the footer's "last shipped" line, so nothing shells out to git at render time).
 
-`/writing` and `/projects` are the same reader pointed at two folders. Adding to
-either is one step: drop a `.md` file into `content/writing/` or
-`content/projects/`. The filename becomes the slug, and the index, the sitemap,
-the metadata, the contents rail and Pixel's notes all derive from the file —
-there is no list to keep in step. The loading rules live once in
-`lib/writing/collection.ts`, and the two registries are thin wrappers over it.
+Manual generators live alongside them: `measure-covers.mjs`,
+`fetch-goodreads-shelf.mjs`, `recolor-brand-assets.mjs`, `generate-test-stl.mjs`.
+
+---
+
+## Adding work
+
+**A markdown project.** Drop a `.md` into `content/projects/`, then add a row to
+`ENTRIES` in `lib/entries/registry.ts`. Without the registry row it appears on no
+index, in no graph and in no sitemap.
+
+**A hand-built case study.** Follow `docs/CASE_STUDY_FORMAT.md` §5.
+
+**An essay.** Drop a `.md` into `content/writing/`. Nothing else to update — the
+index, sitemap, metadata, contents rail and Pixel's notes all derive from the
+file.
+
+**Changing how a project is presented.** Edit `mode` (`case-study` / `peek` /
+`link`) and/or `section` (`work` / `archive`) in the registry. Nothing else
+moves — no file changes folder, no URL changes.
+
+### Frontmatter
 
 ```markdown
 ---
@@ -114,102 +206,66 @@ subtitle: A brief explanation of my outlook on and approach to design.
 description: One or two sentences. Used on the index card and in the OG tags.
 date: 2026-02-14        # sort order on the index, newest first
 version: v4             # optional revision label
-tags: [manifesto]       # optional
+tags: [manifesto]       # optional — becomes a domain node in the graph
+skills: [...]           # optional — becomes a skill node
+tools: [...]            # optional — becomes a tool node
+recommended: true       # optional — drives the index's "Start with…" note
 draft: false            # true hides it from production entirely
 ---
-
-## What is Design?
-
-Preview:
-
-Everything above `Expanded:` is what shows while the section is collapsed.
-
-[NOTE person: An aside. This line defines it; the bold word named above is what
-opens it, over by Pixel in the corner.]
-
-Expanded:
-
-Everything below it waits behind the "Read the rest" toggle.
 ```
 
-**Sections.** The shallowest heading level in the file is the section break, so
-`##` and `###` both work — whichever you reach for. The level below it becomes a
-nested entry in the contents rail and opens its parent section when clicked.
+### Body syntax
 
-**Preview and expanded.** `Preview:` and `Expanded:` on their own lines split a
-section in two. Both are optional: without them the first paragraph previews the
-rest, which is the old behaviour.
+Full table in [`docs/FEATURES.md` §9](docs/FEATURES.md). The essentials:
 
-**Notes.** `[NOTE anchors: body]` defines an annotation. The comma-separated
-`anchors` are bold words that become buttons; clicking one opens the annotation
-above Pixel in the bottom-right margin — never before. This is PixelBot's
-InScreen surface; it lives in `components/pixel/screen/`. Anchors match anywhere in
-the document, so `**de-future**` in the last section can point at a note written
-in the first:
-
-```markdown
-[NOTE de-futuring, de-future: De-futuring is a concept which says that human
-activity, through design, has the ability to erase possible future outcomes.]
-```
-
-Drop the anchors (`[NOTE: …]`) and the note has no word to open it, so it sets
-inline where it was written instead — the one case that shows unprompted. A
-`**bold**` word that names no note simply stays bold.
-
-**Figures.** `[FIGURE key: caption]` renders a diagram from the registry in
-`components/writing/figures/index.ts`. Standalone markdown images work too, and
-`[PLACEHOLDER file: caption]` holds a slot open for artwork that doesn't exist
-yet — it renders a dashed frame naming the file it is waiting for, so a document
-can be written around its diagrams before they are drawn:
-
-```markdown
-[FIGURE design-loop: The relationship between client, designer and user]
-![alt text](/writing/plan.png?w=1600&h=900 "caption")
-[PLACEHOLDER fig-2-3-1.svg: What the drawing will show]
-```
-
-The `w`/`h` query is how a raster image tells `next/image` its aspect ratio —
-without it the figure falls back to a plain `<img>`.
-
-**Titles.** A document's `<h1>` fades in a word at a time. A project can opt
-into a particle build-up instead — `titleEffect="particles"` on `DocumentHeader`
-— which samples the heading's own glyphs and only suits a short, single word.
-
-**Private sections.** `<!-- private -->` on the line after a heading keeps that
-section out of production. It still renders in `npm run dev`, badged, so you can
-work on it. Whole documents are held back the same way with `draft: true`.
+- **Sections** — the shallowest heading level in the file is the section break,
+  so `##` and `###` both work.
+- **`Preview:` / `Expanded:`** on their own lines split a section into what shows
+  collapsed and what waits behind the toggle. Both optional.
+- **`[NOTE anchors: body]`** defines a margin annotation; the comma-separated
+  bold words become the buttons that open it, over by Pixel. Anchors match
+  anywhere in the document.
+- **`[FIGURE key: caption]`** renders a diagram from the registry.
+  `[PLACEHOLDER file.svg: caption]` holds a slot open for art that doesn't exist
+  yet.
+- **`![alt](/writing/plan.png?w=1600&h=900)`** — the `w`/`h` query is how a raster
+  tells `next/image` its aspect ratio; without it the figure falls back to a
+  plain `<img>`.
+- **`<!-- private -->`** on the line after a heading keeps that section out of
+  production while still rendering it, badged, in dev.
 
 Markdown is parsed by remark on the server (`lib/writing/parse.ts`) rather than
-compiled by `@next/mdx`. The reader needs the document as a *structure* —
-preview, body, headings, notes — and MDX only hands back one opaque component.
+compiled by `@next/mdx` — the reader needs the document as a *structure*
+(preview, body, headings, notes), and MDX only hands back one opaque component.
 
-## Dev sandboxes
-
-The routes under `app/(labs)` — `/pixel-lab`, `/text-lab`, `/effects-lab`,
-`/stl-lab`, `/traces-board` — are working surfaces, not
-portfolio pages. They are reachable from the **labs** menu in the top-right
-corner, which only renders in development. All are safe to delete.
-
-They do not exist in a production build at all: every route file in the group is
-named `*.dev.tsx`, and `pageExtensions` in `next.config.ts` only recognises that
-extension in development. Adding a lab means adding a `page.dev.tsx` and an entry
-to `LAB_ROUTES` in `lib/site.ts`, which is the single list the labs menu and
-`robots.ts` both read.
+---
 
 ## Working docs
 
 Notes that track work in progress live in `docs/`, not the repo root:
 
-- `docs/TODO.md` — what's next.
-- `docs/PIXELBOT_BUILD.md` — PixelBot's work queue, and where other features
-  file requests against it rather than editing the module.
+- **`docs/FEATURES.md`** — every feature, where it lives, what's unfinished. Start here.
+- `docs/TODO.md` — what's next, sequenced.
+- `docs/CASE_STUDY_FORMAT.md` — the case-study chassis in detail.
+- `docs/PIXELBOT_BUILD.md` — PixelBot's work queue, and where other features file
+  requests against it rather than editing the module.
 - `docs/PIXEL_CHAT.md` — PixelBot's decision record (why things are as they are).
 - `docs/KNOWN_BUGS.md` — open question marks, not confirmed bugs.
 
+`source/` holds working material that never ships: thesis extracts, board scans,
+content drafts, the content model and PixelBot's SoP.
+
+---
+
 ## Deployment
 
-Set `NEXT_PUBLIC_SITE_URL` to the production origin — `metadataBase`, `robots.txt`
-and `sitemap.xml` are all derived from it, and it falls back to `http://localhost:3000`.
+Set `NEXT_PUBLIC_SITE_URL` to the production origin — `metadataBase`,
+`robots.txt` and `sitemap.xml` are all derived from it, and it falls back to
+`http://localhost:3000`.
+
+Set `ANTHROPIC_API_KEY` for Pixel's chat. **Also set a spend limit on that key**
+— the in-process rate limiter is per-instance on a serverless host and raises the
+cost of abuse without capping it.
 
 ## License
 

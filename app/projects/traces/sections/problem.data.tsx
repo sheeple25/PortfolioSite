@@ -21,22 +21,30 @@ import styles from "@/components/case-study/case.module.css";
  * The section's chart colours — this page's palette rather than the chart
  * registry's own cold neutrals.
  *
- * Literals rather than `var(--tp)`, because these are handed to SVG `fill`
- * attributes on elements built from data rather than set through a stylesheet.
- * They are the resolved values of `--tp` and `--ink` in `entry.module.css`; the
- * tint is a 28% wash of the magenta on white, strong enough to read against the
- * panel, which is itself a 4% wash of the same colour. Anything styled by class
- * rather than by datum — the gridlines, the line itself, the tick labels —
- * still goes through the tokens.
+ * Handed to SVG `fill` attributes on elements built from data rather than set
+ * through a stylesheet, but that doesn't rule out the CSS custom properties:
+ * a presentation attribute like `fill` parses its value as CSS, `var()`
+ * included. `CHART_PINK` is `--tp` itself — the project's identity colour, a
+ * constant across both themes, same as `--fig-accent` on every other figure —
+ * so it stays a literal. `CHART_INK` is `var(--ink)` rather than its light-mode
+ * value baked in, because the chart's own panel (`.chart`, below) is
+ * `--page-bg`-based and flips dark in dark mode; a hardcoded `#1e1e1e` segment
+ * would all but vanish against a `#171310` panel. `CHART_TINT` is a 28% wash of
+ * the magenta on white — kept literal since a light wash reads fine against
+ * either panel colour. Anything styled by class rather than by datum — the
+ * gridlines, the line itself, the tick labels — already goes through the
+ * tokens.
  */
 const CHART_PINK = "#ee15a5";
-const CHART_INK = "#1e1e1e";
+const CHART_INK = "var(--ink)";
 const CHART_TINT = "#fabde6";
 
 /**
- * Read directly off the board's Tinder match/gender chart
- * (`public/traces-board/chart-functional.webp`) — these are the exact
- * percentages plotted there, so digitising them isn't fabricating data.
+ * Read directly off the board's Tinder match/gender chart — these are the exact
+ * percentages plotted there, so digitising them isn't fabricating data. The
+ * board scan itself lived at `public/traces-board/chart-functional.webp` and
+ * was removed with the labs; the spread it was cut from survives at
+ * `source/traces-extract/a_failures.png`, and the scan is in git history.
  *
  * The source plots green/blue/red; re-expressed here in the project's magenta
  * and ink so the chart belongs to the page rather than importing another
@@ -79,13 +87,14 @@ const pctX = (p: number) => BAR.axisLeft + (p / 100) * BAR.axisWidth;
 /**
  * The men-and-women-on-Tinder chart, drawn directly.
  *
- * This started on the shared `BarChart` with `orientation="horizontal"` and
- * `stacked` — the same configuration `components/traces/ProblemSelector.tsx`
- * uses on `/traces-board`. That combination miscomputes the width of the last
- * segment: the men's row rendered its "Pass" band at `x=287.5, width=-32.5`, so
- * 47% of the bar — the whole point of the comparison — silently did not draw,
- * while the women's row came out correct. It is a bug in the shared chart
- * rather than in the data, and `/traces-board` has it too.
+ * KNOWN BKLIT BUG — this is one of the two things blocking a move back onto the
+ * shared chart registry (`components/charts`, vendored Bklit UI). This started
+ * on Bklit's `BarChart` with `orientation="horizontal"` and `stacked`. That
+ * combination miscomputes the width of the last segment: the men's row rendered
+ * its "Pass" band at `x=287.5, width=-32.5`, so 47% of the bar — the whole
+ * point of the comparison — silently did not draw, while the women's row came
+ * out correct. It is a bug in the shared chart rather than in the data, and the
+ * old board build had it too.
  *
  * Six rectangles justify neither fixing a shared component in the middle of
  * this work nor shipping a chart that drops half a bar. Drawing it here also
@@ -178,9 +187,10 @@ function TinderChart() {
 
 /*
  * Digitised off the board's own sourced chart — the Economist's "Love lost"
- * (`public/traces-board/chart-structural.webp`, source Sensor Tower). Read from
- * the plotted line, so these are close approximations rather than the exact
- * underlying dataset. Annual to 2022, then quarterly, which is why four of the
+ * (source Sensor Tower). Read from the plotted line, so these are close
+ * approximations rather than the exact underlying dataset. The board scan lived
+ * at `public/traces-board/chart-structural.webp` before the labs were removed;
+ * it is recoverable from git history. Annual to 2022, then quarterly, which is why four of the
  * eight points carry no year label.
  */
 const LOVE_LOST = [
@@ -311,9 +321,10 @@ function HingePromptFigure() {
       </figcaption>
       <div className={styles.chartShot}>
         {/*
-         * Re-cut from `public/traces-board/hinge-prompt.webp`, which is a crop
-         * off the board page and carries the neighbouring statistics and a
-         * slice of the headline below it. This one is the prompt card alone.
+         * Re-cut from the board's own `hinge-prompt.webp`, which was a crop off
+         * the board page and carried the neighbouring statistics and a slice of
+         * the headline below it. This one is the prompt card alone. The
+         * original lived in `public/traces-board/` and is in git history.
          */}
         <Image
           src="/traces-entry/hinge-prompt.webp"

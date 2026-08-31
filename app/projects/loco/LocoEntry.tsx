@@ -37,7 +37,7 @@ import Process from "./sections/Process";
  *
  * The frame's row and the archive entry this page replaced disagreed, and the
  * archive entry won: it was the maintained content, and it matches the CV
- * (Desmania, Jul – Sept 2024). Those values now live in `lib/caseStudies.ts`,
+ * (Desmania, Jul – Sept 2024). Those values now live in `lib/entries/registry.ts`,
  * which is what the Work index and the graph read. The frame
  * says "1 Month" / "Fall 2025", which are Traces' values left behind when the
  * frame was duplicated, and files "Lead Designer" under PROJ TYPE — a role in

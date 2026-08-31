@@ -20,8 +20,9 @@ import styles from "./Logo.module.css";
  * it stay orange in light mode while the resting mark went blue. It is
  * re-tinted at paint time instead of at build time: `TINT_FILTER_ID` below
  * floods the accent colour and composites it into the frame's own alpha, so
- * whatever `--color-accent` currently resolves to is what the moving artwork
- * is, in either theme. That keeps `scripts/recolor-brand-assets.mjs` for what
+ * whatever `--nav-pixel-accent` currently resolves to is what the moving
+ * artwork is — the same page-scoped accent the resting mark uses, so the two
+ * can never disagree mid-hover. That keeps `scripts/recolor-brand-assets.mjs` for what
  * it's actually needed for (the favicon, and re-authoring the source asset)
  * rather than making the loader's palette a build-time decision.
  *

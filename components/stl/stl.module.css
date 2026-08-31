@@ -1,0 +1,80 @@
+/*
+ * The STL viewer's own chrome. Previously split between `app/(labs)/stl-lab/
+ * page.module.css` and the labs' shared `lab.module.css`; folded into one file
+ * here so the component carries its own styling and depends on nothing outside
+ * `app/globals.css`'s tokens.
+ */
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stage {
+  position: relative;
+  height: var(--stl-height, 32rem);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-charcoal);
+}
+
+.stage canvas {
+  display: block;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* The upload control, shown only when `allowUpload` is set. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.upload:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Visually hidden but still focusable/clickable via the wrapping <label>. */
+.uploadInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.label {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}

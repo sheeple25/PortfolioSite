@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
-import Bookshelf from "@/components/about/Bookshelf";
-import CursorImageTrail from "@/components/about/CursorImageTrail";
-import IndexShell from "@/components/chrome/IndexShell";
-import styles from "./page.module.css";
-
-const TITLE = "About.";
-const INTRO =
-  "This page is still being written. In the meantime, here’s what I’ve been reading.";
+import AboutView from "@/components/about/AboutView";
 
 /*
- * Placeholder art for the cursor trail — real images are still coming, so
- * this borrows a handful of the book covers already on this page rather than
- * introducing new assets for a temporary set.
+ * Placeholder art for the cursor trail.
+ *
+ * These borrow book covers already on the page rather than introducing new
+ * assets for a temporary set. They are due to be replaced with pixelated
+ * cutouts in the same treatment as the interest band's — two different
+ * languages of scattered image on one page read as noise, and the trail
+ * should belong to the same world as the cutouts rather than sit beside it.
  */
 const TRAIL_IMAGES = [
   "/about/books/the-great-gatsby-41733839.jpg",
@@ -26,19 +23,18 @@ export const metadata: Metadata = {
   title: "About",
 };
 
-/*
- * Placeholder page: the About page's full content/layout is still an open
- * item (someone else's concern). This just gives the bookshelf a page to
- * live on for review — not a finished design.
+/**
+ * The About index.
+ *
+ * The standfirst is written here rather than inside `AboutView` so the page's
+ * words stay in the page file, next to its metadata — the component beside it
+ * is layout and behaviour.
  */
 export default function About() {
   return (
-    <>
-      <CursorImageTrail images={TRAIL_IMAGES} />
-      <IndexShell title={TITLE} intro={INTRO}>
-        <h2 className={styles.sectionLabel}>Bookshelf</h2>
-        <Bookshelf />
-      </IndexShell>
-    </>
+    <AboutView
+      trailImages={TRAIL_IMAGES}
+      intro="I build structure out of ambiguity, and I can implement what I specify. Most of what I do sits between the research that decides what a thing should be and the build that makes it real."
+    />
   );
 }

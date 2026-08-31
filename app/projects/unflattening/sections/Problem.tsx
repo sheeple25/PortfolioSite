@@ -20,15 +20,30 @@ import Fig031 from "@/components/projects/figures/Fig031";
  * The frame labels them "CLaim 01" (a typo), "CLAIM 02", "CLAIM 03"; the chain
  * upper-cases its labels in CSS, so all three are written plainly here.
  */
+/*
+ * `grow` levels the row. The three claims are 41, 137 and 88 characters, so at
+ * equal widths the middle column runs to something like three times the height
+ * of the first and the row reads as one broken column between two short ones.
+ * Wrap height falls as width rises, so the widths are weighted towards the
+ * text each column carries — softened rather than strictly proportional,
+ * because a column narrow enough to be "correct" for the first claim can't set
+ * a word like "contextually" without looking cramped.
+ */
 const CLAIMS: readonly ChainStep[] = [
-  { label: "Claim 01", text: "Science Fiction is contextually critical." },
+  {
+    label: "Claim 01",
+    text: "Science Fiction is contextually critical.",
+    grow: 1,
+  },
   {
     label: "Claim 02",
     text: "Indian SF, rooted in a postcolonial, non-Western empirical environment, offers critique that is structurally unavailable in Western SCD.",
+    grow: 2.2,
   },
   {
     label: "Claim 03",
     text: "We can use Indian SF narratives as sites for speculative design — and thereby unflatten.",
+    grow: 1.6,
   },
 ];
 
@@ -67,7 +82,8 @@ export default function Problem({
        */}
       <Fig031 label="Fig 0.3.1 — Four mandates and three crises" />
 
-      <Chain steps={CLAIMS} />
+      {/* Top-aligned: three parallel claims, read across from a shared line. */}
+      <Chain steps={CLAIMS} align="top" />
     </Disclosure>
   );
 }

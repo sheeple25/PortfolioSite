@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getCaseStudy } from "@/lib/caseStudies";
+import { getEntry } from "@/lib/entries";
 import TracesEntry from "./TracesEntry";
 
 /**
@@ -7,11 +7,11 @@ import TracesEntry from "./TracesEntry";
  *
  * The page is `TracesEntry` and the chassis under it is
  * `components/case-study`. Its index-card and graph metadata lives in
- * `lib/caseStudies.ts`, which is also what this route's `metadata` is built
+ * `lib/entries/registry.ts`, which is also what this route's `metadata` is built
  * from, so the share card and the Work index can never disagree.
  */
 
-const study = getCaseStudy("traces");
+const study = getEntry("traces");
 
 export const metadata: Metadata = {
   title: study?.meta.title,

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import TileGrid, { type Tile } from "@/components/index/TileGrid";
+import TileGrid from "@/components/index/TileGrid";
+import { toTile } from "@/components/index/toTile";
 import IndexShell, { IndexEmpty } from "@/components/chrome/IndexShell";
-import { getArchiveSummaries } from "@/lib/archive";
-import { formatDate } from "@/lib/format";
+import { getEntries } from "@/lib/entries";
 
 const TITLE = "Archive.";
 const INTRO =
@@ -20,24 +20,21 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * The Archive index — the second filtered view over the entry registry.
+ *
+ * Ordered by `rank` rather than date, because this is a curated shortlist
+ * rather than a feed: the entries that best survive being pulled out of
+ * context lead. That ordering is applied in `getEntries`, which is also why
+ * the two indexes can share one content pool.
+ *
+ * An entry appearing here says nothing about how built-out it is. A full case
+ * study can sit in the Archive because it is older work outside the current
+ * story, and a Work project can be a peek while it waits to be written.
+ */
 export default function ArchiveIndexPage() {
-  const entries = getArchiveSummaries();
+  const entries = getEntries("archive");
   const pick = entries.find((entry) => entry.meta.recommended);
-
-  const tiles: Tile[] = entries.map((entry) => ({
-    slug: entry.slug,
-    title: entry.meta.title,
-    description: entry.meta.description,
-    place: entry.meta.place,
-    // `term` is the display label; the exact date stands in until one is set.
-    term: entry.meta.term ?? formatDate(entry.meta.date),
-    cover: entry.meta.cover,
-    coverAlt: entry.meta.coverAlt,
-    coverVideo: entry.meta.coverVideo,
-    logo: entry.meta.logo,
-    logoInvert: entry.meta.logoInvert,
-    logoWidth: entry.meta.logoWidth,
-  }));
 
   return (
     <IndexShell
@@ -45,10 +42,10 @@ export default function ArchiveIndexPage() {
       intro={INTRO}
       note={pick ? <>Start with {pick.meta.title}&hellip;</> : null}
     >
-      {tiles.length === 0 ? (
-        <IndexEmpty noun="Entries" dir="content/archive" />
+      {entries.length === 0 ? (
+        <IndexEmpty noun="Entries" dir="content/projects" />
       ) : (
-        <TileGrid items={tiles} basePath="/archive" />
+        <TileGrid items={entries.map(toTile)} />
       )}
     </IndexShell>
   );

@@ -144,7 +144,7 @@ export default function NavBar() {
               decorative
               size={18}
               color="var(--color-white)"
-              eyeColor="var(--color-accent)"
+              eyeColor="var(--nav-pixel-accent)"
               expression={pixelHover ? "happy" : "default"}
               bob={pixelHover && !reducedMotion}
             />

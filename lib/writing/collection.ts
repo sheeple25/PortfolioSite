@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { parseWritingDocument } from "./parse";
+import { parseWritingDocument, plainTextFromMarkdown } from "./parse";
 import type { WritingDocument, WritingSummary } from "./types";
 
 /*
@@ -28,6 +28,11 @@ export type DocumentCollection = {
   getSlugs(): string[];
   /** `null` for an unknown slug, so the page can call `notFound()`. */
   getDocument(slug: string): WritingDocument | null;
+  /**
+   * The document as one continuous run of prose, private sections excluded.
+   * `null` for an unknown or unpublished slug.
+   */
+  getProse(slug: string): string | null;
 };
 
 /**
@@ -123,6 +128,22 @@ export function createDocumentCollection(
       const doc = loadDocument(slug);
       if (!doc || !isPublished(doc)) return null;
       return doc;
+    },
+
+    getProse(slug) {
+      // Through `loadDocument` first, so an unpublished slug is refused on the
+      // same rule the rest of the collection uses rather than a second one.
+      const doc = loadDocument(slug);
+      if (!doc || !isPublished(doc)) return null;
+
+      try {
+        return plainTextFromMarkdown(
+          readFileSync(join(contentDir, `${slug}.md`), "utf8"),
+          { includePrivate: INCLUDE_PRIVATE },
+        );
+      } catch {
+        return null;
+      }
     },
   };
 }

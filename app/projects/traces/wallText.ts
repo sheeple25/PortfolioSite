@@ -111,10 +111,10 @@ export const WALL_ROWS: WallToken[][] = Array.from(
  * row index — no two neighbouring rows share a speed, and nothing reads as
  * sorted.
  *
- * The floor is 240s, not 70s. At 70 the rows crossed at roughly 70px/s, which
+ * The floor is 300s, not 70s. At 70 the rows crossed at roughly 70px/s, which
  * is fast enough to track with your eye — and anything the eye can track next
- * to a title competes with it. Four minutes a lap puts it near 20px/s, slow
+ * to a title competes with it. Five minutes a lap puts it near 16px/s, slow
  * enough to read as a surface that happens to be moving rather than as
  * something asking to be read.
  */
-export const wallRowDuration = (i: number) => 240 + ((i * 29) % 70);
+export const wallRowDuration = (i: number) => 300 + ((i * 29) % 70);
