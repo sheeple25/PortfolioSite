@@ -22,7 +22,8 @@ export type { CaseShellProps, Palette, Anchor } from "./CaseShell";
 export { default as Banner, BannerImage, BannerVideo, Stickers } from "./Banner";
 export type { MetaField, Institution } from "./Banner";
 
-export { default as Contents, sectionIds } from "./Contents";
+export { default as Contents, ContentsList, sectionIds } from "./Contents";
+export { default as ContentsBar } from "./ContentsBar";
 export type { ContentsRow } from "./Contents";
 
 export { default as Carousel } from "./Carousel";

@@ -579,13 +579,21 @@
   padding: 73px 128px;
 }
 
+/*
+ * Below 1280px both margins go entirely, rather than collapsing into blocks
+ * above the text.
+ *
+ * The left one used to stay: the rail became an ordinary list above the first
+ * beat, on the reasoning that a contents list is still worth having on a
+ * narrow window even if it can't be a margin. That was half right. It was
+ * worth having and it was unreachable — a static block at the top of a
+ * twelve-beat page is contents you can read once, before you start, and never
+ * again without scrolling all the way back. `.contentsBar` below is where
+ * those rows go instead. Pixel's margin carries nothing but a closing note and
+ * simply goes.
+ */
 @media (max-width: 1280px) {
   .margin {
-    padding: 48px var(--page-gutter) 0;
-  }
-
-  /* Pixel's margin carries nothing but a closing note; it can go. */
-  .marginRight {
     display: none;
   }
 }
@@ -698,6 +706,146 @@
   color: var(--ink);
 }
 
+/* ---------------------------------------------------- contents, narrow -- */
+
+/*
+ * The rail's rows again, as a sticky bar that opens into a sheet — the shape
+ * `writing/Toc` already uses at this breakpoint. See `ContentsBar.tsx`.
+ *
+ * A direct child of `.page` rather than of `.body`, which matters: `.body` is
+ * a grid, so a sticky element inside one of its tracks is clamped to that
+ * track's height and would stick for a few hundred pixels and then leave.
+ * `.page` is the whole document, so the bar holds for the whole read.
+ */
+.contentsBar {
+  display: none;
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 20;
+  background: color-mix(in srgb, var(--page-bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  /* Follows the header up when a scroll down takes the header away, so the
+   * bar is never left floating over a nav-height strip of nothing. */
+  transition: top 340ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 1280px) {
+  .contentsBar {
+    display: block;
+  }
+}
+
+:global(.chrome-hidden) .contentsBar {
+  top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contentsBar {
+    transition: none;
+  }
+}
+
+.contentsBarToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px var(--page-gutter);
+  font-family: var(--mono);
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+/*
+ * Larger than the rail's own heading at the same tracking: up here "Contents"
+ * is not a label over a visible list, it is the only word naming a control the
+ * reader has to notice and press.
+ */
+.contentsBarLabel {
+  flex: none;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.contentsBarNum {
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tp);
+}
+
+.contentsBarCurrent {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contentsBarChevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--tp);
+}
+
+/*
+ * The sheet hangs below the bar instead of sitting in its flow — the same
+ * correction `writing/Toc` carries. In flow it sets the height of everything
+ * above it, and a tapped row starts the jump and closes the sheet in the same
+ * tick, so the scroll travels toward an offset the collapse has already pulled
+ * hundreds of pixels up the page and every jump overshoots.
+ */
+.contentsSheet {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--page-bg) 94%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.contentsSheetInner {
+  padding: 16px var(--page-gutter) 20px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  /*
+   * Overlaying means the page can no longer be scrolled to reach the bottom of
+   * a long list, so the list carries its own scroll instead.
+   */
+  max-height: calc(100svh - var(--nav-height) - 7rem);
+  overflow-y: auto;
+}
+
+/* Row spacing tuned for the thumb rather than for the margin's 24px. */
+.contentsSheetInner .railList {
+  gap: 4px;
+}
+
+.contentsSheetInner .railLink {
+  padding: 10px 0;
+}
+
+/* How much is left — the one thing the rail gets free from its own length. */
+.contentsBarProgress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--tp);
+  transform-origin: left;
+}
+
 /* ------------------------------------------------------------------ type -- */
 
 .lede {
@@ -774,6 +922,13 @@
   flex-direction: column;
   gap: 32px;
   scroll-margin-top: calc(var(--nav-height) + 2rem);
+}
+
+/* Below 1280px a jump has the sticky contents bar to clear as well. */
+@media (max-width: 1280px) {
+  .beat {
+    scroll-margin-top: calc(var(--nav-height) + 4.5rem);
+  }
 }
 
 .disclosureBar {

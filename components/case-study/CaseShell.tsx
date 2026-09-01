@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useShutterLink } from "@/components/chrome/Shutter";
 import { ReaderProvider, useReader } from "@/components/writing/ReaderContext";
 import Contents, { sectionIds, type ContentsRow } from "./Contents";
+import ContentsBar from "./ContentsBar";
 import {
   useHeroChrome,
   useFooterAccent,
@@ -178,6 +179,14 @@ export default function CaseShell({
       {banner}
 
       <ReaderProvider sectionIds={sectionIds(contents)}>
+        {/*
+          Contents for a narrow window, where both margins have collapsed.
+          Outside `.body` because it is sticky and `.body` is a grid — a sticky
+          element inside a grid track is clamped to that track. Inside the
+          provider because it names the beat you are currently in.
+        */}
+        <ContentsBar rows={contents} />
+
         <div className={styles.body}>
           <div className={styles.margin}>
             <Contents rows={contents} hidden={!railsVisible} />
