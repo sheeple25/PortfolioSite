@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import Pixel from "./Pixel";
+import PixelWardrobe from "./PixelWardrobe";
 import { usePixel } from "./PixelContext";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { useBlink, useFlash, useGaze } from "./hooks";
-import type { Expression } from "./sprites";
+import type { Accessory, Expression } from "./sprites";
 import styles from "./PixelCompanion.module.css";
 
 /** Mood Pixel settles into on each route, unless a page says otherwise. */
@@ -15,7 +16,6 @@ const ROUTE_MOODS: Record<string, Expression> = {
   "/": "default",
   "/about": "happy",
   "/projects": "surprised",
-  "/contact": "happy",
 };
 
 const SLEEPY_AFTER = 9_000;
@@ -25,7 +25,8 @@ const INTERACTIVE = 'a, button, [role="button"], input, textarea, select, summar
 
 export default function PixelCompanion({ size = 88 }: { size?: number }) {
   const pathname = usePathname();
-  const { mood, reaction, hidden, chatOpen } = usePixel();
+  const { mood, reaction, hidden, chatOpen, accessory, setAccessory, atFooter } =
+    usePixel();
   const reducedMotion = usePrefersReducedMotion();
 
   const spriteRef = useRef<HTMLDivElement>(null);
@@ -33,6 +34,8 @@ export default function PixelCompanion({ size = 88 }: { size?: number }) {
   const [idle, setIdle] = useState<"awake" | "sleepy" | "asleep">("awake");
   const [hoveringTarget, setHoveringTarget] = useState(false);
   const [localReaction, flash] = useFlash();
+
+  const [hovered, setHovered] = useState(false);
 
   // --- idle drift + hover awareness ---------------------------------------
   useEffect(() => {
@@ -76,6 +79,11 @@ export default function PixelCompanion({ size = 88 }: { size?: number }) {
     };
   }, [flash]);
 
+  const onSelectAccessory = (next: Accessory | null) => {
+    setAccessory(next);
+    flash(next ? "happy" : "embarrassed", 900);
+  };
+
   // --- resolve the expression --------------------------------------------
   // Order matters: a page that pins a mood (a 404 saying "dead") must not drift
   // off to sleep, but a deliberate reaction still gets to interrupt it.
@@ -108,21 +116,50 @@ export default function PixelCompanion({ size = 88 }: { size?: number }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          aria-hidden="true"
         >
+          {/*
+            The hover surface spans the sprite AND the wardrobe above it, so the
+            trigger doesn't vanish as the pointer travels up to press it.
+
+            `aria-hidden` used to sit on this wrapper, since the mascot is pure
+            decoration. It cannot any more — the wardrobe underneath it is real,
+            operable UI — so it moved down onto the sprite alone.
+          */}
           <div
-            ref={spriteRef}
-            className={styles.hitArea}
-            onClick={() => flash("embarrassed", 1100)}
+            className={styles.stack}
+            onPointerEnter={() => setHovered(true)}
+            onPointerLeave={() => setHovered(false)}
           >
-            <Pixel
-              expression={blinking ? "blink" : expression}
-              lookX={look.x}
-              lookY={look.y}
-              size={size}
-              bob={!reducedMotion && idle !== "asleep"}
-              decorative
-            />
+            {/*
+              Mounted only at the footer, and UNMOUNTED when you leave it —
+              which is also how its open/closed state gets reset. Keeping it
+              mounted behind an `enabled` prop meant an open panel would still
+              be open when you scrolled back down to it later.
+            */}
+            {atFooter && (
+              <PixelWardrobe
+                revealed={hovered}
+                accessory={accessory}
+                onSelect={onSelectAccessory}
+              />
+            )}
+
+            <div
+              ref={spriteRef}
+              className={styles.hitArea}
+              aria-hidden="true"
+              onClick={() => flash("embarrassed", 1100)}
+            >
+              <Pixel
+                expression={blinking ? "blink" : expression}
+                lookX={look.x}
+                lookY={look.y}
+                size={size}
+                accessory={accessory}
+                bob={!reducedMotion && idle !== "asleep"}
+                decorative
+              />
+            </div>
           </div>
         </motion.div>
       )}

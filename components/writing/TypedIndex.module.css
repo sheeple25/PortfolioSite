@@ -1,0 +1,265 @@
+/*
+ * See the note at the top of TypedIndex.tsx. The dial worth touching is
+ * `--typed-size`; everything else follows it.
+ *
+ * The shape is one field of large type filling the band edge to edge, with the
+ * items running into one another as inline links. Two things are doing the work
+ * that rules and rows would normally do: the alternation between faces on
+ * adjacent items, and the chip that lands after each one.
+ */
+
+.ground {
+  /* IndexShell's band already sizes this; fill it. */
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  /*
+   * Top, not centre. The block grows as it types, and a centred block moves
+   * every line already on screen each time a new one is added — the text you
+   * were reading slides upward under you. Anchored to the top it only ever
+   * grows downward into empty band.
+   */
+  align-items: flex-start;
+  overflow: hidden;
+
+  /*
+   * Edge to edge, deliberately not held to `--page-max` the way the masthead
+   * above it is. The text running out to the window's own margins is the
+   * reference's whole gesture — a column of it centred in the band would be a
+   * paragraph on a page instead of a field of type.
+   */
+  padding-inline: var(--page-gutter);
+  padding-block: clamp(1rem, 3vh, 2.5rem);
+
+  /*
+   * Big, and sized against the band's height as well as its width — `vh` is in
+   * the clamp because the band is a fixed fraction of the window, so a size
+   * that fits the block at one aspect ratio overflows it at another.
+   */
+  --typed-size: clamp(1.6rem, min(4.2vw, 6vh), 4.4rem);
+
+  /*
+   * The colour a sentence takes when it is the one being pointed at, in place
+   * of the underline this used to draw. A rule under type this large reads as a
+   * second horizontal line across the block, and with the items butted against
+   * each other it was never clear which sentence it belonged to; the colour
+   * takes the whole sentence at once, wherever it wraps.
+   *
+   * The site blue, restated rather than read from `--color-accent`: IndexShell
+   * repoints that token to `--index-header-ink` for everything inside the band
+   * (see IndexShell.module.css), so `var(--color-accent)` here would resolve to
+   * the same ink the unhovered items are already set in.
+   */
+  --typed-accent: #0047ff;
+}
+
+/*
+ * Dark mode is the one place the site blue does not survive as-is — at #0047ff
+ * against `#17130f` a hovered sentence goes darker than the block around it
+ * rather than picking itself out of it. Lifted toward the ground's own
+ * near-white until it reads as brightening, not dimming.
+ */
+:global(.dark) .ground {
+  --typed-accent: color-mix(in srgb, #0047ff 62%, #f3ecdf);
+}
+
+/*
+ * One paragraph holding every item inline.
+ *
+ * No `text-wrap: pretty` or `balance`, and that is a performance decision
+ * rather than a typographic one. Both ask the browser to lay the paragraph out
+ * more than once to pick better break points, and this paragraph is re-laid-out
+ * on *every keystroke* — with the block measured at around 290ms per character
+ * instead of the ~15ms the typing model asks for, which made the index take the
+ * better part of a minute to finish. Plain greedy wrapping is what the reference
+ * uses anyway: a ragged last line is invisible in a block this size.
+ */
+.field {
+  margin: 0;
+  font-size: var(--typed-size);
+  line-height: 1.24;
+  letter-spacing: -0.015em;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.item {
+  /* `inline` and not `inline-block` — an inline-block would refuse to break
+     mid-item and leave a ragged hole at the end of every line. */
+  display: inline;
+}
+
+/*
+ * An item's sentence. Each one takes a different family from the one before it
+ * — see `FACES` in the component — which is what stops two adjacent sentences
+ * reading as one, the same job the reference does by alternating between its
+ * two families. This runs all three of the site's faces instead of two.
+ */
+.link {
+  color: var(--index-header-ink);
+  text-decoration: none;
+  transition: opacity 160ms ease, color 160ms ease;
+}
+
+/* First, and so the recommended piece — the heaviest of the three. */
+.linkSans {
+  font-family: var(--font-space-grotesk);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.linkSerif {
+  font-family: var(--font-newsreader);
+  font-weight: 400;
+}
+
+/*
+ * The mono runs wider than the other two at the same nominal size and would
+ * otherwise take noticeably more of the band than its share; the step down and
+ * the tighter tracking put its measure back alongside them.
+ */
+.linkMono {
+  font-family: var(--font-jetbrains-mono);
+  font-weight: 400;
+  font-size: 0.88em;
+  letter-spacing: -0.025em;
+}
+
+/*
+ * Hover dims everything else rather than highlighting the one thing. With the
+ * items butted against each other there is no gap for a highlight to sit in,
+ * and picking one sentence out of a solid block is easier done by pushing the
+ * rest back.
+ */
+.field:hover .link {
+  opacity: 0.38;
+}
+
+.field:hover .link:hover,
+.link:focus-visible {
+  opacity: 1;
+  color: var(--typed-accent);
+}
+
+.link:focus-visible {
+  outline: none;
+}
+
+/*
+ * Laid out, never painted. `visibility: hidden` rather than `display: none`
+ * because it still has to take up its full box — that box is what holds the
+ * line breaks still while the typed text grows into it.
+ */
+.pending {
+  visibility: hidden;
+}
+
+/*
+ * A word-processor caret: a hairline rule standing on the baseline, not a
+ * filled cell. The box itself is zero by zero so the caret adds no width and
+ * no height to the line it sits on; the rule is drawn outside the flow.
+ */
+.caret {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+.caret::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  /* Cap height above the baseline down to a little under it, as a caret sits. */
+  top: -0.76em;
+  height: 0.94em;
+  width: max(1px, 0.04em);
+  background: color-mix(in srgb, var(--index-header-ink) 60%, transparent);
+}
+
+/* Only once the block is finished — a cursor that blinks mid-word looks like
+   dropped frames. */
+.blinking::after {
+  animation: blink 1.06s linear infinite;
+}
+
+@keyframes blink {
+  0%,
+  49.9% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
+ * The chip trailing each finished sentence: date, length, and a mark on the
+ * recommended one. Set at a fixed small size rather than in `em`, so it stays
+ * a label at every `--typed-size` instead of scaling up into a second voice.
+ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  margin-inline: 0.4em 0.15em;
+  padding: 0.15em 0.45em;
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 25%, transparent);
+  border-radius: 3px;
+  vertical-align: 0.35em;
+
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--index-header-ink) 62%, transparent);
+
+  /*
+   * Hidden until its sentence is finished, but still occupying its box the
+   * whole time — the same reason `.pending` is `visibility: hidden`. Appearing
+   * from `display: none` would shove the rest of the block sideways at the end
+   * of every item.
+   */
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+.chipOn {
+  visibility: visible;
+  opacity: 1;
+}
+
+.star {
+  color: var(--index-header-ink);
+}
+
+.chipDot {
+  opacity: 0.5;
+}
+
+@media (max-width: 40rem) {
+  .ground {
+    /* The band is shorter and the measure much narrower, so the same block
+       needs a smaller face to stay inside it. */
+    --typed-size: clamp(1.05rem, 4.4vw, 1.5rem);
+  }
+
+  .chip {
+    font-size: 0.55rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .chip {
+    transition: none;
+  }
+
+  .blinking::after {
+    animation: none;
+  }
+}

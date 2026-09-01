@@ -200,3 +200,139 @@ export function translateRuns(runs: readonly Run[], dx: number, dy: number): Run
 export function runsToPath(runs: readonly Run[]): string {
   return runs.map(({ x, y, w }) => `M${x} ${y}h${w}v1h${-w}z`).join("");
 }
+
+/* ------------------------------------------------------------- accessories */
+
+export type Accessory = "bowtie" | "bowler" | "sunglasses" | "horns" | "halo";
+
+export type AccessorySprite = {
+  /** Shown in the wardrobe, and read out to assistive tech. */
+  label: string;
+  /** Same literal-grid authoring as the body: 24 columns, `#` is ink. */
+  rows: readonly string[];
+  /**
+   * Where row 0 of `rows` lands on the body grid. NEGATIVE IS ABOVE THE HEAD —
+   * a bowler and a halo have to sit off the top of the 24x24 box, which is why
+   * `Pixel.module.css` lets the sprite overflow rather than clip to its
+   * viewBox. The body's own box is left at 24x24 so nothing about the mascot's
+   * layout — the fixed corner, the bob, every `size` prop on the site —
+   * changes when a hat goes on.
+   */
+  originY: number;
+  /** Omitted means "the same ink as the eyes", which most of these want. */
+  fill?: string;
+  /** Opaque lenses. Drawing eyes underneath them just muddies the shape. */
+  hidesEyes?: boolean;
+};
+
+/**
+ * The wardrobe. Five costume pieces, authored the same way as the body and the
+ * eyes — a literal grid, so the stair-steps stay part of the artwork instead of
+ * being a smooth curve that got downsampled.
+ *
+ * Two of them break the 24x24 box upward (`originY` below zero) and one paints
+ * over the eyes; everything else is an ordinary overlay drawn last.
+ */
+export const ACCESSORIES: Record<Accessory, AccessorySprite> = {
+  bowtie: {
+    label: "Bow tie",
+    // Sits on the lower body, above the hem's feet (which start at row 21).
+    //
+    // The wings are five cells tall at the outer edge and taper to one as they
+    // reach the knot — that taper is the whole silhouette. An earlier version
+    // kept them a constant three tall and it rendered as three dark blobs in a
+    // row rather than as a tie.
+    //
+    // The middle row runs solid all the way across on purpose. Punching it
+    // either side of the knot looked right on the grid and rendered as a knot
+    // floating unattached between two wings.
+    originY: 15,
+    rows: [
+      "....##............##....",
+      "....#####..##..#####....",
+      "....################....",
+      "....#####..##..#####....",
+      "....##............##....",
+    ],
+  },
+  bowler: {
+    label: "Bowler hat",
+    // Crown four rows, then a brim twice its width — at this resolution a
+    // realistically narrow bowler brim just reads as a dark cap, so the
+    // silhouette is exaggerated until the hat is unmistakably a hat.
+    //
+    // The bottom row is 20 cells wide, which is exactly the width of row 0 of
+    // the head: the brim lands flush on the shoulders instead of hanging over
+    // them or floating above the rounded corners.
+    //
+    // Warm grey rather than the eyes' near-black, and this is the only reason:
+    // the crown is the one piece of costume that sits almost entirely OFF the
+    // body, against whatever is behind Pixel — and where the wardrobe is
+    // reachable, that is the footer's pure black panel. A black hat on it was
+    // simply invisible. Horns and the halo overhang too, which is why they
+    // carry their own colours as well; everything that stays on the blue body
+    // can safely default to the eye ink.
+    originY: -6,
+    fill: "#8a8578",
+    rows: [
+      "........########........",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      "...##################...",
+      "..####################..",
+    ],
+  },
+  sunglasses: {
+    label: "Sunglasses",
+    // Lenses are filled and the eyes are suppressed underneath: a hollow frame
+    // reads as spectacles, not shades. The punched pair of cells in each lens
+    // is a glint — it shows body colour through, which is what stops the lens
+    // being a dead black slab.
+    originY: 6,
+    hidesEyes: true,
+    rows: [
+      "..####################..",
+      "...##################...",
+      "...#..#####..#..#####...",
+      "....######....######....",
+      ".....####......####.....",
+    ],
+  },
+  horns: {
+    label: "Devil horns",
+    // Bases sit on the head and taper outward as they climb, so the pair
+    // reads as curving away from each other rather than as two spikes.
+    originY: -5,
+    fill: "#d64545",
+    rows: [
+      "...#................#...",
+      "...##..............##...",
+      "....##............##....",
+      ".....##..........##.....",
+      ".....###........###.....",
+    ],
+  },
+  halo: {
+    label: "Angel halo",
+    // A closed ring with three empty rows below it — the gap is the float, and
+    // it is why this one starts as high as the hat does despite being smaller.
+    //
+    // Fourteen cells across rather than twelve: narrower, the indented middle
+    // row stopped reading as the sides of a ring and the whole thing looked
+    // like two stacked bars.
+    originY: -6,
+    fill: "#f2c94c",
+    rows: [
+      ".......##########.......",
+      ".....##..........##.....",
+      ".......##########.......",
+    ],
+  },
+};
+
+export const ACCESSORY_KEYS = Object.keys(ACCESSORIES) as Accessory[];
+
+export function isAccessory(value: unknown): value is Accessory {
+  return typeof value === "string" && value in ACCESSORIES;
+}

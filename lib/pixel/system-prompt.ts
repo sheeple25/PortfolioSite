@@ -202,7 +202,7 @@ export function buildStablePrompt(): string {
   const sections = [
     POSITIONING,
     PURPOSE,
-    `${SITE_NAME} is a ${SITE_DESIGNATION}. Reach him at ${CONTACT_EMAIL}, or via /contact.`,
+    `${SITE_NAME} is a ${SITE_DESIGNATION}. Reach him at ${CONTACT_EMAIL} — there's no separate contact page, so give the email address directly rather than pointing at a path.`,
     describeLinks() && `Profiles:\n${describeLinks()}`,
     projects.length
       ? `Current work:\n${describeEntries(projects)}`

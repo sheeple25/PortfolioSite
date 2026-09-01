@@ -79,6 +79,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${newsreader.variable}`}
+      /*
+        `html` sets `scroll-behavior: smooth` for in-page anchor jumps. Next 16
+        no longer overrides that during route changes unless told to, so without
+        this a nav to a new page animates a long smooth scroll to the top
+        instead of landing there. This opts back into the instant jump.
+      */
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>

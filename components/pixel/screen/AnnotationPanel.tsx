@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
+import { usePixel } from "../PixelContext";
 import { useNotes } from "./NotesContext";
 import styles from "./notes.module.css";
 
@@ -17,12 +18,22 @@ import styles from "./notes.module.css";
  *
  * Both this and the mascot are positioned from `--shell-inset`, so they share a
  * right margin with the text without either one measuring the other.
+ *
+ * It also leaves when Pixel does. The panel is fixed and rides `--corner-lift`,
+ * so once the footer opens it would be left floating over a black panel it was
+ * never designed against — a note anchored to the mascot, hanging in a room the
+ * mascot has already walked into. Reaching the footer is the end of the
+ * document and the end of the reading, so the note goes with it.
  */
 export default function AnnotationPanel() {
   const notes = useNotes();
+  const { atFooter } = usePixel();
   const reducedMotion = usePrefersReducedMotion();
 
-  const active = notes?.activeId ? notes.get(notes.activeId) : undefined;
+  const open = notes?.activeId ? notes.get(notes.activeId) : undefined;
+  // `AnimatePresence` still runs the exit transition, so it slides away rather
+  // than being cut off mid-sentence as the footer arrives.
+  const active = atFooter ? undefined : open;
 
   return (
     <AnimatePresence>

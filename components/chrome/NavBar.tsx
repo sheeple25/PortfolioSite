@@ -4,14 +4,69 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { NAV_LINKS, WORDMARK } from "@/lib/site";
+import { CONTACT_EMAIL, NAV_LINKS, SOCIAL_LINKS, WORDMARK } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { Pixel, usePixel } from "@/components/pixel";
 import { useShutterLink } from "./Shutter";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import TrackedAnchor from "./TrackedAnchor";
 import styles from "./NavBar.module.css";
+
+const MAIL_HREF = `mailto:${CONTACT_EMAIL}`;
+const LINKEDIN = SOCIAL_LINKS.find((link) => link.label === "LinkedIn");
+
+/**
+ * "Contact" has no page behind it — clicking the label itself is a direct
+ * `mailto:` link, and hovering (or focusing, for keyboard users) reveals the
+ * two ways to actually reach out: email again, spelled out, and LinkedIn.
+ * `:focus-within`/`:hover` on the `<li>` drives the reveal in CSS, with the
+ * dropdown flush against the trigger (no gap) so the pointer path from link
+ * to menu never leaves the hoverable box.
+ */
+function ContactMenu({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <li className={styles.contactItem}>
+      <TrackedAnchor
+        href={MAIL_HREF}
+        className={styles.link}
+        eventName="contact_email_click"
+        eventProperties={{ href: MAIL_HREF, source: "nav" }}
+        onClick={onNavigate}
+      >
+        Contact
+      </TrackedAnchor>
+
+      <div className={styles.contactDropdown}>
+        <div className={styles.contactDropdownPanel}>
+          <TrackedAnchor
+            href={MAIL_HREF}
+            className={styles.contactDropdownLink}
+            eventName="contact_email_click"
+            eventProperties={{ href: MAIL_HREF, source: "nav-dropdown" }}
+            onClick={onNavigate}
+          >
+            {CONTACT_EMAIL}
+          </TrackedAnchor>
+          {LINKEDIN?.href && (
+            <TrackedAnchor
+              href={LINKEDIN.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.contactDropdownLink}
+              eventName="outbound_link_click"
+              eventProperties={{ label: LINKEDIN.label, href: LINKEDIN.href }}
+              onClick={onNavigate}
+            >
+              LinkedIn
+            </TrackedAnchor>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
 
 /**
  * A bar link that plays the shutter on its way out: the header section of the
@@ -126,6 +181,7 @@ export default function NavBar() {
               </li>
             );
           })}
+          <ContactMenu />
         </ul>
 
         <div className={styles.controls}>
@@ -200,6 +256,43 @@ export default function NavBar() {
                   </ShutterNavLink>
                 </motion.li>
               ))}
+              <motion.li
+                key="contact"
+                initial={reducedMotion ? false : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.32,
+                  delay: 0.04 * NAV_LINKS.length,
+                  ease: "easeOut",
+                }}
+                className={styles.sheetContactRow}
+              >
+                <TrackedAnchor
+                  href={MAIL_HREF}
+                  className={styles.sheetLink}
+                  eventName="contact_email_click"
+                  eventProperties={{ href: MAIL_HREF, source: "nav-sheet" }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span className={styles.sheetIndex} aria-hidden="true">
+                    {String(NAV_LINKS.length + 1).padStart(2, "0")}
+                  </span>
+                  Contact
+                </TrackedAnchor>
+                {LINKEDIN?.href && (
+                  <TrackedAnchor
+                    href={LINKEDIN.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.sheetContactSecondary}
+                    eventName="outbound_link_click"
+                    eventProperties={{ label: LINKEDIN.label, href: LINKEDIN.href }}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    LinkedIn &#8599;
+                  </TrackedAnchor>
+                )}
+              </motion.li>
             </ul>
           </motion.div>
         )}

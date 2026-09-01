@@ -21,12 +21,15 @@ import styles from "./PixelSidebar.module.css";
 
 /**
  * Internal paths (the site's real sections only), absolute URLs, and emails.
+ * "contact" isn't in the path alternation — it's not a page (see
+ * `lib/site.ts`'s `NAV_LINKS`), so the system prompt has Pixel mention the
+ * email address instead, which this already linkifies as a `mailto:`.
  *
- * Trailing punctuation is left out of the match so "see /contact." links the
+ * Trailing punctuation is left out of the match so "see /about." links the
  * path and keeps the full stop as text.
  */
 const LINKABLE =
-  /(https?:\/\/[^\s<>()]+[^\s<>().,;:!?"'])|(\/(?:projects|writing|archive|about|contact)(?:\/[a-zA-Z0-9-_]+)*)|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+  /(https?:\/\/[^\s<>()]+[^\s<>().,;:!?"'])|(\/(?:projects|writing|archive|about)(?:\/[a-zA-Z0-9-_]+)*)|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
 
 export default function MessageText({ text: raw }: { text: string }) {
   const text = applyScriptedBits(raw);

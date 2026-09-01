@@ -1,163 +1,74 @@
 /*
- * Placeholder styling only — this is the data/interaction pass, not the
- * visual one. Just enough to read as its own framed panel and stay legible.
+ * The Work index's navigation surface. There is only one shape of this now:
+ * the framed 16:9 panel variant is gone along with the `fill` prop, because
+ * nothing had rendered it since the graph was promoted from the header's
+ * texture to the page's navigation — and keeping it alive is what forced two
+ * sets of tuning for every value in here.
  */
 
 .frame {
   position: relative;
-  width: min(900px, 100%);
-  aspect-ratio: 16 / 9;
-  margin: 0 auto clamp(2rem, 5vw, 3.5rem);
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-  background: var(--color-white);
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 
   /*
-   * Per-node-type palette, read by `.node[data-type=…]` below and by the
-   * legend's inline `style`. Defined here (not read straight off the
-   * ambient `--color-*` tokens) because IndexShell's `.page` retargets
-   * `--color-accent` and `--color-charcoal` to the *same* ink token for the
-   * rest of the dark-ground index chrome — which silently made featured and
-   * archive projects the same colour. `.frameFill` below overrides every one
-   * of these for the dark-ground context; these are the framed panel's own
-   * light-background defaults.
+   * One colour, spent once.
+   *
+   * The palette used to be five hues — warm for featured work, ink for
+   * archive, purple domains, blue skills, green tools — which is four
+   * categorical distinctions competing for attention on a surface whose actual
+   * job is to point at the middle. Domains are the only distinction worth
+   * spending a colour on, so the site blue goes there and nothing else gets
+   * one: skills and tools drop to ink, and the selected work is marked by
+   * where it sits rather than by being a different colour from its neighbours.
+   *
+   * `#0047ff` is written out rather than read from `--color-accent` because
+   * `IndexShell`'s `.page` retargets that token to the index chrome's ink
+   * across the whole dark-ground header. Reading it here would quietly give
+   * the domain pills the same colour as everything else — which is the exact
+   * bug this block exists to route around.
    */
-  --node-featured: var(--color-accent);
-  --node-archive: var(--color-charcoal);
-  --node-domain: var(--color-border-strong);
-  --node-skill: var(--color-muted);
-  --node-tool: var(--color-muted);
-}
+  --node-domain: #0047ff;
+  --node-project: var(--index-header-ink);
+  --node-skill: var(--index-header-ink);
+  --node-tool: var(--index-header-ink);
 
-/*
- * The Work index header's background slot: same graph, no panel chrome —
- * fills the header edge to edge and sits behind the masthead rather than as
- * a bordered card in the flow. Legend/detail/expand retint to the header's
- * dark ground since `--color-white` reads as a literal white card otherwise.
- */
-.frameFill {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
-  margin: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  /* Node labels and the detail panel's secondary lines read this token; the
-     index-wide retint above only reassigns the tokens WorkGraph doesn't use
-     (charcoal/accent/muted/border), so it's set here directly instead. */
+  /* The domain pill's fill: paper in light, true black in dark, so the blue
+     reads at full strength against it rather than against the band's own
+     slightly-off ground. */
+  --pill-fill: #ffffff;
+
+  /* Node labels and the panel's secondary lines read this token; the
+     index-wide retint only reassigns the tokens WorkGraph doesn't use, so it's
+     set here directly instead. */
   --color-ink-soft: color-mix(in srgb, var(--index-header-ink) 72%, transparent);
 
   /*
-   * The light-ground palette (the default — see `.dark` below for the dark
-   * one). Featured work gets the one warm colour in the set — it's the
-   * curated four, so it's meant to catch the eye first — everything else
-   * stays in a cool/neutral family so it doesn't compete. Values are literal,
-   * not further `--color-*` tokens, since those are the exact things this
-   * override exists to route around. Deeper/more saturated than the dark
-   * variant on purpose: the pastel tones that read fine on near-black lose
-   * almost all their contrast on the light ground.
+   * What sits under a cover while it loads, and the whole card for an entry
+   * that has none. Mixed off the band's own ground and its ink so it tracks the
+   * theme in both directions at once: a shade darker than the ground in light
+   * mode, a shade lighter in dark.
    */
-  --node-featured: #b35900;
-  --node-archive: var(--index-header-ink);
-  --node-domain: color-mix(in srgb, var(--index-header-ink) 46%, transparent);
-  --node-skill: #2f5fd6;
-  --node-tool: #1f8f68;
+  --card-surface: color-mix(in srgb, var(--index-band-ground) 88%, var(--index-header-ink) 12%);
 }
 
-/* The dark-ground palette — see the note on `.frameFill` above. */
-:global(.dark) .frameFill {
-  --node-featured: #ffb066;
-  --node-skill: #8fb2ff;
-  --node-tool: #7fe0bd;
-}
-
-.frameFill .legend,
-.frameFill .detail,
-.frameFill .hint,
-.frameFill .expandButton {
-  background: color-mix(in srgb, var(--index-header-ground) 70%, transparent);
-  border-color: color-mix(in srgb, var(--index-header-ink) 22%, transparent);
-  color: var(--index-header-ink);
+:global(.dark) .frame {
+  /* The site blue is deliberately the same value in both themes (see
+     `globals.css`), but `#0047ff` on near-black is close to unreadable — this
+     is that hue lifted for contrast, not a different colour. */
+  --node-domain: #6690ff;
+  --pill-fill: #000000;
 }
 
 /*
- * The legend/detail/expand chrome is plain HTML, sized in real rem — it
- * doesn't scale with the SVG's viewBox the way nodes and labels do, so at
- * full-bleed hero size the framed panel's tuning (8-9px type) would sit like
- * a tiny sticker in the corner of a much bigger surface. Scaled up here to
- * match.
+ * `touch-action: none` is what makes a one-finger drag on a phone pan the
+ * graph instead of scrolling the page, and it is deliberate that it costs the
+ * page scroll *here*. The page below the graph is only the footer, and the
+ * masthead above the band keeps its ordinary touch behaviour — so a finger on
+ * the type at the top of the screen still scrolls down to the footer, and a
+ * finger on the graph moves the graph.
  */
-.frameFill .expandButton {
-  top: 1.25rem;
-  right: 1.25rem;
-  width: 2.75rem;
-  height: 2.75rem;
-}
-
-.frameFill .legend {
-  right: 1.5rem;
-  gap: 0.6rem;
-  padding: 0.85rem 1rem;
-  border-radius: 0.75rem;
-  font-size: 0.75rem;
-}
-
-.frameFill .detail {
-  left: 1.25rem;
-  bottom: 1.25rem;
-  right: auto;
-  max-width: min(22rem, calc(100% - 2.5rem));
-  padding: 0.9rem 1.1rem;
-  border-radius: 0.7rem;
-}
-
-.frameFill .hint {
-  left: 1.25rem;
-  bottom: 1.25rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.7rem;
-  font-size: 0.68rem;
-}
-
-.frameFill .detailTitle {
-  font-size: 1.05rem;
-}
-
-.frameFill .detailLine {
-  font-size: 0.9rem;
-}
-
-.frameExpanded {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  width: min(92vw, calc(92vh * 16 / 9));
-  margin: auto;
-  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--color-bg) 92%, transparent);
-}
-
-.expandButton {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.4rem;
-  background: var(--color-white);
-  color: var(--color-charcoal);
-  cursor: pointer;
-}
-
-.expandButton:hover {
-  border-color: var(--color-border-strong);
-}
-
 .svg {
   display: block;
   width: 100%;
@@ -175,26 +86,22 @@
 }
 
 .dot {
-  fill: var(--color-border-strong);
-  opacity: 0.4;
+  fill: color-mix(in srgb, var(--index-header-ink) 34%, transparent);
+  opacity: 0.7;
 }
 
-/* A bit more present at full-bleed hero scale, where it's meant to read as
-   a deliberate texture rather than the framed panel's quiet placeholder
-   grid. Still `--color-border-strong` (unmodified by the dark-ground
-   retint), which lands as a warm light tan — reads well against the near-
-   black ground without needing its own colour override. */
-.frameFill .dot {
+:global(.dark) .dot {
+  fill: var(--color-border-strong);
   opacity: 0.55;
 }
 
 .edge {
-  stroke: var(--color-border);
+  stroke: color-mix(in srgb, var(--index-header-ink) 26%, transparent);
   stroke-width: 1;
 }
 
 .edge[data-dim="true"] {
-  opacity: 0.15;
+  opacity: 0.12;
 }
 
 .node {
@@ -202,18 +109,22 @@
   outline: none;
 }
 
+/* Project nodes are `<a>` elements, and an anchor in an SVG still picks up the
+   UA's text-decoration and link colour on some engines — neither of which
+   means anything on a card. */
+.node:is(a) {
+  text-decoration: none;
+}
+
 .node[data-dim="true"] {
-  opacity: 0.3;
+  opacity: 0.28;
 }
 
-/* Colour lives here, once, on the type switch — the glow and the icon below
-   both just inherit it via `currentColor`/`color: inherit`. */
+/* Colour lives here, once, on the type switch — every mark below reads it
+   through `currentColor`. Selected and other projects share one value now;
+   what separates them is position and size. */
 .node[data-type="project"] {
-  color: var(--node-archive);
-}
-
-.node[data-type="project"][data-featured="true"] {
-  color: var(--node-featured);
+  color: var(--node-project);
 }
 
 .node[data-type="domain"] {
@@ -233,33 +144,169 @@
   pointer-events: all;
 }
 
-/* A soft halo in the node's own colour, behind the icon — legibility
-   against the dot-grid and gradient scrim without a hard-edged badge. */
-.nodeGlow {
-  fill: currentColor;
-  opacity: 0.16;
+/* ---- Project cards ---------------------------------------------------- */
+
+.card {
+  fill: var(--card-surface);
+}
+
+.cardCover {
   pointer-events: none;
 }
 
-.nodeIcon {
+/* Fallback mark for an entry with no cover. */
+.cardGlyph {
   color: inherit;
-  pointer-events: none;
-}
-
-.nodeLabel {
-  font-size: 0.6rem;
-  fill: var(--color-ink-soft);
-  text-anchor: middle;
+  opacity: 0.55;
   pointer-events: none;
 }
 
 /*
- * Domain/skill nodes are their own label now — no icon, no circle, just the
- * word. `font-size` is set inline per-node (`tagFontSize()` in the
- * component, `dims.width`-relative) rather than here, so it always matches
- * the width `nodeRadius()` estimated for hit-testing and collision.
+ * Title and scrim, hidden until the card is pointed at or focused.
+ *
+ * Fading the group rather than the text alone is deliberate: the scrim exists
+ * only to make the words legible, so it has no business being on screen when
+ * the words are not.
  */
-.nodeTagText {
+.cardCaption {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.node[data-type="project"][data-active] .cardCaption,
+.node:focus-visible .cardCaption {
+  opacity: 1;
+}
+
+/*
+ * The wash the title sits on. Its direction is chosen per cover from a measured
+ * luminance (`scripts/measure-cover-ink.mjs`) and referenced by name from the
+ * markup, so there is nothing to set here beyond keeping it out of the way of
+ * the pointer.
+ */
+.cardScrim {
+  pointer-events: none;
+}
+
+.cardTitle {
+  font-family: var(--font-jetbrains-mono);
+  font-weight: 600;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+/*
+ * Black or white, whichever the cover under it needs — and not the theme's ink,
+ * which is the mistake worth naming: the type sits on a photograph, so it has
+ * to answer to the photograph and not to whether the page is in light or dark
+ * mode. A near-black cover wants white type in both themes.
+ */
+.cardTitle[data-ink="light"] {
+  fill: #ffffff;
+}
+
+.cardTitle[data-ink="dark"] {
+  fill: #000000;
+}
+
+/* The mark over the cover — Traces' and Kobble's. `logoInvert` is for a mark
+   drawn in a dark solid fill that has to read on a dark plate. */
+.cardLogo {
+  pointer-events: none;
+}
+
+.cardLogoInvert {
+  filter: invert(1);
+}
+
+/*
+ * The hover loop's host. `foreignObject` is a real box in the SVG, so without
+ * this it would sit over the card swallowing the pointer events the drag and
+ * click handlers need — and the pointer is by definition on it whenever it
+ * exists.
+ */
+.cardVideoSlot {
+  pointer-events: none;
+}
+
+.cardVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/*
+ * The card has no resting border — a photograph with a hairline around it and
+ * a caption under it is a card whether or not you draw the box, and nine
+ * outlined boxes was a lot of line on a surface that also has 67 edges on it.
+ *
+ * What the outline is still needed for is state: which card the pointer is on,
+ * and — since these are the page's only links, and `outline: none` above is
+ * only defensible with something in its place — which one the keyboard is on.
+ * So it is drawn, but only then.
+ */
+.cardOutline {
+  fill: none;
+  stroke: none;
+  pointer-events: none;
+  transition: stroke-width 120ms ease;
+}
+
+.node[data-type="project"][data-active] .cardOutline {
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.node:focus-visible .cardOutline {
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-dasharray: 5 3;
+}
+
+/* ---- Domains ----------------------------------------------------------- */
+
+/*
+ * A bordered chip in the site blue, and the only coloured thing on the canvas.
+ * Square-cornered to match the cards: a rounded pill reads as a button waiting
+ * to be pressed, where this is a label on a diagram.
+ */
+.pill {
+  fill: var(--pill-fill);
+  stroke: currentColor;
+  stroke-width: 1;
+  transition: fill 120ms ease;
+}
+
+.node[data-active] .pill {
+  fill: color-mix(in srgb, currentColor 16%, var(--pill-fill));
+  stroke-width: 1.75;
+}
+
+.node:focus-visible .pill {
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+/* ---- Skills ------------------------------------------------------------ */
+
+/*
+ * Skills are bare text. This rect is not a chip and is not meant to be seen —
+ * it is filled with the band's own ground so that an edge passing behind a
+ * skill is knocked out from under the word instead of running through the
+ * middle of it. No border, no tint, no colour.
+ */
+.skillGround {
+  fill: var(--index-band-ground);
+  stroke: none;
+}
+
+.node[data-type="skill"][data-active] .skillGround {
+  fill: color-mix(in srgb, currentColor 10%, var(--index-band-ground));
+}
+
+.pillText {
   font-family: var(--font-jetbrains-mono);
   fill: currentColor;
   font-weight: 500;
@@ -268,132 +315,289 @@
   pointer-events: none;
 }
 
-/* Domain reads as a tag/chip — short, upper-cased, tracked — so it stays
-   visually distinct from skill's longer sentence-case phrases even where
-   the colour alone might not (e.g. dimmed state). */
-.nodeTagDomain {
+/* Domain reads as a category — short, upper-cased, tracked — so it stays
+   distinct from skill's sentence-case phrases even where colour alone might
+   not (a dimmed node, a colourblind reader). */
+.pillTextDomain {
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   font-weight: 600;
 }
 
-/* The opaque backdrop chip behind a real software logo — see the `tool`
-   render branch in WorkGraph.tsx for why this can't just be `currentColor`
-   like `.nodeGlow`. */
-.nodeLogoChip {
+/* ---- Tools ------------------------------------------------------------- */
+
+.toolChip {
   fill: #f4f2ea;
-  stroke: var(--color-border);
+  stroke: color-mix(in srgb, currentColor 30%, transparent);
   stroke-width: 1;
   pointer-events: none;
 }
 
-/* Fallback for a tool with no logo in the icon set: a plain initials badge
-   in the node's own colour instead of a fabricated mark. */
-.nodeToolBadge {
+.toolBadge {
   fill: currentColor;
+  opacity: 0.72;
   pointer-events: none;
 }
 
-.nodeToolInitials {
+.toolInitials {
   font-family: var(--font-jetbrains-mono);
-  font-size: 0.62rem;
+  font-size: 12px;
   font-weight: 700;
-  fill: #1b1f16;
+  fill: var(--index-band-ground);
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
 }
 
+/* ---- Reset ------------------------------------------------------------- */
+
 /*
- * A vertical sidebar on the right edge, centred rather than pinned to a
- * corner — it used to sit top-left, which in fill mode landed underneath
- * the site's own floating nav bar (the header bleeds up behind it) and got
- * visually clipped. Vertical-centre keeps it clear of both the nav bar up
- * top and the bottom-left detail panel.
+ * The mirror of `IndexShell`'s expand control, which sits at `top: 1.25rem;
+ * right: 1.25rem` at 2.75rem square with a 0.5rem radius. Every one of those
+ * values is repeated here rather than derived, because the two are a pair on
+ * screen — opposite corners of the same band — and a pair that is only
+ * accidentally aligned drifts apart the first time either is touched.
  */
-.legend {
+.reset {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2.75rem;
+  padding: 0 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--index-band-ground) 82%, transparent);
+  backdrop-filter: blur(4px);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--index-header-ink);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.reset:hover {
+  background: var(--index-band-ground);
+  border-color: color-mix(in srgb, var(--index-header-ink) 45%, transparent);
+}
+
+/* ---- The side panel ---------------------------------------------------- */
+
+/*
+ * One persistent panel, docked left, instead of a hover tooltip in one corner
+ * and a legend in another.
+ *
+ * Left rather than right because the right-hand edge is already spoken for:
+ * Pixel floats in that corner site-wide, and two persistent surfaces in one
+ * corner is a fight neither wins.
+ *
+ * It is reserved out of the layout rather than floated over it (see
+ * `useChromeInset`), so the graph sits beside it and no node is ever parked
+ * underneath. The fixed width and the `min-height` on the body are what stop
+ * it resizing as you move between nodes — a panel that changes shape under the
+ * pointer is harder to read than one that simply swaps its contents.
+ */
+.panel {
   position: absolute;
   top: 50%;
-  right: 0.75rem;
+  left: 1.25rem;
   transform: translateY(-50%);
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--color-white) 85%, transparent);
+  gap: 1rem;
+  width: clamp(15rem, 19%, 21rem);
+  /* Tall enough to be a column rather than a card — it was floating as a squat
+     box in the middle of the left edge, which read as a tooltip that had
+     forgotten to go away. Capped so it never fights the band's own height. */
+  min-height: min(30rem, 68%);
+  padding: 1.25rem 1.25rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 18%, transparent);
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--index-band-ground) 86%, transparent);
   backdrop-filter: blur(4px);
+  color: var(--index-header-ink);
+  pointer-events: none;
+}
+
+/* Takes the slack, so the legend stays pinned to the bottom of the column and
+   the detail block reads from the top whatever is in it. */
+.panelBody {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/*
+ * Four steps, and each one is a different size, weight and colour from the one
+ * above it — kind, then name, then the sentence, then the facts. The panel's
+ * problem before was that the last three were nearly the same: a 1.15rem
+ * semibold line over a 0.9rem line over a 0.82rem line, all the same face, with
+ * 0.2–0.4rem between them.
+ */
+.panelKind {
   font-family: var(--font-jetbrains-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-ink-soft);
-  pointer-events: none;
-  width: fit-content;
+}
+
+/*
+ * Space Grotesk, not the inherited Newsreader.
+ *
+ * Newsreader is the site's *reading* face and belongs to running prose. A node
+ * name in the panel is a label on an interface — it sits directly above a mono
+ * kind line and a row of mono field labels — and a serif in that stack reads as
+ * a paragraph that wandered into a control panel.
+ */
+.panelTitle {
+  margin-top: 0.5rem;
+  font-family: var(--font-space-grotesk);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.panelBlurb {
+  margin-top: 0.6rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--index-header-ink) 88%, transparent);
+}
+
+/* Label above value, in a column — the labels are what make four grey lines
+   legible as four different kinds of fact. */
+.panelFacts {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.panelFactLabel {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.panelFactValue {
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.panelFacts + .panelFactLabel {
+  margin-top: 1.1rem;
+}
+
+.panelBlurb + .panelFactLabel {
+  margin-top: 1.1rem;
+}
+
+/* The projects a tag connects, by name. A list rather than a run-on line: at
+   four or five titles the separators stop being readable. */
+.panelList {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+/* The three things you can do here, as three lines rather than one paragraph
+   of them run together. */
+.panelSteps {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--color-ink-soft);
+}
+
+.panelSteps li {
+  padding-left: 0.85rem;
+  text-indent: -0.85rem;
+}
+
+.panelSteps li::before {
+  content: "→";
+  padding-right: 0.35rem;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--index-header-ink) 14%, transparent);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .legendItem {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.45rem;
   white-space: nowrap;
 }
 
-.detail {
-  position: absolute;
-  left: 0.75rem;
-  bottom: 0.75rem;
-  right: 0.75rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--color-white) 92%, transparent);
-  backdrop-filter: blur(4px);
-  pointer-events: none;
-}
-
-.detailTitle {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--color-charcoal);
-}
-
-.detailLine {
-  font-size: 0.75rem;
-  color: var(--color-ink-soft);
-}
-
-/* Sits in the same corner as `.detail`, shown only while no node is active
-   — a standing reminder of the zoom gesture now that plain scroll no longer
-   doubles as one (see the zoom behavior's `filter` in WorkGraph.tsx). */
-.hint {
-  position: absolute;
-  left: 0.75rem;
-  bottom: 0.75rem;
-  margin: 0;
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--color-white) 85%, transparent);
-  backdrop-filter: blur(4px);
-  font-family: var(--font-jetbrains-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-ink-soft);
-  pointer-events: none;
+/* The swatch carries the node colour through `currentColor` on `.legendItem`;
+   the words stay in the band's ink so the legend doesn't read as four
+   differently coloured lines. */
+.legendLabel {
+  color: var(--index-header-ink);
 }
 
 /*
- * Below phone width the header is tall and narrow — the opposite of the
- * ~4:3 canvas this is laid out in — so `xMidYMid slice` would crop most of
- * the graph away instead of just trimming the edges. Rather than solve
- * responsive re-layout here, fill mode steps aside and the header falls
- * back to its flat ground; the masthead was already designed to stand on
- * that alone.
+ * Below phone width the band is short and narrow. The canvas is measured now
+ * (see `useCanvas`), so the graph is no longer cropped there — it is laid out
+ * into a tall narrow ellipse on a smaller canvas so the cards keep a usable
+ * share of the screen. The panel moves to the bottom and its height is what
+ * gets reserved out of the layout instead of its width.
  */
 @media (max-width: 40rem) {
-  .frameFill {
+  .panel {
+    top: auto;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    transform: none;
+    /* Wide enough on a phone that the two-column legend would fit; it is still
+       hidden below, because the graph needs the height more. */
+    gap: 0.6rem;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .panelBody {
+    min-height: 4.5rem;
+  }
+
+  /* Four rows of key against a canvas a few hundred pixels wide would take
+     more of the screen than the graph. The panel names whatever you touch, in
+     words, which is the same information without the block. */
+  .legend {
     display: none;
+  }
+
+  .reset {
+    left: 0.75rem;
   }
 }

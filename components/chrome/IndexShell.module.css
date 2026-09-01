@@ -1,12 +1,16 @@
 /*
  * The frame every index page sits in.
  *
- * Two bands, and the relationship between them is the point. The header section
- * is a full window tall. The sheet holding the list or grid is then pulled back
- * up over the header's bottom band by `--index-peek`, so a row and a half of
- * content is already showing at rest. The header is *not* shortened to make
- * room — the sheet rides on top of it, which is what lets the header keep a
- * full window of ground for a background to work in.
+ * Two shapes. See the note at the top of IndexShell.tsx for which page is
+ * which; in short, `.pageFull` is the one-window shape (`/projects`,
+ * `/writing`) and the plain `.page` is the one with a sheet (`/about`).
+ *
+ * With a sheet, two bands, and the relationship between them is the point. The
+ * header section is a full window tall. The sheet holding the list or grid is
+ * then pulled back up over the header's bottom band by `--index-peek`, so a row
+ * and a half of content is already showing at rest. The header is *not*
+ * shortened to make room — the sheet rides on top of it, which is what lets the
+ * header keep a full window of ground for a background to work in.
  *
  * Index pages deliberately drop the three-track reading shell that documents
  * use. That layout exists to hold a contents rail and an annotation margin
@@ -27,6 +31,41 @@
    * whose rows are a different height again.
    */
   --index-peek: 30svh;
+
+  /*
+   * The least room the stage gets on a single-window page, and so — since the
+   * band takes whatever is left of the window — the most the band can have.
+   *
+   * A floor rather than a fixed boundary. The stage grows past this whenever
+   * its own contents need to (`/about` puts a logo marquee under the masthead),
+   * and only pages whose masthead is shorter than this actually sit at it. That
+   * is the difference between one dial that works on all three indexes and
+   * three magic numbers that each go stale the first time the type reflows.
+   */
+  --index-stage-min: 30svh;
+
+  /*
+   * The masthead's two halves are pinned to the window's own edges rather than
+   * centred in a content column, so the head of the page opens as wide as the
+   * screen does. These three tokens are what that costs.
+   *
+   * `--index-masthead-gap` is a *floor*, not the gap: the two tracks are
+   * content-sized and `justify-content: space-between` hands all the leftover
+   * width to the space between them, so this only matters at the width where
+   * they would otherwise touch.
+   *
+   * `--index-intro-width` is the standfirst's cap, and it is a variable rather
+   * than a literal because `useMastheadFit` writes to it — see that file. The
+   * value here is the resting width and the narrowest the fitter will use; it
+   * only ever widens from here.
+   *
+   * `--index-intro-scale` multiplies the standfirst's type size. It is the
+   * fitter's last resort and stays at 1 in almost every case; both `.intro`
+   * here and `.rebus` in Rebus.module.css fold it into their own clamp.
+   */
+  --index-masthead-gap: clamp(2rem, 6vw, 6rem);
+  --index-intro-width: 30rem;
+  --index-intro-scale: 1;
 
   /*
    * `--index-header-ground` and `--index-header-ink` are declared in
@@ -71,6 +110,58 @@
 }
 
 /*
+ * The one-window shape. The header section is the entire page, so there is
+ * nothing below it to hold off the footer — that padding would only push the
+ * footer a screen-and-a-bit down and turn "one screen, then the footer" into a
+ * short dead scroll in between.
+ */
+.pageFull {
+  padding-bottom: 0;
+}
+
+/*
+ * Two stacked regions instead of a masthead with something absolutely
+ * positioned behind it: the stage takes the height it needs, the band takes
+ * the rest. See `--index-stage-min`.
+ */
+.pageFull .headerSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageFull .stage {
+  min-height: var(--index-stage-min);
+  /* Never squeezed to make room for the band — the band is the flexible one. */
+  flex: 0 0 auto;
+
+  /*
+   * The masthead's ceiling — the counterpart to `--index-stage-min` above, and
+   * the box `useMastheadFit` holds the standfirst inside.
+   *
+   * The floor is a floor precisely because the stage is allowed to grow past
+   * it: `/about` puts a marquee under its masthead and needs to. But nothing
+   * says how far, and a standfirst is the one thing in here whose height is set
+   * by the *window's width* rather than by the design — the same sentence in
+   * the same column wraps to more lines as the window narrows, so on a short,
+   * narrow window (a laptop at 150% zoom, say) the masthead can quietly take
+   * nearly half the screen and the graph below it is the one that pays.
+   *
+   * `svh`, so it is a share of the window and not a fixed height: this is a
+   * statement about proportion — the head of the page must not crowd out the
+   * navigation under it — and a fixed number would be a different proportion at
+   * every size. At the sizes this site is actually read at the standfirst is
+   * already inside it and the fitter does nothing; it bites when the window is
+   * short relative to the type, which is exactly the case it exists for.
+   *
+   * Declared here rather than on `.page` because there is only a ceiling where
+   * there is a band underneath to protect. On the sheet shape the property is
+   * simply absent, which is what makes the fitter stand down there — see how it
+   * resolves this value.
+   */
+  --index-stage-max: 44svh;
+}
+
+/*
  * `svh` — the *small* viewport height — rather than `vh` or `dvh`. On mobile
  * `vh` measures the window with the browser's toolbars collapsed, so a `100vh`
  * header is taller than what is actually on screen at rest and the peek is
@@ -100,40 +191,168 @@
 
 /*
  * The texture slot. A video, a canvas or an animated gradient goes here; the
- * child is stretched to the section on the assumption it wants to fill it.
+ * child is stretched to fill it.
+ *
+ * No longer the full header — the texture used to run edge to edge behind
+ * both the masthead and the top of the tile grid at once, which is what the
+ * scrim used to exist to fix. Instead the slot is a contained band: it starts
+ * at half the screen's height (clear of the masthead, so nothing needs to
+ * fade for legibility) and ends a little past the sheet's top edge, into the
+ * first row of tiles by `--index-bg-drop`. A hard edge on purpose — this
+ * reads as a distinct panel the first row sits on rather than an atmosphere
+ * behind the whole page.
  */
 .background {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: 50svh;
+  bottom: calc(var(--index-peek) - var(--index-bg-drop, 7svh));
   z-index: 0;
 }
 
-.background > * {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/*
+ * The band: the same slot on a page with no sheet, taking the rest of the
+ * window under the stage.
+ *
+ * Static rather than absolutely positioned. There is nothing left to position
+ * it against — the tile grid the `--index-peek` arithmetic above was measuring
+ * from is gone from these routes — and as an ordinary flex child it can simply
+ * be told to take the leftover height, which is what lets the boundary follow
+ * each page's own masthead instead of a per-page viewport fraction.
+ *
+ * The change of ground is the point of the rule below it. Everything in here is
+ * cropped by the band's top edge — the graph runs on under it, the typed list
+ * starts against it — and with the same ground above and below, that edge reads
+ * as content accidentally cut off rather than as the boundary of a region. A
+ * step in ground and a hairline is enough to make it deliberate; anything
+ * heavier turns the band into a card sitting on the page, which is the thing
+ * the index has always specifically not been.
+ */
+.backgroundFull {
+  position: relative;
+  inset: auto;
+
+  /*
+   * `flex-basis: 0`, emphatically not `auto`.
+   *
+   * With `auto` the band's base size is its content's height, so the band asks
+   * for however tall its contents happen to be and the header grows to fit —
+   * which for a `1600×1200` SVG at full width is about 1900px, i.e. the page
+   * stopped being one screen and the footer went below a dead scroll. A basis
+   * of `0` means the band contributes nothing to the header's height and is
+   * handed the leftover instead, which is the whole arrangement: the stage
+   * asks, the band takes the remainder.
+   *
+   * `min-height: 0` is the companion fix — a flex item's default
+   * `min-height: auto` would put the content's height back in as a floor and
+   * undo it.
+   */
+  flex: 1 1 0;
+  min-height: 0;
+
+  background: var(--index-band-ground);
+  border-top: 1px solid
+    color-mix(in srgb, var(--index-header-ink) 10%, transparent);
 }
 
 /*
- * Sits between the texture and the masthead, fading the ground colour out
- * from full strength at the top down to nothing by the point the intro's
- * last line ends — so whatever the background slot holds stays legible
- * behind the title/standfirst without flattening the rest of the header.
+ * The band's contents fill it by being taken out of flow entirely, rather than
+ * by `height: 100%`.
+ *
+ * A percentage height resolves against the parent's height, and a flex item's
+ * height is only definite *after* layout — so `height: 100%` here is the same
+ * circular request that made the graph size itself from its own intrinsic
+ * aspect ratio in the first place. Positioning against the band's box sidesteps
+ * the question: the child can then never contribute to the height it is trying
+ * to read.
  */
-.scrim {
+.backgroundFull > *:not(.expandButton) {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  /* Purely visual — must not steal the pan/zoom/drag gestures the
-     background slot's content (e.g. WorkGraph's SVG) still needs. */
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--index-header-ground) 90%, transparent) 0%,
-    color-mix(in srgb, var(--index-header-ground) 68%, transparent) 24%,
-    color-mix(in srgb, var(--index-header-ground) 28%, transparent) 42%,
-    transparent 62%
-  );
+  width: auto;
+  height: auto;
+}
+
+/*
+ * Full screen: the stage goes, and the band takes the header.
+ *
+ * The header section is *already* exactly one window (`min-height: 100svh`),
+ * already starts under the nav bar, and already hands the band whatever the
+ * stage doesn't take. So full screen isn't a new box on top of the page — it is
+ * the arrangement that already exists with the stage's share set to nothing.
+ * The band inherits the whole header, which is the whole screen bar the header
+ * bar, and the footer is simply below a fold the scroll lock makes unreachable.
+ *
+ * This is deliberately not `position: fixed`, which is what it looked like it
+ * wanted to be. The header section is the shutter's panel and carries a
+ * `clip-path` for as long as it is mounted (`Shutter.tsx` animates it to
+ * `inset(0 0 0% 0)` and leaves it there) — and `clip-path` clips fixed
+ * descendants, so a fixed overlay in this subtree is cropped to the header's own
+ * box the moment the page is scrolled at all. Staying in the flow sidesteps the
+ * whole question, and costs nothing: the box being asked for and the box the
+ * header already is are the same box.
+ *
+ * The nav bar keeps its place on top of it. The screen is the band *and* the
+ * header — a full-screen view whose only way out is the Escape key is a trap —
+ * and because the band starts below the bar rather than under it, nothing in
+ * here is hidden behind it, the close button least of all.
+ */
+.pageExpanded .stage {
+  display: none;
+}
+
+/* No stage above it any more, so nothing for the hairline to divide it from. */
+.backgroundExpanded {
+  border-top: none;
+  /* Nothing to scroll, and nothing to hand a scroll to if a gesture starts here. */
+  overscroll-behavior: none;
+}
+
+/*
+ * The full-screen toggle, in the band's top-right corner.
+ *
+ * One position for both states, because the band's top edge is in the same
+ * place in both: below the masthead at rest, below the nav bar expanded. It is
+ * the only way out of the expanded view with a mouse, so it being clear of the
+ * header is the requirement, not a detail.
+ */
+.expandButton {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  bottom: auto;
+  left: auto;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid
+    color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--index-band-ground) 78%, transparent);
+  backdrop-filter: blur(4px);
+  color: var(--index-header-ink);
+  cursor: pointer;
+}
+
+.expandButton:hover {
+  border-color: color-mix(in srgb, var(--index-header-ink) 45%, transparent);
+}
+
+/*
+ * The `:not()` on this and on the two `.backgroundFull`/`.backgroundExpanded`
+ * rules above says the same thing three times, and has to: the toggle is a
+ * child of the slot so that it can be positioned against the band in both
+ * states, but it is the shell's chrome rather than the slot's content, and every
+ * rule that stretches "the thing in the slot" to fill the band would otherwise
+ * stretch the button too.
+ */
+.background > *:not(.expandButton) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /*
@@ -144,20 +363,70 @@
 .masthead {
   position: relative;
   z-index: 1;
-  width: min(var(--page-max), 100% - 2 * var(--page-gutter));
-  margin-inline: auto;
+  /*
+   * The full window, not the content column.
+   *
+   * This used to be `min(var(--page-max), 100% - 2 * var(--page-gutter))`
+   * centred with `margin-inline: auto`, which meant that past 76rem the
+   * masthead stopped growing and the two halves drifted inward together,
+   * leaving a widening dead margin on both sides while the band underneath —
+   * the graph, the typed list, the interest panel — kept running edge to edge.
+   * The head of the page read as a card floating on a full-bleed page.
+   *
+   * Now the gutter is the only inset, which is the same inset the nav bar uses
+   * (`padding-inline: var(--page-gutter)` in NavBar.module.css). The title
+   * therefore starts on the same vertical as the wordmark above it and the
+   * standfirst ends on the same vertical as the theme toggle, at every width.
+   * Because the gutter is `clamp(1.25rem, 5vw, 4rem)` and the type sizes below
+   * are `vw`-based clamps too, the whole masthead is a function of the viewport
+   * — which is what makes it track a browser zoom, since zooming is exactly a
+   * change in the CSS-pixel viewport.
+   */
+  width: 100%;
+  padding-inline: var(--page-gutter);
   padding-top: clamp(2rem, 5vw, 4.5rem);
 
   /*
-   * Title on the left, standfirst on the right — the two held apart rather than
-   * stacked, so the head of the page reads as one band instead of a column of
-   * text. The right column is capped so the line length stays readable however
-   * wide the window gets.
+   * Title against the left edge, standfirst against the right, and the window
+   * between them.
+   *
+   * Neither track is an `fr`, and that is the whole mechanism. With an `fr`
+   * track the leftover width is absorbed *inside* the title's column, so the
+   * two halves sit at a fixed distance from each other and drift toward the
+   * middle together as the window grows. With the title at `max-content`, the
+   * standfirst at its own cap and `space-between`, the leftover goes into the
+   * space between the tracks instead, which is what pins each half to its own
+   * edge. `--index-masthead-gap` is then only a floor, for the width at which
+   * there is no leftover left to distribute.
+   *
+   * The `minmax(0, …)` on both is what lets them give way rather than overflow
+   * when that floor is reached; the standfirst's own cap is the dial
+   * `useMastheadFit` turns.
    */
   display: grid;
-  grid-template-columns: 1fr minmax(0, 30rem);
+  grid-template-columns:
+    minmax(0, max-content)
+    minmax(0, var(--index-intro-width));
+  justify-content: space-between;
   align-items: start;
-  column-gap: clamp(2rem, 6vw, 6rem);
+  column-gap: var(--index-masthead-gap);
+}
+
+/*
+ * Air between the last line of the standfirst and the top of the band.
+ *
+ * Only when the masthead is the whole stage. Once the type is tall enough to
+ * push the stage past its floor, the band's edge is the masthead's own bottom
+ * edge — with nothing here the standfirst would sit directly on the hairline.
+ * `/about` is excluded by the selector because the banner that follows brings
+ * its own top margin; adding this as well would just widen that gap.
+ *
+ * `useMastheadFit` reads this back off the computed style rather than carrying
+ * its own copy of the number, so the air is part of the box it fits into and
+ * the two can't drift apart.
+ */
+.masthead:last-child {
+  padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 /*
@@ -184,7 +453,11 @@
 
 .intro {
   font-family: var(--font-newsreader);
-  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  /*
+   * `--index-intro-scale` is 1 unless `useMastheadFit` has run out of width to
+   * give — see the token's note at the top of this file.
+   */
+  font-size: calc(clamp(1.05rem, 1.5vw, 1.35rem) * var(--index-intro-scale, 1));
   line-height: 1.45;
   /* Held back from the title so the two still read as a pair on the dark ground. */
   color: color-mix(in srgb, var(--index-header-ink) 78%, transparent);
@@ -221,22 +494,6 @@
 .sheet > * {
   width: min(var(--page-max), 100% - 2 * var(--page-gutter));
   margin-inline: auto;
-}
-
-/*
- * The list previously kept the documents' own reading measure (`--measure`,
- * 42rem) while `/projects` and `/archive` ran to the full `--page-max`. That
- * made `/writing` visibly narrower than its sibling indexes, which is the one
- * thing the four of them should agree on — so the measure is gone and every
- * index's content field is now the same width.
- *
- * The line length that argument was protecting still matters, but it belongs
- * to the row's own text rather than to the container, and it is already held
- * there — `components/writing/IndexCard.module.css` caps the card's summary
- * at 36rem, which is tighter than the measure this used to impose.
- */
-.list {
-  list-style: none;
 }
 
 .empty {
@@ -285,6 +542,11 @@
 /*
  * Below this the two halves of the masthead can't share a line without the
  * standfirst becoming a narrow ragged column, so they stack.
+ *
+ * `useMastheadFit` stands down here, and detects it by counting the tracks
+ * below rather than by re-testing this width in JavaScript. There is nothing
+ * for it to do either way: stacked, the standfirst already has the full
+ * measure, so there is no gap left to widen into.
  */
 @media (max-width: 60rem) {
   .masthead {
@@ -311,5 +573,21 @@
 
   .sheet {
     margin-top: 0;
+  }
+
+  /*
+   * Exempt, because the reasoning above doesn't apply: there is no peek to
+   * make room for, and collapsing the header to the height of its own type
+   * would leave the background — which on these routes is the whole
+   * navigation — with no box to draw in at all. The stage gives up its floor
+   * instead, so the band still has somewhere to go on a landscape phone.
+   */
+  .pageFull {
+    --index-stage-min: 0;
+  }
+
+  .pageFull .headerSection {
+    min-height: 100svh;
+    padding-bottom: 0;
   }
 }

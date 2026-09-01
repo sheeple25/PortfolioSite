@@ -22,6 +22,7 @@ export { default as PacmanCursor } from "./PacmanCursor";
 export { PixelProvider, usePixel, usePixelMood } from "./PixelContext";
 export { useBlink, useFlash, useGaze } from "./hooks";
 export { EXPRESSIONS, rowsToRuns, runsToPath, type Expression } from "./sprites";
+export { ACCESSORIES, ACCESSORY_KEYS, type Accessory } from "./sprites";
 
 /* ------------------------------------------------------------------ InScreen */
 /* The right-hand column: annotations raised by a bold word in the prose. */

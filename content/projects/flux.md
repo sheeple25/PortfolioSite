@@ -9,8 +9,6 @@ place: CEPT University
 term: Spring 2024
 role: Solo — concept, mechanism, CAD, prototyping
 skills:
-  - Product Design
-  - Mechanism Design
   - CAD Modelling
   - Prototyping
 # DRAFT — the body text below never names a package. "CAD Modelling" above
@@ -24,8 +22,9 @@ coverAlt: The Flux nameplate, its ferrofluid display lit against a dark desk.
 titleEffect: ferrofluid
 expandable: false
 tags:
-  - product
-  - mechanism
+  - Physical Product
+  - Making
+  - Academic
 ---
 
 Flux is a kinetic nameplate for content creators. It uses rare-earth magnets to pull ferrofluid — a suspension of ferrous nanoparticles that behaves like a liquid magnet — into letters, holds them, then lets them collapse back into a pool.

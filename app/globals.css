@@ -43,6 +43,24 @@
   --index-header-ground: #f7f7f7;
   --index-header-ink: #1e1e1e;
 
+  /*
+   * The lower band on an index — the part that holds the navigation itself
+   * (the graph, the typed list, the interest cutouts) rather than the
+   * masthead.
+   *
+   * A separate value rather than a `color-mix` off the ground, for the same
+   * reason the two above are literals: it has to be readable from
+   * `.index-ground` on the document as well as inside the page's own subtree.
+   *
+   * The difference is deliberately small — a step, not a panel. It exists
+   * because the band's contents are cropped by its top edge (the graph runs
+   * under it, the typed text starts at it), and without a change of ground
+   * that edge reads as the content being accidentally cut off rather than as
+   * the boundary of a region. Light mode steps down toward the ink; dark mode
+   * steps up, because there is no useful room left below `#17130f`.
+   */
+  --index-band-ground: #efefef;
+
   --nav-height: 5rem;
   --page-max: 76rem;
   --page-gutter: clamp(1.25rem, 5vw, 4rem);
@@ -310,6 +328,8 @@ button {
      the index ground always used, now scoped to dark mode instead of fixed. */
   --index-header-ground: #17130f;
   --index-header-ink: #f3ecdf;
+  /* Steps up rather than down — see the note in `:root`. */
+  --index-band-ground: #201a15;
 }
 
 @theme inline {
@@ -403,6 +423,26 @@ button {
 .chrome-hidden [data-chrome="header"],
 .chrome-hidden [data-chrome="footer"],
 .rails-hidden [data-chrome="rail"] {
+  pointer-events: none;
+}
+
+/*
+ * An index's band, opened to fill the screen (`IndexShell`'s `canExpand`).
+ *
+ * Everything floating over the page goes; the header bar deliberately stays,
+ * because it is the way back out. That makes this a stronger statement than
+ * `.rails-hidden` above and it is written as one rather than reusing it: that
+ * rule hides by sliding a rail off its own bottom edge, which works for a rail
+ * anchored to one, and does not for `StickerVote`'s — that one is centred with
+ * `top: 55%; translateY(-50%)`, and since `transform` is a single property the
+ * `translateY(115%)` replaces the centring instead of adding to it, leaving the
+ * badges 160-odd pixels lower and still on screen. Going out on opacity has no
+ * geometry to get wrong, whatever a given rail's resting transform happens to
+ * be. It also fades rather than slides, which is the right register here — this
+ * is chrome stepping back for a moment, not the page being taken away.
+ */
+.band-expanded [data-chrome="rail"] {
+  opacity: 0;
   pointer-events: none;
 }
 

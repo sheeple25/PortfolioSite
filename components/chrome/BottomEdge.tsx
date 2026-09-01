@@ -42,7 +42,7 @@ export default function BottomEdge() {
      * How far up the fixed corner furniture has to sit to clear the footer.
      *
      * Measured from the footer's bottom row, not its top edge. The panel opens
-     * to 60svh as you reach the end of the page (see Footer.module.css), so its
+     * to 70svh as you reach the end of the page (see Footer.module.css), so its
      * top edge ends up halfway up the screen — resting the mascot on that would
      * fling it into the middle of the viewport. The bottom row sticks to the
      * bottom of the viewport instead, which is the thing the furniture actually

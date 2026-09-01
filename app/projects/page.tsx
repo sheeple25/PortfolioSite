@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import TileGrid from "@/components/index/TileGrid";
-import { toTile } from "@/components/index/toTile";
 import { getEntries } from "@/lib/entries";
 import { getProjectGraph } from "@/lib/graph";
 import IndexShell, { IndexEmpty } from "@/components/chrome/IndexShell";
@@ -15,6 +13,10 @@ const TITLE = "Work.";
  * Deliberately shorter than the sentence it replaces. At this size a line of
  * prose would push the masthead's right column down past the fold, and the
  * point of the rebus is that it is read at a glance rather than parsed.
+ *
+ * The trailing clause is the one concession to the merge: the four marks name
+ * the curated work, and the page now holds everything else as well, so it has
+ * to say so or the graph looks like it has wandered off the brief.
  */
 const INTRO = (
   <Rebus>
@@ -23,47 +25,58 @@ const INTRO = (
     <RebusLogo src="/logos/IFTC.svg" alt="In For The Cause" />, four client
     briefs in four months at <RebusLogo src="/logos/PwC.svg" alt="PwC" />, and a
     lavatory for an <RebusLogo src="/logos/IndianRailways.svg" alt="Indian Railways" />{" "}
-    <RebusEmoji label="locomotive">🚆</RebusEmoji>.
+    <RebusEmoji label="locomotive">🚆</RebusEmoji>. Everything else I have made
+    is in here too.
   </Rebus>
 );
 
 export const metadata: Metadata = {
   title: "Work",
   description:
-    "Design research and speculative projects — the briefs behind them and what came out.",
+    "Design research and speculative projects — the briefs behind them and what came out, mapped against the domains, skills and tools they share.",
   openGraph: {
     title: "Work",
     description:
-      "Design research and speculative projects — the briefs behind them and what came out.",
+      "Design research and speculative projects — the briefs behind them and what came out, mapped against the domains, skills and tools they share.",
     url: "/projects",
   },
 };
 
 /**
- * The Work index — one of two filtered views over the entry registry.
+ * Every project, on one page, navigated by the graph.
  *
- * `section: "work"` is what puts a project here rather than in the Archive,
- * and it is a curation decision held in `lib/entries/registry.ts`, not a
- * consequence of where a file lives or how built-out it is. See the note at
- * the top of `lib/entries/types.ts`.
+ * This used to be one of two filtered views over the entry registry, with a
+ * separate `/archive` holding the rest and a tile grid on each. The split is
+ * gone: `getProjectGraph()` had always been built from the unfiltered registry
+ * — it was the one thing on the site that already knew Work and the Archive
+ * were one pool — and promoting it from the header's texture to the page's
+ * navigation is what let the second index go. Curation did not go with it; it
+ * moved into the layout, where `section: "work"` still decides which nodes are
+ * larger, warmer and held in the middle. See `docs/INDEX_NAV_REDESIGN.md`.
+ *
+ * No `children`, so `IndexShell` renders no sheet: the masthead and the graph
+ * are one window, and the only thing below them is the site footer.
  */
 export default function ProjectsIndexPage() {
-  const entries = getEntries("work");
+  const entries = getEntries();
   const pick = entries.find((entry) => entry.meta.recommended);
   const graph = getProjectGraph();
+
+  if (entries.length === 0) {
+    return (
+      <IndexShell title={TITLE} intro={INTRO}>
+        <IndexEmpty noun="Projects" dir="content/projects" />
+      </IndexShell>
+    );
+  }
 
   return (
     <IndexShell
       title={TITLE}
       intro={INTRO}
       note={pick ? <>Start with {pick.meta.title}&hellip;</> : null}
-      background={<WorkGraph graph={graph} fill />}
-    >
-      {entries.length === 0 ? (
-        <IndexEmpty noun="Projects" dir="content/projects" />
-      ) : (
-        <TileGrid items={entries.map(toTile)} />
-      )}
-    </IndexShell>
+      background={<WorkGraph graph={graph} />}
+      backgroundInteractive
+    />
   );
 }

@@ -9,22 +9,24 @@ place: CEPT University
 term: Fall 2023
 role: Solo — design, prototyping, packaging
 skills:
-  - Product Design
-  - Model-Led Iteration
-  - Packaging Design
-# Confirmed from the body text below ("Keyshot answered the one number that
-# mattered"). "Model-Led Iteration" above suggests physical models carried
-# most of the process, so this is deliberately just the one tool, not a
-# guessed CAD package alongside it.
+  - Prototyping
+  - Furniture Design
+  - CAD Modelling
+# Keyshot is confirmed from the body text below ("Keyshot answered the one
+# number that mattered"). Solidworks is not — it was added by hand along with
+# "CAD Modelling" above, on the reasoning that the Keyshot render had to have
+# been fed by *some* CAD model. Verify which package it actually was.
 tools:
   - Keyshot
+  - Solidworks
 cover: /archive/matchbox-hero.webp
 coverAlt: The Matchbox bedside lamp in plywood, its shade raised.
 titleEffect: glow
 expandable: false
 tags:
-  - furniture
-  - lighting
+  - Physical Product
+  - Furniture
+  - Academic
 ---
 
 A bedside lamp that has to give both directed and ambient light, in a form that could be mass-manufactured.

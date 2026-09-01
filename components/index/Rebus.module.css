@@ -6,7 +6,15 @@
  */
 .rebus {
   display: inline;
-  font-size: clamp(1.3rem, 2.1vw, 1.85rem);
+  /*
+   * `--index-intro-scale` is the masthead fitter's last resort — 1 in every
+   * ordinary case. It has to be folded in here as well as on `.intro`, because
+   * this rule replaces that one's `font-size` outright rather than inheriting
+   * it; scaling only the paragraph would leave the rebus at full size and the
+   * fallback would do nothing on the one page that has ever needed it. See
+   * `components/chrome/useMastheadFit.ts`.
+   */
+  font-size: calc(clamp(1.3rem, 2.1vw, 1.85rem) * var(--index-intro-scale, 1));
   line-height: 1.55;
   /*
    * Words and marks are held apart a little more than normal word-spacing, so

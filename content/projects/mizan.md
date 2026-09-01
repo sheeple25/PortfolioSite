@@ -10,8 +10,9 @@ term: Fall 2022
 role: Solo — design, simulation, fabrication
 skills:
   - Furniture Design
-  - Load Simulation
-  - Sheet Metal Fabrication
+  - CAD Modelling
+  - Fabrication
+  - Structural Design
 # Confirmed from the body text below ("Solidworks simulation drove the rest").
 tools:
   - Solidworks
@@ -20,8 +21,10 @@ coverAlt: The Mizan shelf, an aluminium slide-fit shelving system.
 titleEffect: assemble
 expandable: false
 tags:
-  - furniture
-  - fabrication
+  - Furniture
+  - Making
+  - Academic
+  - Physical Product
 ---
 
 A flatpack shelf for homes, in metal, that the buyer assembles without tools or fasteners.

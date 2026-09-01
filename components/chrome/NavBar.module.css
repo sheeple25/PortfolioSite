@@ -70,6 +70,72 @@
   background-size: 0% 1.5px;
 }
 
+.contactItem {
+  position: relative;
+}
+
+/*
+ * No gap between the trigger and this wrapper (`top: 100%`, no margin) — the
+ * visual spacing lives in `padding-top` instead, so the padding stays inside
+ * the hoverable box and the pointer never crosses dead space on its way from
+ * the "Contact" label down to the menu. See `feedback_sticky_...` memories
+ * for the general shape of this trap: a gap here would drop `:hover` for a
+ * frame and the dropdown would flicker shut before the pointer arrives.
+ */
+.contactDropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-top: 0.6rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.16s ease, visibility 0.16s;
+}
+
+.contactItem:hover .contactDropdown,
+.contactItem:focus-within .contactDropdown {
+  opacity: 1;
+  visibility: visible;
+}
+
+.contactDropdownPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 12.5rem;
+  padding: 0.4rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 18px 32px -18px rgba(0, 0, 0, 0.35);
+  transform: translateY(-4px);
+  transition: transform 0.16s ease;
+}
+
+.contactItem:hover .contactDropdownPanel,
+.contactItem:focus-within .contactDropdownPanel {
+  transform: translateY(0);
+}
+
+.contactDropdownLink {
+  display: block;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  color: var(--color-muted);
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.contactDropdownLink:hover,
+.contactDropdownLink:focus-visible {
+  background: color-mix(in srgb, var(--nav-pixel-accent) 8%, transparent);
+  color: var(--color-charcoal);
+}
+
 /* Groups the theme toggle with "Ask Pixel" and the mobile menu button, so
    they move as one block at the end of the row regardless of how much space
    `justify-content: space-between` leaves for the row's other children. */
@@ -183,6 +249,26 @@
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   color: var(--color-accent);
+}
+
+.sheetContactRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheetContactSecondary {
+  align-self: flex-start;
+  margin-bottom: 0.9rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  color: var(--color-muted);
+  transition: color 0.18s ease;
+}
+
+.sheetContactSecondary:hover,
+.sheetContactSecondary:focus-visible {
+  color: var(--color-charcoal);
 }
 
 @media (max-width: 860px) {

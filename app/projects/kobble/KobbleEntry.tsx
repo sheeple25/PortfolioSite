@@ -74,8 +74,8 @@ export default function KobbleEntry() {
     <CaseShell
       contents={CONTENTS}
       palette={PALETTE}
-      backHref="/archive"
-      backLabel="Archive"
+      backHref="/projects"
+      backLabel="Work"
       banner={
         <Banner title="Kobble" meta={META}>
           <BannerVideo
@@ -136,7 +136,7 @@ export default function KobbleEntry() {
             <StatRow stats={[{ value: 421, label: "Taxonomy categories" }]} />
           </Disclosure>
 
-          <MoreProjects projects={NEIGHBOURS} indexHref="/archive" />
+          <MoreProjects projects={NEIGHBOURS} />
         </>
         );
       }}

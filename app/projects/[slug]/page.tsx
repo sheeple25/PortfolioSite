@@ -72,9 +72,14 @@ export default async function ProjectPage({ params }: PageProps) {
 
   const sectionIds = doc.sections.map((section) => section.id);
 
-  /* Back to whichever index actually lists this entry. */
-  const backHref = entry.section === "work" ? "/projects" : "/archive";
-  const backLabel = entry.section === "work" ? "Work" : "Archive";
+  /*
+   * One index lists every entry now, so there is nothing to choose between —
+   * this used to branch on `entry.section`, back when Work and the Archive
+   * were two pages. `entry` is still resolved above, because a slug with a
+   * document but no registry entry is still a 404.
+   */
+  const backHref = "/projects";
+  const backLabel = "Work";
 
   return (
     <article className={styles.page}>
@@ -145,9 +150,7 @@ export default async function ProjectPage({ params }: PageProps) {
                   &lowast;
                 </p>
                 <Link href={backHref} className={styles.endLink}>
-                  {entry.section === "work"
-                    ? "More work"
-                    : "Back to the archive"}
+                  More work
                 </Link>
               </div>
             </div>

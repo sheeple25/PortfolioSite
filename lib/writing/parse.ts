@@ -230,6 +230,7 @@ function readFrontmatter(
     tools: Array.isArray(data.tools) ? data.tools.map(String) : undefined,
     cover: typeof data.cover === "string" ? data.cover : undefined,
     coverAlt: typeof data.coverAlt === "string" ? data.coverAlt : undefined,
+    cardCover: typeof data.cardCover === "string" ? data.cardCover : undefined,
     coverVideo: typeof data.coverVideo === "string" ? data.coverVideo : undefined,
     logo: typeof data.logo === "string" ? data.logo : undefined,
     logoInvert: data.logoInvert === true,

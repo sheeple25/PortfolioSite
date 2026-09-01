@@ -4,7 +4,6 @@ import { useState } from "react";
 import IndexShell from "@/components/chrome/IndexShell";
 import CursorImageTrail from "./CursorImageTrail";
 import InterestBand from "./InterestBand";
-import LogoMarquee from "./LogoMarquee";
 
 /*
  * The About page's body.
@@ -14,12 +13,26 @@ import LogoMarquee from "./LogoMarquee";
  * element in state — `onHeaderElement` is a function, and functions can't
  * cross the server/client boundary as props.
  *
- * The page is two acts. Act I is the masthead: title, the standfirst, and the
- * marquee of places under it. Act II is the band of interests over a shared
- * panel, below. More is going under the title and standfirst later; that space
- * is deliberately left open rather than filled with something provisional.
+ * The page is two acts, and they are now the shell's two regions rather than a
+ * header and a sheet scrolled to. Act I is the **stage**: title and standfirst,
+ * and nothing else — the logo marquee that used to run under them is gone, and
+ * the places it named are now rows in the desktop's experience widget, with
+ * their role and dates attached. Act II is the desktop, in the **band** below
+ * — the same slot the graph fills on `/projects` and the typed list on
+ * `/writing`, on the same slightly darker ground, so all three indexes are one
+ * screen with their interactive half at the bottom of it.
  *
- * The cursor trail belongs to Act I alone and is scoped to the header element,
+ * That is what `IndexShell` with no `children` gives: the page is exactly one
+ * window and the only thing under it is the footer.
+ *
+ * Dropping the marquee makes the stage shorter, and because the shell splits
+ * these two regions with flex rather than a fixed boundary, the band grows by
+ * exactly that much. That height is spent on the desktop — the experience
+ * widget and the wallpaper around it — and explicitly not on the window, which
+ * is capped so it stays the size it was. See `--window-max-*` in
+ * `InterestBand.module.css`.
+ *
+ * The cursor trail belongs to Act I alone and is scoped to the stage element,
  * so it falls silent at the band — two layers of scattered images competing
  * for the same job is exactly what the pixel cutouts are already doing there.
  */
@@ -30,19 +43,18 @@ export default function AboutView({
   intro: React.ReactNode;
   trailImages: string[];
 }) {
-  const [header, setHeader] = useState<HTMLElement | null>(null);
+  const [stage, setStage] = useState<HTMLElement | null>(null);
 
   return (
     <>
-      <CursorImageTrail images={trailImages} bounds={header} />
+      <CursorImageTrail images={trailImages} bounds={stage} />
       <IndexShell
         title="About."
         intro={intro}
-        banner={<LogoMarquee />}
-        onHeaderElement={setHeader}
-      >
-        <InterestBand />
-      </IndexShell>
+        onStageElement={setStage}
+        background={<InterestBand />}
+        backgroundInteractive
+      />
     </>
   );
 }

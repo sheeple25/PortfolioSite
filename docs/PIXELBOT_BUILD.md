@@ -533,9 +533,106 @@ Pixel *is* is editing the module.
   layered/composable sprite model for a wardrobe — is `sprites.ts` and
   `Pixel.tsx`, inside the module. Add a row to §10 and a line to `docs/TODO.md`,
   and do the sprite work in a dedicated PixelBot pass.
+  - **The accessory layer now exists** (§13). `<Pixel accessory="bowler" />` is
+    ordinary public API and needs no request. Adding a *sixth* costume, or a
+    second colour within one costume, is still a change to the sprite and still
+    does.
 
 ### Not reachable from other features at all
 
 The chat, the system prompt, the API route, the InScreen notes and the rate
 limits. The ESLint boundary blocks deep imports, so another feature cannot
 couple to any of it by accident.
+
+---
+
+## 13. Build log — the footer wardrobe
+
+A deliberate PixelBot pass, taken on its own, against the first half of the
+footer-game item in `docs/TODO.md`: hover Pixel at the footer, get a
+**Customise** pill, pick from bow tie / bowler hat / sunglasses / devil horns /
+angel halo, and he wears it for the rest of the session.
+
+### The decision that shaped everything else
+
+§12 assumed the footer feature would mount **its own** `<Pixel>` and hide the
+sitewide companion behind it — which is why it reserves reason-tagged
+`setHidden` as a prerequisite, `hidden` being one unowned boolean with two
+writers already.
+
+The wardrobe attaches to the **existing** companion instead. It is fixed to the
+bottom-right corner, and `--corner-lift` parks it on the footer's bottom row as
+you arrive, so it is *already in the footer* by the time the control is
+reachable. That single choice removed the whole prerequisite: no second mascot
+on screen, no duplicate gaze/blink/idle machinery, no third writer to `hidden`.
+
+**The prerequisite is still real for the runner**, which genuinely does need a
+sprite of its own doing something the companion isn't.
+
+### What was added inside the module
+
+| File | Change |
+| --- | --- |
+| `sprites.ts` | `Accessory`, `ACCESSORIES`, `ACCESSORY_KEYS`, `isAccessory`. Costumes are literal grids like the body, with an `originY` that may be negative. |
+| `Pixel.tsx` | `accessory` prop; paths built once at module load; `hidesEyes` suppresses the eye layer. |
+| `Pixel.module.css` | `overflow: visible` on the sprite. |
+| `PixelContext.tsx` | `accessory` / `setAccessory`, backed by a `sessionStorage` external store. |
+| `PixelWardrobe.tsx` + `.module.css` | New. The hover → pill → panel control. |
+| `PixelCompanion.tsx` | Footer detection, hover state, mounts the wardrobe. |
+| `index.ts` | Exports `ACCESSORIES`, `ACCESSORY_KEYS`, `Accessory`. |
+
+### Things that were wrong first, and what fixed them
+
+- **The sprite clips.** An SVG clips to its viewBox, so a hat at negative rows
+  paints nothing at all — and the bug looks like a broken mask, not a clip.
+  Widening the viewBox was the alternative and would have changed the rendered
+  height of every Pixel on the site. `overflow: visible` keeps the body's box at
+  24×24 and lets the costume paint outside it.
+- **A black hat on a black footer is invisible.** The bowler, horns and halo are
+  the three pieces that overhang the body onto the page behind, and where this
+  control lives that page is the footer's pure black panel. All three carry
+  their own fill; the bowler is warm grey because the eyes' near-black
+  disappeared. Costumes that stay on the blue body still default to eye ink.
+- **The first bow tie rendered as three blobs.** Constant-height wings don't
+  read as a tie; they have to taper into the knot. A later version punched the
+  middle row either side of the knot and left it floating unattached — that row
+  runs solid now.
+- **Restoring the costume tripped `react-hooks/set-state-in-effect`.** Reading
+  `sessionStorage` in an effect is a cascading render, and seeding `useState`
+  from it disagrees with the server-rendered HTML. `useSyncExternalStore` with a
+  server snapshot of `null` is the shape that handles both.
+- **The pill vanished as you reached for it.** Moving the pointer off the sprite
+  fired `pointerleave` before it arrived at the button. The wardrobe's box is
+  now `pointer-events: none` only while hidden, and solid once revealed, so the
+  pointer transfers from sprite to control without ever leaving the group. It
+  has to be transparent while hidden — it sits over the footer's "Back to top".
+- **The panel remembered being open.** Behind an `enabled` prop it kept its
+  state; scrolling back to the footer later reopened it. The companion unmounts
+  it instead, which resets it for free and removed a second effect-setState.
+
+### Verified
+
+`tsc --noEmit` clean, `eslint components/pixel` clean (the one remaining warning
+is pre-existing in `PacmanCursor.tsx`), `next build` green. The costume art was
+checked by rasterising the real masks out of `sprites.ts` and looking at them —
+all five defects above were found that way, not by reading the grids.
+
+### Follow-ups, same pass
+
+- **The InScreen annotation panel now leaves at the footer.** It is fixed and
+  rides `--corner-lift`, so it was being left floating over the footer's black
+  panel — a note anchored to the mascot, hanging in a room the mascot had
+  already walked into. It exits through `AnimatePresence` rather than being cut,
+  so it slides away mid-arrival instead of vanishing.
+- **`atFooter` moved onto `PixelContext`.** It started as local state in
+  `PixelCompanion`; the annotation panel needed the same answer, and two
+  `IntersectionObserver`s on one element for one boolean is a second source of
+  truth waiting to disagree.
+- **The wardrobe speaks in mono.** Buttons inherit the body face under the
+  preflight reset, so the pill shipped in Newsreader — the reading face on a
+  piece of interface furniture. Pinned explicitly rather than left leaning on
+  that reset.
+
+### Not done
+
+The Chrome-dino runner. This pass was the wardrobe only.

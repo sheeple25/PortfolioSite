@@ -96,8 +96,8 @@ export default function VashiEntry() {
     <CaseShell
       contents={CONTENTS}
       palette={PALETTE}
-      backHref="/archive"
-      backLabel="Archive"
+      backHref="/projects"
+      backLabel="Work"
       banner={
         <Banner title="Vashi ISL" meta={META} institutions={INSTITUTIONS}>
           <BannerImage
@@ -159,7 +159,7 @@ export default function VashiEntry() {
             <StatRow stats={[{ value: 20, suffix: "+", label: "Competitors reviewed" }]} />
           </Disclosure>
 
-          <MoreProjects projects={NEIGHBOURS} indexHref="/archive" />
+          <MoreProjects projects={NEIGHBOURS} />
         </>
         );
       }}

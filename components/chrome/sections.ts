@@ -10,7 +10,7 @@ import { ENTRIES } from "@/lib/entries/registry";
  */
 
 /** The section indexes, all built on `IndexShell`. */
-export const INDEX_ROUTES = ["/projects", "/archive", "/writing", "/about"] as const;
+export const INDEX_ROUTES = ["/projects", "/writing", "/about"] as const;
 
 /** Carries the dark index ground, and renders a full-window header section. */
 export function isIndexRoute(pathname: string) {
@@ -39,7 +39,8 @@ const CASE_SHELL_SLUGS = new Set(
  * The indexes do (`IndexShell`'s header section), and so do the hand-built
  * case studies under `/projects/<slug>` (`CaseShell`'s banner). Nothing else
  * does: markdown entries and `/writing/<slug>` are `DocumentHeader` pages
- * inside the reading shell, and `/contact` has no header of its own at all.
+ * inside the reading shell, and contact isn't a route at all (it's a
+ * `mailto:` link in the header, see `NavBar`).
  *
  * A route matched here that turns out to have no panel is not an error — the
  * close simply plays and the destination arrives without opening. The list only

@@ -1,9 +1,18 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { usePathname } from "next/navigation";
 import { useFlash } from "./hooks";
-import type { Expression } from "./sprites";
+import { isAccessory, type Accessory, type Expression } from "./sprites";
 import {
   useChatSession,
   type Audience,
@@ -13,6 +22,73 @@ import {
 
 /** Reactions raised through the context linger slightly longer than a local flash. */
 const REACTION_MS = 900;
+
+/**
+ * Where the wardrobe's choice is kept. `sessionStorage`, deliberately: the
+ * costume is meant to last "the rest of the session" and no longer, so it
+ * survives a reload of the tab and dies with it. `localStorage` would make a
+ * joke someone made once into a permanent fact about the site, and a plain
+ * `useState` would lose it on any hard refresh.
+ */
+/**
+ * How much of the footer has to be on screen before Pixel counts as having
+ * arrived in it. Not "any of it": `--corner-lift` is still carrying him up onto
+ * the footer's bottom row while the first sliver shows.
+ */
+const FOOTER_ARRIVED_RATIO = 0.35;
+
+const ACCESSORY_KEY = "pixel:accessory";
+
+function readStoredAccessory(): Accessory | null {
+  try {
+    const stored = window.sessionStorage.getItem(ACCESSORY_KEY);
+    return isAccessory(stored) ? stored : null;
+  } catch {
+    // Storage access throws outright in some privacy modes rather than
+    // returning null. An undressed mascot is a fine answer to that.
+    return null;
+  }
+}
+
+/*
+ * The costume is an external store rather than provider state, for one reason:
+ * it has to be read from `sessionStorage`, and there is no `sessionStorage` on
+ * the server. Seeding `useState` from it would make the client's first render
+ * disagree with the HTML it is hydrating; restoring it in an effect instead
+ * would be a setState-in-effect cascade. `useSyncExternalStore` is the shape
+ * React provides for exactly this — the same one `ThemeToggle` uses to read the
+ * `.dark` class that was set before first paint.
+ *
+ * Module scope, so the read happens once per page load rather than per mount.
+ */
+let accessoryValue: Accessory | null =
+  typeof window === "undefined" ? null : readStoredAccessory();
+
+const accessoryListeners = new Set<() => void>();
+
+function subscribeAccessory(onStoreChange: () => void) {
+  accessoryListeners.add(onStoreChange);
+  return () => {
+    accessoryListeners.delete(onStoreChange);
+  };
+}
+
+const getAccessorySnapshot = () => accessoryValue;
+
+/** The server has no session, so it always renders him undressed. */
+const getServerAccessorySnapshot = (): Accessory | null => null;
+
+function writeAccessory(next: Accessory | null) {
+  accessoryValue = next;
+  try {
+    if (next) window.sessionStorage.setItem(ACCESSORY_KEY, next);
+    else window.sessionStorage.removeItem(ACCESSORY_KEY);
+  } catch {
+    // Not being able to persist it is survivable; the in-memory value still
+    // dresses him for this page.
+  }
+  accessoryListeners.forEach((listener) => listener());
+}
 
 /** Where an `openChat` call came from. Analytics and tone both care. */
 export type ChatSource = "header" | "companion" | "screen";
@@ -41,6 +117,16 @@ type PixelContextValue = {
   react: (expression: Expression, ms?: number) => void;
   hidden: boolean;
   setHidden: (hidden: boolean) => void;
+  /** The costume from the footer wardrobe. `null` is the bare mascot. */
+  accessory: Accessory | null;
+  setAccessory: (accessory: Accessory | null) => void;
+  /**
+   * Pixel has reached the footer and is sitting in it. Lives here rather than
+   * in the companion because two surfaces need the same answer — the wardrobe,
+   * which only exists at the footer, and the InScreen annotation panel, which
+   * has to get out of the way when he arrives. One observer, one truth.
+   */
+  atFooter: boolean;
 
   /* ------------------------------------------------------------ the chat */
   chatOpen: boolean;
@@ -74,6 +160,12 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
   const [mood, setMood] = useState<Expression | null>(null);
   const [hidden, setHidden] = useState(false);
   const [reaction, react] = useFlash(REACTION_MS);
+  const accessory = useSyncExternalStore(
+    subscribeAccessory,
+    getAccessorySnapshot,
+    getServerAccessorySnapshot,
+  );
+  const [atFooter, setAtFooter] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
   const [triggerPathname, setTriggerPathname] = useState<string | null>(null);
@@ -89,6 +181,36 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
    * queued here and fired by the effect below, once state has settled.
    */
   const pendingPrompt = useRef<string | null>(null);
+
+  /*
+   * `#site-footer` is the same public anchor `BottomEdge` measures against, so
+   * this is reading a documented handle rather than reaching into another
+   * component. An observer rather than a scroll listener: the answer changes
+   * twice per page and the browser can work that out without a callback on
+   * every frame. The footer lives in the root layout and never unmounts, so
+   * this runs once.
+   */
+  useEffect(() => {
+    const footer = document.getElementById("site-footer");
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setAtFooter(
+          entry.isIntersecting && entry.intersectionRatio >= FOOTER_ARRIVED_RATIO,
+        );
+      },
+      { threshold: [0, FOOTER_ARRIVED_RATIO, 0.6, 1] },
+    );
+    observer.observe(footer);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const setAccessory = useCallback(
+    (next: Accessory | null) => writeAccessory(next),
+    [],
+  );
 
   const sendMessage = useCallback(
     (text: string) => {
@@ -136,6 +258,9 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
       react,
       hidden,
       setHidden,
+      accessory,
+      setAccessory,
+      atFooter,
       chatOpen,
       openChat,
       closeChat,
@@ -154,6 +279,9 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
       reaction,
       react,
       hidden,
+      accessory,
+      setAccessory,
+      atFooter,
       chatOpen,
       openChat,
       closeChat,

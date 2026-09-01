@@ -1,0 +1,203 @@
+/*
+ * The wardrobe floats over the footer's black panel, so every colour in here is
+ * a literal rather than a palette token — the same reasoning as
+ * `Footer.module.css`. The control is fixed-position furniture and is NOT
+ * inside `<footer>` in the DOM, so it never inherits the footer's re-pointed
+ * tokens; pointing it at `--color-charcoal` would give it near-black type on a
+ * near-black ground in light mode.
+ */
+.root {
+  /*
+   * The wardrobe speaks in mono, like the InScreen annotation panel's
+   * `.panelText` does. Buttons inherit the body face under Tailwind's preflight,
+   * which meant the pill came out in Newsreader — the reading face, for a piece
+   * of interface furniture.
+   */
+  font-family: var(--font-jetbrains-mono);
+
+  /*
+   * Pointer-events are the whole trick that makes the hover survive the trip
+   * from Pixel up to the button. While hidden this box must not exist for the
+   * mouse — it sits directly over the footer's "Back to top" link. The moment
+   * hovering Pixel reveals it, it becomes solid, so the pointer leaves the
+   * sprite and lands on THIS instead of on the page behind, and the reveal
+   * doesn't flicker off halfway through the gesture.
+   */
+  pointer-events: none;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+
+  /*
+   * Padding, not margin: the box has to touch the sprite's hit area with no
+   * dead row between them, or the pointer falls through the gap. It is also
+   * the clearance a bowler hat needs — accessories paint above the head, out
+   * past the sprite's own box.
+   */
+  padding-bottom: 1.75rem;
+}
+
+.root.shown {
+  pointer-events: auto;
+}
+
+/*
+ * Explicit rather than relying on the preflight that makes buttons inherit the
+ * body face — that inheritance is exactly what put the pill in Newsreader, and
+ * a reset it depends on is not something this control should be betting on.
+ */
+.trigger,
+.title,
+.option,
+.clear {
+  font-family: inherit;
+}
+
+.trigger {
+  opacity: 0;
+  transform: translateY(0.25rem);
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+
+  border: 1px solid rgba(247, 247, 247, 0.26);
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.82);
+  backdrop-filter: blur(6px);
+  color: #f7f7f7;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.root.shown .trigger,
+/*
+ * Keyboard users never trigger the hover, so focus reveals it too. The button
+ * stays in the tab order while transparent — which is why it is `opacity: 0`
+ * and not `visibility: hidden`: a hidden element cannot take focus, and there
+ * would be no way in without a mouse.
+ */
+.trigger:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--nav-pixel-accent, #0047ff);
+  outline-offset: 2px;
+}
+
+.trigger:hover {
+  border-color: rgba(247, 247, 247, 0.5);
+}
+
+.panel {
+  border: 1px solid rgba(247, 247, 247, 0.18);
+  border-radius: 0.75rem;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.9);
+  padding: 0.85rem;
+  width: min(15rem, calc(100vw - 2 * var(--page-gutter)));
+}
+
+.title {
+  margin: 0 0 0.6rem;
+  color: rgba(247, 247, 247, 0.58);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.options {
+  display: grid;
+  /* Two up: five costumes plus the odd one out reads better than a 5-wide row
+     that would push the panel past the page gutter on a phone. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: rgba(247, 247, 247, 0.05);
+  color: rgba(247, 247, 247, 0.75);
+  /* Top padding is headroom for the hat, horns and halo, which paint above the
+     preview sprite's own box. */
+  padding: 1.4rem 0.35rem 0.5rem;
+  font-size: 0.66rem;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease-out, border-color 0.15s ease-out;
+}
+
+.option:hover {
+  background: rgba(247, 247, 247, 0.11);
+  border-color: rgba(247, 247, 247, 0.22);
+  color: #f7f7f7;
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--nav-pixel-accent, #0047ff);
+  outline-offset: 2px;
+}
+
+.worn {
+  border-color: var(--nav-pixel-accent, #0047ff);
+  background: rgba(247, 247, 247, 0.12);
+  color: #f7f7f7;
+}
+
+.preview {
+  display: block;
+  line-height: 0;
+}
+
+.optionLabel {
+  display: block;
+}
+
+.clear {
+  margin-top: 0.5rem;
+  width: 100%;
+  border: 1px solid rgba(247, 247, 247, 0.2);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: rgba(247, 247, 247, 0.75);
+  padding: 0.35rem;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: #f7f7f7;
+  border-color: rgba(247, 247, 247, 0.45);
+}
+
+.clear:focus-visible {
+  outline: 2px solid var(--nav-pixel-accent, #0047ff);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media print {
+  .root {
+    display: none;
+  }
+}

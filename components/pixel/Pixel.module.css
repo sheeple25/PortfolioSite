@@ -6,8 +6,21 @@
   line-height: 0;
 }
 
+/*
+ * `overflow: visible` is load-bearing, not tidying. A bowler, horns and a halo
+ * all sit ABOVE the head, at negative rows on the sprite grid, and an SVG
+ * clips to its viewBox by default — so without this the hat is simply invisible
+ * and the bug looks like a broken mask rather than a clip.
+ *
+ * The alternative was widening the viewBox to make room, which would have
+ * changed the rendered height of every Pixel on the site (the fixed corner, the
+ * chat header, the 404) for the sake of a costume that is usually not even
+ * worn. Overflowing keeps the body's box exactly 24x24 at `size` px and lets
+ * the accessory paint outside it.
+ */
 .sprite {
   display: block;
+  overflow: visible;
 }
 
 /*

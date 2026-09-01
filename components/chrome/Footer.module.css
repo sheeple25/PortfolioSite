@@ -58,11 +58,11 @@
     var(--footer-pad-bottom);
 
   /*
-   * The footer is 60svh tall and the last thing in the document, so its bottom
+   * The footer is 70svh tall and the last thing in the document, so its bottom
    * edge only meets the bottom of the viewport at maximum scroll. Everything
    * above that point, the panel's bottom runs off-screen and what you actually
    * see is a black band that grows upward as you scroll — from nothing, to the
-   * height of the content, to the full 60svh.
+   * height of the content, to the full 70svh.
    *
    * That growth *is* the expansion, and it costs no JS: the extra height over
    * the content is the scroll runway that drives it. `.baseline` sticks itself
@@ -75,9 +75,9 @@
    * mobile toolbar hid itself, mid-scroll. It matches the `100svh` on `body`.
    *
    * `min-height` rather than `height` so a short viewport — where the content
-   * alone is taller than 60svh — grows the panel instead of crushing it.
+   * alone is taller than 70svh — grows the panel instead of crushing it.
    */
-  min-height: 60svh;
+  min-height: 70svh;
   display: flex;
   flex-direction: column;
 }

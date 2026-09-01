@@ -23,15 +23,18 @@ const nextConfig: NextConfig = {
   pageExtensions: ROUTE_EXTENSIONS,
 
   /**
-   * Every project now lives at `/projects/<slug>`, whichever index lists it.
+   * Every project lives at `/projects/<slug>`, and every project is listed on
+   * `/projects`.
    *
    * An entry's section — Work or Archive — is a curation decision that can
    * change (see `lib/entries/registry.ts`), so it can't also decide the URL:
    * promoting a project would silently break every link to it. One canonical
    * address, and the old archive paths redirect to it permanently.
    *
-   * `/archive` itself is untouched — `:slug` requires a segment — and remains
-   * the Archive index.
+   * The second rule is newer and covers the index itself. `/archive` was a
+   * separate page until the two merged into one graph — the entries it listed
+   * are all still there, so the honest answer for an old link is the page they
+   * moved to rather than a 404.
    */
   async redirects() {
     return [
@@ -41,6 +44,20 @@ const nextConfig: NextConfig = {
         // `public/archive/*` assets to be served normally.
         source: "/archive/:slug([^./]+)",
         destination: "/projects/:slug",
+        permanent: true,
+      },
+      {
+        source: "/archive",
+        destination: "/projects",
+        permanent: true,
+      },
+      {
+        // The page is gone (`lib/site.ts`'s `NAV_LINKS`): contact is now a
+        // `mailto:` link with a hover dropdown in the header on every page,
+        // not a route of its own. Old links to it land on the homepage
+        // rather than 404ing.
+        source: "/contact",
+        destination: "/",
         permanent: true,
       },
     ];

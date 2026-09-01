@@ -194,11 +194,13 @@ export function getEntries(section?: EntrySection): ResolvedEntry[] {
  * which is exactly the assumption this refactor removes.
  */
 export function linkHrefFor(entry: ResolvedEntry): string {
-  return (
-    entry.pageHref ??
-    entry.href ??
-    (entry.section === "work" ? "/projects" : "/archive")
-  );
+  /*
+   * The last fallback used to pick an index by section. There is only one now
+   * — Work and the Archive are a single graph on `/projects` — so the section
+   * no longer decides anything about a URL, which is the same lesson
+   * `pageHrefFor` learned above.
+   */
+  return entry.pageHref ?? entry.href ?? "/projects";
 }
 
 /** `undefined` for an unknown or unpublished slug. */

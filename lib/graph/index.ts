@@ -1,5 +1,6 @@
 import { getEntries, linkHrefFor } from "@/lib/entries";
 import type { ResolvedEntry } from "@/lib/entries/types";
+import COVER_INK from "./cover-ink.json";
 
 /*
  * Data model for the Work/Archive knowledge graph.
@@ -40,6 +41,19 @@ export type ProjectGraphNode = {
   term?: string;
   cover?: string;
   coverAlt?: string;
+  /** Plays on hover, over the still. `cover` is its poster frame. */
+  coverVideo?: string;
+  /** A mark laid over the middle of the card — see `logoWidth`/`logoInvert`. */
+  logo?: string;
+  logoInvert?: boolean;
+  /** Mark width as a percentage of the card's width. */
+  logoWidth?: number;
+  /**
+   * Which way the title over this cover has to go, measured rather than
+   * guessed — see `scripts/measure-cover-ink.mjs`. `"light"` means white type
+   * on a darkening scrim; `"dark"` means black type on a lightening one.
+   */
+  coverInk: "light" | "dark";
 };
 
 export type TagGraphNode = {
@@ -89,9 +103,23 @@ function toProjectNode(entry: ResolvedEntry): ProjectGraphNode {
     team: meta.team,
     timeline: meta.timeline,
     term: meta.term,
-    cover: meta.cover,
+    /* The card-specific cover wins where one exists; see `cardCover`. */
+    cover: meta.cardCover ?? meta.cover,
     coverAlt: meta.coverAlt,
+    coverVideo: meta.coverVideo,
+    logo: meta.logo,
+    logoInvert: meta.logoInvert,
+    logoWidth: meta.logoWidth,
+    coverInk: inkFor(meta.cardCover ?? meta.cover),
   };
+}
+
+/** Light type unless the measurement says otherwise — an unmeasured cover is
+ *  far more likely to be a photograph than a pale plate, and the scrim carries
+ *  light type over almost anything. */
+function inkFor(cover: string | undefined): "light" | "dark" {
+  if (!cover) return "light";
+  return (COVER_INK as Record<string, string>)[cover] === "dark" ? "dark" : "light";
 }
 
 function addTagEdges(

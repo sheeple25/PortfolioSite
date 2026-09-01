@@ -9,10 +9,10 @@ place: CEPT University
 term: Fall 2023
 role: Solo — technique research, structure, fabrication
 skills:
-  - Textile Design
-  - Ply-Split Braiding
-  - Structural Prototyping
   - Furniture Design
+  - Prototyping
+  - Fabrication
+  - Structural Design
 # No `tools:` list — this one is hand-craft (braiding, physical structural
 # prototyping), not software-led, and nothing in the body names specific
 # equipment. Add one if there's a named tool/rig worth surfacing.
@@ -21,8 +21,9 @@ coverAlt: The Vortex stool — a braided cotton seat suspended in a teak and cha
 titleEffect: weave
 expandable: false
 tags:
-  - textile
-  - structure
+  - Furniture
+  - Making
+  - Academic
 ---
 
 Ply-split braiding is a rare textile technique from rural Rajasthan. Any cord of fabric or other ductile material can be intertwined into a textile by hand.

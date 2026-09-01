@@ -1,0 +1,235 @@
+/*
+ * The window's own frame. How big it may get and where it opens belong to the
+ * desktop (`InterestBand.module.css`), not here: this component draws a
+ * window, it does not decide where windows go.
+ */
+/*
+ * Placed on the desktop, not centred in a slot.
+ *
+ * `--win-fx`/`--win-fy` arrive from the component as plain numbers from 0 to
+ * 1, and the arithmetic below turns them into a position: `100% - <window
+ * size>` is the slack the window does not occupy, and the fraction picks a
+ * point along it. So `0` pins the window to the top/left of the desktop, `1`
+ * to the bottom/right, and `0.5` centres it — at any viewport size, without
+ * anything needing to know how wide the desktop actually is.
+ *
+ * That is the whole reason this is done in CSS rather than by handing in a
+ * `left` in pixels: only the stylesheet knows the window's own size, and the
+ * position has to be worked out against it.
+ *
+ * `--win-dx`/`--win-dy` are then the drag, in pixels, added on top. Keeping
+ * the two terms separate is what lets a window be dragged *and* still respond
+ * to a resize of the desk: the fractional part reflows, the drag rides along.
+ * The drag is deliberately not a `translate`, because `transform` is reserved
+ * for the open/close animation and the two would overwrite each other.
+ *
+ * `--window-max-*` are the caps, and they live on the desktop because how big
+ * a window may get is a property of the desk it sits on, not of the frame. The
+ * `min(…, 100%)` keeps a window inside a viewport narrower than the cap.
+ *
+ * Absolute so that mounting and unmounting never resizes anything around it —
+ * that is what stops the icons and the widgets shifting when a window opens.
+ * `pointer-events` are taken back here because the layer holding this one has
+ * them switched off; see `.layer`.
+ */
+.window {
+  --w: min(var(--window-max-w, 54rem), 100%);
+  --h: min(var(--window-max-h, 26rem), 100%);
+
+  position: absolute;
+  width: var(--w);
+  height: var(--h);
+  left: calc((100% - var(--w)) * var(--win-fx, 0.5) + var(--win-dx, 0px));
+  top: calc((100% - var(--h)) * var(--win-fy, 0.5) + var(--win-dy, 0px));
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+
+  border-radius: 0.6rem;
+  /*
+   * Lifted off the wallpaper by a hairline and a shadow rather than by a
+   * change of hue alone. On a ground that answers to the light/dark toggle, a
+   * fixed fill would be wrong in one of the two themes; mixing against the ink
+   * token means the window stays a step above whatever it is sitting on.
+   */
+  background: color-mix(in srgb, var(--index-header-ink) 7%, var(--index-header-ground));
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 20%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--index-header-ink) 10%, transparent) inset,
+    0 18px 40px -12px rgb(0 0 0 / 0.45);
+  /* The travel-into-icon animation scales this; without an origin at its
+     centre the scale would drift against the translate. */
+  transform-origin: center center;
+}
+
+/*
+ * The topmost window. With several open the reader needs to know which one
+ * they are talking to, and the OS answer is that the background windows go
+ * quiet rather than that the front one shouts: everything below is dimmed by
+ * a lighter shadow and a fainter border, and only this one keeps the full
+ * lift. Cheaper to read than a coloured active title bar, and it survives both
+ * themes.
+ */
+.focused {
+  border-color: color-mix(in srgb, var(--index-header-ink) 34%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--index-header-ink) 14%, transparent) inset,
+    0 24px 56px -14px rgb(0 0 0 / 0.55);
+}
+
+/*
+ * Filling the desk. The `left`/`top` calc above has to be overridden outright
+ * rather than zeroed through the variables, because a maximised window must
+ * ignore its drag offset without forgetting it — restoring puts it back where
+ * the reader had left it.
+ */
+.maximised {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+/* ------------------------------------------------------------- title bar */
+
+/*
+ * `cursor: grab` because it now genuinely moves. `touch-action: none` is what
+ * makes the drag work on a touch screen at all: without it the browser claims
+ * the gesture for scrolling and the pointermove events stop arriving halfway
+ * through.
+ *
+ * `user-select: none` stops a drag that starts on the title text from
+ * selecting it instead of moving the window.
+ */
+.bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--index-header-ink) 14%, transparent);
+  background: color-mix(in srgb, var(--index-header-ink) 6%, transparent);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.bar:active {
+  cursor: grabbing;
+}
+
+/* Nothing to drag when it already fills the desk. */
+.maximised .bar {
+  cursor: default;
+}
+
+.lights {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* Both light clusters claim the same width so the title lands optically
+     centred between them rather than centred on the leftover space. */
+  flex: 0 0 3.2rem;
+}
+
+/*
+ * All three are real controls now. They stay grey until the bar is hovered or
+ * one of them is focused — three permanently coloured dots on a page that is
+ * otherwise ink-on-ground would read as a status readout rather than as
+ * furniture.
+ */
+.light {
+  width: 0.66rem;
+  height: 0.66rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+  background: color-mix(in srgb, var(--index-header-ink) 16%, transparent);
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.bar:hover .close,
+.close:focus-visible {
+  background: #ff5f57;
+  border-color: #e0443e;
+}
+
+.bar:hover .minimise,
+.minimise:focus-visible {
+  background: #febc2e;
+  border-color: #d69e1f;
+}
+
+.bar:hover .zoom,
+.zoom:focus-visible {
+  background: #2ac840;
+  border-color: #1da62f;
+}
+
+.light:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.title {
+  margin: 0;
+  flex: 1 1 auto;
+  text-align: center;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------------ body */
+
+/*
+ * Reserved for two lines whether or not it needs them, so a longer note on one
+ * interest cannot shrink that interest's panel relative to the others'. Same
+ * argument as the caption it replaces.
+ */
+.note {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.7rem 1rem 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+  min-height: 2.6em;
+  box-sizing: content-box;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 1rem 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light {
+    transition: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .note {
+    padding: 0.6rem 0.75rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .body {
+    padding: 0 0.75rem 0.75rem;
+  }
+}

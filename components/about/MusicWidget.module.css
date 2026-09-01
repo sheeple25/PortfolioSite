@@ -1,0 +1,155 @@
+/*
+ * The record rises *out of the top* of the sleeve rather than sliding out of
+ * its side.
+ *
+ * The widget's box is therefore taller than the sleeve by exactly
+ * `--peek-hover`, and the sleeve is pushed down to sit at the bottom of it.
+ * That reserved headroom is the whole trick: the record's fully-pulled
+ * position is the top of this box, so it can never travel outside the widget
+ * and never gets bitten by the desktop's `overflow: hidden`. The alternative —
+ * leaving the box sleeve-sized and nudging the whole widget down the desktop —
+ * would work until the sleeve size or the pull distance changed, and then
+ * silently clip again.
+ */
+.widget {
+  --sleeve: clamp(5rem, 9vw, 6.5rem);
+  /* How far the record stands out of the sleeve at rest, and on hover. Both
+     are fractions of the sleeve so the pull scales with the widget. */
+  --peek: calc(var(--sleeve) * 0.22);
+  --peek-hover: calc(var(--sleeve) * 0.55);
+
+  position: relative;
+  width: var(--sleeve);
+  height: calc(var(--sleeve) + var(--peek-hover));
+  flex: 0 0 auto;
+}
+
+/* ---------------------------------------------------------------- record */
+
+/*
+ * Behind the sleeve and standing proud of its top edge. The transition is on
+ * `translate` alone rather than on `transform`, so the turn on hover can own
+ * `rotate` without the two fighting over one property.
+ */
+.record {
+  position: absolute;
+  /* Level with the sleeve's own top edge; the translate below lifts it from
+     there, so a pull of `--peek-hover` lands it exactly at the widget's top. */
+  top: var(--peek-hover);
+  left: 50%;
+  width: var(--sleeve);
+  height: var(--sleeve);
+  z-index: 0;
+  translate: -50% calc(-1 * var(--peek));
+  border-radius: 50%;
+  transition: translate 420ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /*
+   * Vinyl: a near-black disc with grooves. The grooves are a repeating conic
+   * sheen plus repeating radial rings — the rings read as the record's
+   * tracks, the sheen as light moving across them.
+   */
+  background:
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgb(255 255 255 / 0.055) 0 1px,
+      transparent 1px 3px
+    ),
+    radial-gradient(circle at 50% 50%, #2b2b2f 0 38%, #1a1a1d 38% 100%);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.45),
+    0 8px 18px -8px rgb(0 0 0 / 0.7);
+}
+
+/* The paper label at the centre, and the spindle hole punched through it. */
+.label {
+  position: absolute;
+  inset: 34%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--index-header-ground) 0 12%,
+    #c8623c 12% 100%
+  );
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+}
+
+/* ---------------------------------------------------------------- sleeve */
+
+/* Pushed to the bottom of the widget's box, under the record's headroom. */
+.sleeve {
+  position: absolute;
+  top: var(--peek-hover);
+  left: 0;
+  right: 0;
+  height: var(--sleeve);
+  z-index: 1;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--index-header-ink) 12%, var(--index-header-ground));
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+  box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.6);
+}
+
+/*
+ * Placeholder cover art. Replace this whole rule's `background` with a real
+ * `background-image` and the widget is done — nothing else depends on it.
+ *
+ * Two offset colour fields and a hard diagonal, which reads as a designed
+ * sleeve at this size without pretending to be a specific record.
+ */
+.sleeveArt {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      118deg,
+      transparent 0 46%,
+      color-mix(in srgb, var(--index-header-ink) 16%, transparent) 46% 54%,
+      transparent 54% 100%
+    ),
+    radial-gradient(
+      circle at 74% 26%,
+      color-mix(in srgb, #c8623c 60%, transparent) 0 22%,
+      transparent 22% 100%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--index-header-ink) 8%, transparent),
+      color-mix(in srgb, var(--index-header-ink) 20%, transparent)
+    );
+}
+
+/* ----------------------------------------------------------------- hover */
+
+/*
+ * The pull. Hovering anywhere on the widget lifts the record — the target is
+ * the whole thing rather than the crescent of disc showing at rest, which
+ * would be a hit area a few pixels tall and effectively undiscoverable.
+ */
+.widget:hover .record {
+  translate: -50% calc(-1 * var(--peek-hover));
+  rotate: 16deg;
+}
+
+/*
+ * Both the slide and the turn go. A record that silently jumps further out is
+ * a worse answer than one that does not move at all, so with the preference
+ * set this widget is simply static art.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .record {
+    transition: none;
+  }
+
+  .widget:hover .record {
+    translate: -50% calc(-1 * var(--peek));
+    rotate: 0deg;
+  }
+}
+
+@media (max-width: 40rem) {
+  .widget {
+    --sleeve: 4.25rem;
+  }
+}

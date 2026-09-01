@@ -150,7 +150,7 @@ export function ShutterProvider({ children }: { children: ReactNode }) {
       if (reducedMotion) return false;
 
       /*
-       * No panel on this page at all — `/contact` has none.
+       * No panel on this page at all — `/writing/<slug>` pages have none.
        *
        * This must decline rather than proceed, and getting it the wrong way
        * round broke pages like that completely: the shutter took the click,

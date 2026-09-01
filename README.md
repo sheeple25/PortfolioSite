@@ -58,10 +58,9 @@ The full account is in [`docs/FEATURES.md`](docs/FEATURES.md); this is the index
 | Feature | What it is | Where | Status |
 | --- | --- | --- | --- |
 | **Entry registry** | One list; `mode` decides what a tile does, `section` decides which index it's on | `lib/entries/` | Shipped |
-| **Work index** | Curated index, knowledge graph as its header | `app/projects/` | Shipped |
-| **Archive index** | Second view over the same registry, ranked | `app/archive/` | Shipped |
-| **Knowledge graph** | Force-directed graph of projects × domains × skills × tools, built from frontmatter | `components/graph/`, `lib/graph/` | Data-complete, **unstyled** |
-| **Tile grid** | Two columns, unequal heights; names held back until hover | `components/index/TileGrid.tsx` | Shipped |
+| **Work index** | Every project on one screen, the knowledge graph as its navigation | `app/projects/` | Shipped |
+| **Knowledge graph** | Force-directed graph of projects × domains × skills × tools, built from frontmatter. Nodes are real links with cover thumbnails | `components/graph/`, `lib/graph/` | Shipped as `/projects`'s navigation |
+| **Tile grid** | Two columns, unequal heights; names held back until hover | `components/index/TileGrid.tsx` | Built, currently unused — see note below |
 | **Peek cards** | A large card slides over the index — more than a tile, less than a page, not a navigation | `components/index/PeekCard.tsx` | Shipped |
 | **Shutter transition** | One header rolls shut, the next opens. Navigation deferred until the close finishes | `components/chrome/Shutter.tsx` | Shipped |
 | **PixelBot — mascot** | 24×24 sprite; gaze, blink, idle sleep, nine expressions, pettable | `components/pixel/` | Shipped |
@@ -104,9 +103,8 @@ The full account is in [`docs/FEATURES.md`](docs/FEATURES.md); this is the index
 ├── app/
 │   ├── about/               # /about — bookshelf + cursor trail (rest placeholder)
 │   ├── api/pixel/           # POST /api/pixel — Pixel's streaming chat endpoint
-│   ├── archive/             # /archive — the second index over the entry registry
 │   ├── contact/             # /contact
-│   ├── projects/            # /projects — the Work index, and every project page
+│   ├── projects/            # /projects — the one project index, and every project page
 │   │   ├── [slug]/          #   markdown-backed entries, via the reading shell
 │   │   ├── loco/            #   hand-built case study
 │   │   ├── traces/          #   hand-built case study

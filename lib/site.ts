@@ -23,13 +23,14 @@ export const CONTACT_EMAIL = "vidush.gupta25@gmail.com";
 /**
  * The primary navigation, in bar order. Home is reached through the wordmark
  * rather than a link of its own, which is why it isn't in this list.
+ *
+ * Contact isn't here: it has no page of its own (see `NavBar`'s contact
+ * menu) — it's a `mailto:` link with a hover dropdown, not a route.
  */
 export const NAV_LINKS = [
   { href: "/projects", label: "Work" },
   { href: "/about", label: "About" },
   { href: "/writing", label: "Writing" },
-  { href: "/archive", label: "Archive" },
-  { href: "/contact", label: "Contact" },
 ] as const;
 
 export type ExternalLink = {
@@ -65,12 +66,9 @@ export const DOCUMENT_LINKS: ReadonlyArray<ExternalLink> = [
 /**
  * Static public routes, in nav order. `app/sitemap.ts` is generated from this
  * list plus the documents found in `content/writing`.
+ *
+ * `/archive` is deliberately absent: it now permanently redirects to
+ * `/projects` (see `next.config.ts`), and so is `/contact` — it now
+ * permanently redirects to `/` since the page is gone (same file).
  */
-export const ROUTES = [
-  "/",
-  "/projects",
-  "/archive",
-  "/writing",
-  "/about",
-  "/contact",
-] as const;
+export const ROUTES = ["/", "/projects", "/writing", "/about"] as const;

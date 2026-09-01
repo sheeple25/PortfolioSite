@@ -16,6 +16,20 @@
   pointer-events: none;
 }
 
+/*
+ * Sprite and wardrobe in one column, right-aligned so the panel opens inward
+ * from the corner rather than off the edge of the screen.
+ *
+ * No `pointer-events` of its own: it inherits `none` from `.companion`, and the
+ * two children that need to be clickable opt back in individually. If this box
+ * were solid it would sit over the footer's "Back to top" link and swallow it.
+ */
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .hitArea {
   pointer-events: auto;
   cursor: pointer;

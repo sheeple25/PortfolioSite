@@ -31,8 +31,7 @@ and the content behind it doesn't.
 | --- | --- | --- |
 | **Content & structure** | | |
 | Entry registry (`mode` / `section`) | Shipped | Three modes wired end to end |
-| Work index (`/projects`) | Shipped | Home of the site; `/` redirects here |
-| Archive index (`/archive`) | Shipped | Structure still under review |
+| Work index (`/projects`) | Shipped | Home of the site; `/` redirects here. Work + Archive merged into it — the graph is its navigation |
 | Writing index + reader (`/writing`) | Shipped | 3 documents live |
 | Markdown → section-tree pipeline | Shipped | remark, not MDX — see §9 |
 | Case-study chassis | Shipped | 3 projects on it |
@@ -40,6 +39,7 @@ and the content behind it doesn't.
 | Peek cards | Shipped | Only 2 entries use it (both drafts) |
 | **PixelBot** | | |
 | Mascot (gaze, blink, idle, moods) | Shipped | |
+| Footer wardrobe (5 costumes) | Shipped | Hover Pixel at the footer; lasts the session |
 | InScreen margin annotations | Shipped | Mechanism done; no annotation authored for Pixel itself |
 | InChat sidebar + streaming API | Shipped | Cost-capped; rate-limited |
 | "What I actually did" process note | **Placeholder** | All 7 DecisionLogs are `placeholder: true` → renders nothing |
@@ -51,7 +51,7 @@ and the content behind it doesn't.
 | Sticker rating + analytics | Shipped, **needs rework** | Both function and appearance flagged in TODO |
 | Dark mode toggle | Shipped | Manual only; ignores `prefers-color-scheme` by design |
 | Pac-Man cursor | Shipped | "Feed it to Pixel" interaction not built |
-| Footer physics pit | Shipped, under review | To be replaced by a Pixel footer game |
+| Footer physics pit | Shipped, under review | To be replaced by a Pixel footer game; the wardrobe half is built |
 | Immersive chrome (hide on scroll) | Shipped | |
 | Animated titles (8 per-project effects) | Shipped | |
 | **Page-specific** | | |
@@ -95,19 +95,25 @@ Six public routes. There is no separate home page: `/` redirects to
 | Route | What it is |
 | --- | --- |
 | `/` | Redirect → `/projects` |
-| `/projects` | **Work** — the curated index. Knowledge graph as its header background |
-| `/projects/<slug>` | One project. Canonical URL for *every* entry, whatever index lists it |
-| `/archive` | **Archive** — the second index over the same registry |
-| `/writing` | Essays index |
+| `/projects` | **Work** — every project, navigated by the knowledge graph |
+| `/projects/<slug>` | One project. Canonical URL for *every* entry, whatever its section |
+| `/writing` | Essays index — the typed nav |
 | `/writing/<slug>` | One essay |
 | `/about` | Bookshelf (rest is placeholder) |
 | `/contact` | Email + socials |
 
 Plus `robots.txt`, `sitemap.xml`, `icon.svg`, and `POST /api/pixel`.
 
-**`/archive/<slug>` permanently redirects to `/projects/<slug>`**
-(`next.config.ts`). The redirect pattern is `:slug([^./]+)` — the `[^./]` excludes
-anything with a dot in it so `public/archive/*.webp` assets still serve.
+**`/archive/<slug>` permanently redirects to `/projects/<slug>`**, and
+**`/archive` itself permanently redirects to `/projects`** (`next.config.ts`).
+The slug redirect's pattern is `:slug([^./]+)` — the `[^./]` excludes anything
+with a dot in it so `public/archive/*.webp` assets still serve. `/archive` was
+a separate index until Work and the Archive merged into one graph; the entries
+it listed are all still there, which is why an old link redirects rather than
+404s. `section: "archive"` survives the merge as a curation flag — it decides a
+node's size, colour and whether the centring force holds it in the middle — it
+just no longer decides which page an entry appears on, because there is only
+one.
 
 ### The one structural idea
 
@@ -391,6 +397,9 @@ The body is one 24×24 mask; eyes live in their own 6×6 box, drawn once and
 **Nine expressions:** `default`, `happy`, `embarrassed`, `surprised`, `sleepy`,
 `asleep`, `unimpressed`, `dead`, `blink`.
 
+**Five costumes**, authored the same way as the body and eyes — see *5b. The
+footer wardrobe* below.
+
 Behaviours:
 
 - **Gaze** — follows the cursor, snapped to nine cells. rAF-throttled, and the
@@ -416,7 +425,69 @@ Mounted in the root layout, not per page, so it survives client-side navigation
 — the idle timer, gaze and blink carry across route changes instead of
 remounting cold.
 
-### 5b. InScreen — margin annotations
+### 5b. The footer wardrobe
+
+Scroll to the footer, hover Pixel, and a **Customise** pill appears above him.
+It opens five costumes — bow tie, bowler hat, sunglasses, devil horns, angel
+halo — and whichever you pick stays on **for the rest of the session**, on every
+Pixel on the site, not just the one in the footer.
+
+**There is no second Pixel in the footer, deliberately.** The obvious build is a
+local `<Pixel>` mounted inside `<footer>` with the sitewide companion hidden
+behind it — which is exactly the shape `PIXELBOT_BUILD.md` §12 pre-registered,
+and it is why that section reserves the reason-tagged `setHidden` work as a
+prerequisite. It isn't needed here: the companion is already fixed to the
+bottom-right corner and `--corner-lift` rests it on the footer's bottom row as
+you arrive, so by the time the wardrobe is reachable the real Pixel is sitting
+in the footer anyway. Attaching to him costs no duplicate sprite, no second copy
+of the gaze/blink/idle machinery, and no third writer to `hidden`.
+
+- **Accessories are masks, like everything else.** Literal grids in `sprites.ts`
+  with an `originY` saying where row 0 lands on the body — and `originY` may be
+  **negative**, which is how a hat, horns and a halo sit above the head.
+- **The sprite overflows its viewBox rather than growing.** An SVG clips to its
+  viewBox, so above-head costumes would simply not paint. Widening the box was
+  the alternative and would have changed the rendered height of *every* Pixel on
+  the site — the fixed corner, the chat header, the 404 — for a costume that is
+  usually not even worn. `Pixel.module.css` sets `overflow: visible` instead and
+  the body's box stays exactly 24×24 at `size` px.
+- **Three costumes carry their own colour, and that is a contrast decision, not
+  a style one.** The bowler, horns and halo overhang the body onto whatever is
+  behind Pixel — and where the wardrobe is reachable, that is the footer's pure
+  black panel. The bowler was authored in the eyes' near-black first and was
+  flatly invisible there; it is warm grey now. Anything that stays on the blue
+  body still defaults to the eye ink.
+- **Sunglasses suppress the eyes** (`hidesEyes`). Drawing them under an opaque
+  lens just muddied the shape. Gaze and blink keep running underneath and come
+  back the moment the shades come off.
+- **Chosen costume lives in `sessionStorage`, via `useSyncExternalStore`.** The
+  session is the point — it survives a reload of the tab and dies with it, where
+  `localStorage` would turn a one-off joke into a permanent fact about the site.
+  The external-store shape is what lets a value that doesn't exist on the server
+  be read without a hydration mismatch or a setState-in-effect cascade; the same
+  reasoning as the theme toggle.
+- **The hover survives the trip to the button.** The wardrobe's own box is
+  `pointer-events: none` until revealed, then solid — so the pointer leaves the
+  sprite and lands on *it* rather than on the page behind, and the pill doesn't
+  flicker away mid-gesture. While hidden it must stay transparent to the mouse,
+  because it sits directly over the footer's "Back to top" link.
+- **Keyboard gets in.** The trigger is `opacity: 0`, not `visibility: hidden`,
+  precisely so it stays focusable — a hidden element can't take focus and there
+  would be no way in without a mouse. `aria-hidden` moved off the companion
+  wrapper onto the sprite alone, since the mascot is still decoration but the
+  wardrobe underneath it is real, operable UI.
+- **Leaving the footer unmounts it**, which is also how its open/closed state
+  resets. Behind an `enabled` prop, a panel left open stayed open when you
+  scrolled back down to it later.
+- **"Have I reached the footer" is `atFooter` on `PixelContext`**, not local
+  state. Two surfaces need the same answer — this, and the InScreen panel, which
+  has to get out of the way when he arrives (§5c) — so it is one
+  `IntersectionObserver` on `#site-footer` rather than two.
+- **It speaks in mono**, like the annotation panel's `.panelText`. Buttons
+  inherit the body face under the preflight reset, so the pill first rendered in
+  Newsreader — the reading face, on a piece of interface furniture.
+
+### 5c. InScreen — margin annotations
 
 Notes written once in markdown, reachable from three places that all agree via
 one context: the note in the margin, any bold word listed as an anchor, and
@@ -434,6 +505,14 @@ written in the first. Drop the anchors (`[NOTE: …]`) and the note sets inline
 where it was written — the one case that shows unprompted. A bold word naming no
 note simply stays bold.
 
+**The panel leaves when Pixel reaches the footer.** It is fixed and rides
+`--corner-lift`, so once the footer opens it would otherwise be left floating
+over a black panel it was never designed against — a note anchored to the mascot,
+hanging in a room the mascot has already walked into. It reads `atFooter` from
+`PixelContext` (the same signal the wardrobe uses, one observer for both) and
+exits through `AnimatePresence`, so it slides away rather than being cut off
+mid-sentence.
+
 Narration clears itself after 16s. The context's default is a **working no-op
 rather than a thrown error**, because prose containing a note can legitimately
 render outside a provider (a preview, a card) and a bold word quietly staying
@@ -442,7 +521,7 @@ bold beats a broken page.
 **The design principle:** InScreen explains deterministically and for free, and
 hands off to InChat only when a visitor wants more than an aside can carry.
 
-### 5c. ProcessNote — "what he actually did"
+### 5d. ProcessNote — "what he actually did"
 
 `components/pixel/screen/ProcessNote.tsx`. Renders the `## What I did` block
 from `content/decisions/<slug>.md` into Pixel's margin on project open,
@@ -461,7 +540,7 @@ pulling the reader into the problem).
 > true`, which hides them from both the margin and the prompt — showing a
 > recruiter "TK" is worse than showing them nothing.
 
-### 5d. InChat — the Ask Pixel sidebar
+### 5e. InChat — the Ask Pixel sidebar
 
 Fixed-position sidebar. Opening it widens `body`'s margin to push the page over
 rather than overlaying it.
@@ -508,11 +587,11 @@ open-ended `pageExcerpt` that was accepted but never sent — an unbounded strin
 going straight into a system prompt is both a cost multiplier and the widest
 available surface for prompt injection.
 
-### 5e. DecisionLogs — `content/decisions/<slug>.md`
+### 5f. DecisionLogs — `content/decisions/<slug>.md`
 
 One file per project, serving two readers the content model keeps together:
 
-- **`## What I did`** → the margin, unprompted, no model call (§5c).
+- **`## What I did`** → the margin, unprompted, no model call (§5d).
 - **`## Decisions`** → folded into the system prompt, so a visitor can ask *why*.
   This is the "Interrogate" depth tier in `source/content-model.md`.
 
@@ -526,23 +605,38 @@ Content cut from a case study for length is supposed to land here.
 ## 6. Index surfaces
 
 ### IndexShell — `components/chrome/IndexShell.tsx`
-The shared frame for `/projects`, `/archive`, `/writing` and `/about`.
+The shared frame for `/projects`, `/writing` and `/about`. **Two shapes**,
+picked by whether the page passes `children`.
 
-Two bands. The **header section** is a full window tall — masthead at its top,
-the rest deliberately empty so a background can carry it. The **sheet** holding
-the content is pulled back up over the header's bottom band by `--index-peek`,
-so the first row is already showing before a single scroll. The header doesn't
-stop where content starts: it runs on underneath, and the tiles sit on it.
+**With a sheet** (`/about`): two bands. The **header section** is a full window
+tall — masthead at its top, the rest deliberately empty so a background can
+carry it. The **sheet** holding the content is pulled back up over the header's
+bottom band by `--index-peek`, so the first row is already showing before a
+single scroll. The header doesn't stop where content starts: it runs on
+underneath, and the content sits on it.
+
+**Without one** (`/projects`, `/writing`): no sheet at all. The page is exactly
+one window — masthead on top, background from `--index-bg-top` (62svh) to the
+bottom edge — and the only thing a scroll reveals is the site footer. Once the
+background *is* the navigation there is no foreground list competing with it, so
+it takes the whole lower half of the screen instead of a contained band.
 
 The header section is also the shutter's panel. It takes a `background` **slot**
 rather than a typed prop, so a page can put a video, a canvas or a graph there
 without the shell knowing — which is exactly how the knowledge graph gets onto
-`/projects`.
+`/projects` and the typed nav onto `/writing`. Those two also pass
+`backgroundInteractive`, which drops the slot's `aria-hidden`: it is right for a
+texture and wrong for the only links on the page.
 
-It exists as a component because the three indexes had already drifted apart
-once.
+It exists as a component because the indexes had already drifted apart once.
 
 ### TileGrid — `components/index/TileGrid.tsx`
+**Currently unused.** It was the foreground on `/projects` and `/archive`; both
+indexes now navigate through their background instead, so nothing renders it.
+Kept rather than deleted because `mode: "peek"` is a supported entry state whose
+only implementation lives here — an entry flipped to `peek` today would resolve
+correctly in `lib/entries` and have nothing to open it. Described as built.
+
 Two columns of **equal width with varying heights**, so the columns flow out of
 step and rows stop lining up. The asymmetry is carried by height alone — six
 cover ratios cycled by index, so a column runs a full pass before repeating.
@@ -718,7 +812,7 @@ draft: false            # true hides it from production entirely
 | --- | --- |
 | Shallowest heading level | The section break — `##` and `###` both work, whichever you reach for |
 | `Preview:` / `Expanded:` | Splits a section in two. Both optional; without them the first paragraph previews the rest |
-| `[NOTE anchors: body]` | A margin annotation, opened by the named bold words (§5b) |
+| `[NOTE anchors: body]` | A margin annotation, opened by the named bold words (§5c) |
 | `[FIGURE key: caption]` | A diagram from the registry |
 | `![alt](/path.png?w=1600&h=900)` | An optimised `next/image`. The `w`/`h` query is how a raster tells `next/image` its ratio — without it the figure falls back to a plain `<img>` and the page reflows on load |
 | `![alt](diagram:key "caption")` | A registry component |
