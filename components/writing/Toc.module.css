@@ -163,13 +163,19 @@
   text-align: left;
 }
 
+/*
+ * The bar's label. Larger than a conventional eyebrow, and larger than the
+ * rail's at the same tracking, because this one is not an eyebrow over a
+ * heading — it is the only word naming a control you have to find and press,
+ * on the screen where the contents are otherwise invisible.
+ */
 .barEyebrow {
   flex-shrink: 0;
   font-family: var(--font-jetbrains-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-charcoal);
 }
 
 .barCurrent {

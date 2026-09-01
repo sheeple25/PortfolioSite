@@ -342,6 +342,20 @@
 }
 
 /*
+ * Its opposite number on a phone. `WorkGraph`'s reset control tightens to the
+ * same inset and height at this width, and the two are a pair on screen — see
+ * the note on `.reset` in `WorkGraph.module.css`.
+ */
+@media (max-width: 40rem) {
+  .expandButton {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
+/*
  * The `:not()` on this and on the two `.backgroundFull`/`.backgroundExpanded`
  * rules above says the same thing three times, and has to: the toggle is a
  * child of the slot so that it can be positioned against the band in both
@@ -517,6 +531,23 @@
  * corner — so the mascot's voice arrives in one place across the whole section.
  * See `.panel` in components/pixel/screen/notes.module.css.
  */
+/*
+ * Pixel's corner aside. Same anchor as the document annotation panel
+ * (`notes.module.css` `.panel`) — the two never coexist, because one belongs to
+ * an index and the other to a reading page, but they must land in the same
+ * corner so the mascot's aside is in one place across the whole site.
+ *
+ * Unlike that panel this one has no column to sit in. An index is one window
+ * and the band below the masthead *is* the page's navigation — the graph on
+ * `/projects`, the typed index on `/writing` — so this text is always laid over
+ * live, moving content. Bare type on that was unreadable, hence the scrim: the
+ * same ground/ink/blur recipe `.expandButton` uses a few rules down, for the
+ * same reason and against the same background.
+ *
+ * `--index-band-ground` and `--index-header-ink` rather than the site tokens,
+ * because both track the light/dark swap *and* the retint `.page` applies —
+ * see the token block at the top of this file.
+ */
 .note {
   position: fixed;
   right: calc(var(--shell-inset) + env(safe-area-inset-right, 0px));
@@ -525,7 +556,20 @@
       2.5rem + env(safe-area-inset-bottom, 0px)
   );
   z-index: 45;
-  width: var(--notes-width);
+  /*
+   * Widened by exactly the horizontal padding. `box-sizing: border-box` is
+   * global here, so keeping `--notes-width` flat would have quietly narrowed
+   * the text measure by the scrim's own inset rather than the box growing to
+   * hold it — the note is a designed measure, not an arbitrary one.
+   */
+  width: calc(var(--notes-width) + 1.6rem);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid
+    color-mix(in srgb, var(--index-header-ink) 18%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--index-band-ground) 78%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   font-family: var(--font-jetbrains-mono);
   font-size: 0.78rem;
   line-height: 1.6;

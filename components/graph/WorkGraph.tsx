@@ -19,14 +19,17 @@ import { useShutter } from "@/components/chrome/Shutter";
 import type { GraphNode, ProjectGraph } from "@/lib/graph";
 import {
   CARD,
-  PILL,
-  TOOL_R,
+  NARROW,
+  WIDE,
   layoutHomes,
   nodeBox,
+  pillSpec,
   pillWidth,
+  toolRadius,
   type Home,
   type LayoutDims,
   type LayoutInset,
+  type LayoutMode,
 } from "@/lib/graph/layout";
 import styles from "./WorkGraph.module.css";
 
@@ -68,10 +71,29 @@ import styles from "./WorkGraph.module.css";
  */
 const BASE_DIMS: LayoutDims = { width: 1600, height: 620 };
 
-/** A narrower canvas on a phone, so the same card *units* render bigger
- *  against a much smaller band. Sizes in `layout.ts` are canvas units, so
- *  shrinking the canvas is how a card gets a larger share of a small screen. */
-const NARROW_WIDTH = 980;
+/*
+ * The same trade on a phone, at about seven tenths of the room.
+ *
+ * Sizes in `layout.ts` are canvas units, so a smaller canvas is how a card
+ * gets a larger share of a small screen — and the canvas used to be a flat 980
+ * wide here, which rendered a card at 67x47 CSS pixels and a skill label at
+ * five. Neither is a thumbnail or a word; they are a texture of them.
+ *
+ * The number is a measurement, not a taste: `layoutHomes` is pure, so the
+ * whole thing can be run offline against a spread of real phone bands and the
+ * result checked for overlapping nodes. 700k is the smallest area — the
+ * biggest cards — at which every band from a 375x360 squat one up packs
+ * cleanly with the larger tag type of `NARROW`. It lands a card at about
+ * 100x70 on a typical phone, half again what it was.
+ *
+ * Constant *area* rather than constant width for the same reason the desktop
+ * canvas is (see `CANVAS_AREA`): the packing problem is about how much room
+ * there is, and a short band and a tall one of the same area have the same
+ * amount of it. A phone in a squat band gets a wider canvas and smaller cards,
+ * which is the honest answer — there is less room, so less fits.
+ */
+const NARROW_AREA = 700_000;
+const NARROW_WIDTH_CLAMP = { min: 560, max: 1100 };
 
 /** Guards against a degenerate band (a collapsed flex slot mid-layout, a
  *  browser reporting 0 during a resize) turning into an absurd viewBox. */
@@ -351,13 +373,13 @@ function useCanvas(frame: React.RefObject<HTMLDivElement | null>) {
   }, [frame]);
 
   const dims = useMemo<LayoutDims>(() => {
-    // A phone keeps a fixed, deliberately small canvas instead: there the
-    // problem is not packing but that a card has to stay big enough to read
-    // on a screen a few hundred pixels wide, so the canvas is held narrow and
-    // the graph is allowed to be a surface you pan around.
-    const width = narrow
-      ? NARROW_WIDTH
-      : clamp(Math.round(Math.sqrt(CANVAS_AREA / aspect)), WIDTH_CLAMP.min, WIDTH_CLAMP.max);
+    // A phone runs the same calculation against a smaller area — see
+    // `NARROW_AREA`. There the binding constraint is not packing efficiency
+    // but that a card has to stay big enough to read, and a label big enough
+    // to be a word, on a screen a few hundred pixels wide.
+    const area = narrow ? NARROW_AREA : CANVAS_AREA;
+    const limit = narrow ? NARROW_WIDTH_CLAMP : WIDTH_CLAMP;
+    const width = clamp(Math.round(Math.sqrt(area / aspect)), limit.min, limit.max);
     return { width, height: Math.round(width * aspect) };
   }, [aspect, narrow]);
 
@@ -407,11 +429,18 @@ function useChromeInset(
   return useMemo<LayoutInset>(() => {
     const measured = band.width > 0 && panelBox.width > 0;
 
-    if (narrow) {
-      // The panel docks to the bottom on a phone, so it eats height, not width.
-      if (!measured) return { bottom: dims.height * 0.22 };
-      return { bottom: ((panelBox.height + CHROME_GUTTER) / band.height) * dims.height };
-    }
+    /*
+     * Nothing at all on a phone.
+     *
+     * What is left of the panel there is the legend, a small translucent block
+     * in the bottom-left corner with `pointer-events: none` on it — and a
+     * strip of reserved height is an expensive way to keep a card out from
+     * under something you can see and touch through. Measured against real
+     * phone bands it is also the worse layout of the two: reserving the
+     * legend's height is what pushed nodes into each other on the shortest
+     * bands, where the graph has least room to give in the first place.
+     */
+    if (narrow) return {};
 
     if (!measured) return { left: dims.width * PANEL_FRACTION };
     return { left: ((panelBox.width + CHROME_GUTTER) / band.width) * dims.width };
@@ -470,7 +499,10 @@ export default function WorkGraph({ graph }: { graph: ProjectGraph }) {
   const stillMotion = usePrefersReducedMotion();
   const { dims, narrow, band } = useCanvas(frameRef);
   const inset = useChromeInset(panelRef, dims, band, narrow);
-  const homes = useMemo(() => layoutHomes(graph, dims, inset), [graph, dims, inset]);
+  /* One object, read by the layout and by every mark below, so the geometry
+     the packing was checked against is the geometry that gets drawn. */
+  const mode: LayoutMode = narrow ? NARROW : WIDE;
+  const homes = useMemo(() => layoutHomes(graph, dims, inset, mode), [graph, dims, inset, mode]);
 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -519,7 +551,7 @@ export default function WorkGraph({ graph }: { graph: ProjectGraph }) {
       .force(
         "collide",
         forceCollide<SimNode>((d) => {
-          const box = nodeBox(d);
+          const box = nodeBox(d, mode);
           // A disc that covers most of the card without the full half-diagonal's
           // worth of dead corner — the resting layout is already collision-free,
           // so this only has to behave during a drag.
@@ -537,7 +569,10 @@ export default function WorkGraph({ graph }: { graph: ProjectGraph }) {
       sim.stop();
       simRef.current = null;
     };
-  }, [nodes]);
+    /* `mode` is one of two module constants, so listing it costs nothing —
+       and it does change (with the breakpoint), which changes the radius the
+       collision force is built from. */
+  }, [nodes, mode]);
 
   // Pan/zoom on the SVG itself — a plain translate/scale transform applied
   // to the group wrapping the background, edges and nodes.
@@ -852,7 +887,7 @@ export default function WorkGraph({ graph }: { graph: ProjectGraph }) {
                 the dots behind themselves. */}
             {nodes.map((node) => {
               if (node.type === "project") return null;
-              const box = nodeBox(node);
+              const box = nodeBox(node, mode);
               return (
                 <rect
                   key={node.id}
@@ -922,7 +957,7 @@ One clip for every card, declared in the node's
           <g>
             {nodes.map((node) => {
               const dimmed = connected ? !connected.has(node.id) : false;
-              const box = nodeBox(node);
+              const box = nodeBox(node, mode);
 
               /*
                * Everything a node needs whichever element it turns out to be.
@@ -963,7 +998,8 @@ One clip for every card, declared in the node's
                  * a pale cover gets black type over a lightening wash and a
                  * dark one gets white type over a darkening one.
                  */
-                const scrimH = Math.min(card.h, card.caption * 2);
+                const caption = card.caption * mode.caption;
+                const scrimH = Math.min(card.h, caption * 2);
                 const playing = hoveredId === node.id && !stillMotion;
 
                 return (
@@ -1041,11 +1077,11 @@ One clip for every card, declared in the node's
                       // No cover on this entry: the original generic glyph,
                       // which at least says "a project" rather than leaving a
                       // hole in the graph.
-                      <g transform={`translate(${-card.caption / 2}, ${-card.caption / 2})`}>
+                      <g transform={`translate(${-caption / 2}, ${-caption / 2})`}>
                         <FileText
                           className={styles.cardGlyph}
-                          width={card.caption}
-                          height={card.caption}
+                          width={caption}
+                          height={caption}
                           strokeWidth={1.75}
                         />
                       </g>
@@ -1135,9 +1171,9 @@ One clip for every card, declared in the node's
                       <text
                         className={styles.cardTitle}
                         data-ink={node.coverInk}
-                        x={-box.hw + 9}
-                        y={box.hh - card.caption / 2}
-                        style={{ fontSize: card.title }}
+                        x={-box.hw + 9 * mode.caption}
+                        y={box.hh - caption / 2}
+                        style={{ fontSize: card.title * mode.caption }}
                       >
                         {node.title}
                       </text>
@@ -1158,28 +1194,34 @@ One clip for every card, declared in the node's
 
               if (node.type === "tool") {
                 const tool = toolIcon(node.label);
+                const r = toolRadius(mode);
                 return (
                   <g key={node.id} role="button" aria-label={node.label} tabIndex={-1} {...shared}>
-                    <circle className={styles.nodeHit} r={TOOL_R + 5} />
+                    <circle className={styles.nodeHit} r={r + 5} />
                     {tool.kind === "logo" ? (
                       <>
                         {/* Simple Icons ship with a plain black fill and no
                             `currentColor` hook — an opaque light chip behind
                             keeps the mark legible on both grounds, instead of
                             trying to recolour a referenced image. */}
-                        <circle className={styles.toolChip} r={TOOL_R} />
+                        <circle className={styles.toolChip} r={r} />
                         <image
                           href={tool.src}
-                          x={-TOOL_R * 0.6}
-                          y={-TOOL_R * 0.6}
-                          width={TOOL_R * 1.2}
-                          height={TOOL_R * 1.2}
+                          x={-r * 0.6}
+                          y={-r * 0.6}
+                          width={r * 1.2}
+                          height={r * 1.2}
                         />
                       </>
                     ) : (
                       <>
-                        <circle className={styles.toolBadge} r={TOOL_R} />
-                        <text className={styles.toolInitials}>{tool.text}</text>
+                        <circle className={styles.toolBadge} r={r} />
+                        <text
+                          className={styles.toolInitials}
+                          style={{ fontSize: 12 * mode.tags }}
+                        >
+                          {tool.text}
+                        </text>
                       </>
                     )}
                   </g>
@@ -1199,8 +1241,8 @@ One clip for every card, declared in the node's
                * fill knocks the edge out from under the text without putting a
                * container around it.
                */
-              const spec = PILL[node.type];
-              const width = pillWidth(node);
+              const spec = pillSpec(node.type, mode);
+              const width = pillWidth(node, mode);
               const isDomain = node.type === "domain";
               return (
                 <g key={node.id} role="button" aria-label={node.label} tabIndex={-1} {...shared}>

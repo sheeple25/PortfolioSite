@@ -93,23 +93,71 @@ export const PILL = {
 
 export const TOOL_R = 17;
 
+/*
+ * How the layout is being asked to behave, in the one place both the geometry
+ * and the placement can read it.
+ *
+ * There is exactly one axis here — a phone or not — but it changes two things
+ * that have to change together, so it is a mode rather than two flags passed
+ * around separately:
+ *
+ *   `tags` scales every tag's type and box. Sizes in this file are canvas
+ *   units and the canvas is scaled to the band, so on a phone a 13-unit skill
+ *   label renders at about five pixels. That is not small type, it is a
+ *   texture: the words are there and cannot be read. Scaling the tags up costs
+ *   packing room, which is why it is paid for by the narrow canvas being a
+ *   smaller *area* (`WorkGraph.tsx`) rather than by hoping they still fit.
+ *
+ *   `caption` does the same for a card's own title, which is drawn from
+ *   `CARD` rather than from a pill spec and would otherwise be seven pixels
+ *   of type on a phone. The card itself is *not* scaled — its size in canvas
+ *   units is what the grid is built around, and it grows on a phone by the
+ *   canvas being smaller.
+ *
+ *   `narrow` swaps the project grid for one that suits a portrait band —
+ *   two or three columns of several rows, rather than the four-or-more-wide
+ *   arrangement a laptop's letterbox gets. The old `minCols: 3` was a floor
+ *   the phone could not honour: at a canvas narrow enough for a readable card
+ *   the third column simply hung off the edge, which is what put seven nodes
+ *   outside the viewBox.
+ */
+export type LayoutMode = { tags: number; caption: number; narrow: boolean };
+
+export const WIDE: LayoutMode = { tags: 1, caption: 1, narrow: false };
+export const NARROW: LayoutMode = { tags: 1.3, caption: 1.55, narrow: true };
+
+/** A tag's box, at whatever size the mode asks for. */
+export function pillSpec(type: "domain" | "skill", mode: LayoutMode = WIDE) {
+  const base = PILL[type];
+  return {
+    h: base.h * mode.tags,
+    font: base.font * mode.tags,
+    pad: base.pad * mode.tags,
+    tracking: base.tracking,
+  };
+}
+
+export function toolRadius(mode: LayoutMode = WIDE): number {
+  return TOOL_R * mode.tags;
+}
+
 /** JetBrains Mono's advance is a near-fixed 0.6em; tracking adds to it. */
 const MONO_ADVANCE = 0.6;
 
 /** Text width for a mono label, in canvas units. The pill is drawn from this
  *  same estimate, so an imperfect guess shows up as slightly uneven padding
  *  rather than as two labels sitting on top of each other. */
-export function pillWidth(node: GraphNode): number {
-  if (node.type !== "domain" && node.type !== "skill") return TOOL_R * 2;
-  const spec = PILL[node.type];
+export function pillWidth(node: GraphNode, mode: LayoutMode = WIDE): number {
+  if (node.type !== "domain" && node.type !== "skill") return toolRadius(mode) * 2;
+  const spec = pillSpec(node.type, mode);
   const advance = spec.font * (MONO_ADVANCE + spec.tracking);
   return node.label.length * advance + spec.pad * 2;
 }
 
-export function nodeBox(node: GraphNode): Box {
+export function nodeBox(node: GraphNode, mode: LayoutMode = WIDE): Box {
   if (node.type === "project") return { hw: CARD.w / 2, hh: CARD.h / 2 };
-  if (node.type === "tool") return { hw: TOOL_R, hh: TOOL_R };
-  return { hw: pillWidth(node) / 2, hh: PILL[node.type].h / 2 };
+  if (node.type === "tool") return { hw: toolRadius(mode), hh: toolRadius(mode) };
+  return { hw: pillWidth(node, mode) / 2, hh: pillSpec(node.type, mode).h / 2 };
 }
 
 /** A project the graph holds in the middle — the curated Work section. */
@@ -143,6 +191,24 @@ const GUTTER_STEPS = 8;
 const FREE_CELLS = 3;
 
 const GRID_LIMITS = { minCols: 3, maxCols: 7, minRows: 2, maxRows: 5 };
+
+/*
+ * The same grid, turned on its side for a portrait band.
+ *
+ * Two columns where there is room and three where there isn't, over as many
+ * rows as it takes — the opposite shape from the laptop's four-or-five wide by
+ * two or three deep, and for the same reason: the grid should run along the
+ * band's long axis, and on a phone that axis is vertical.
+ *
+ * `minCols: 2` is the load-bearing change. Three columns of a card wide enough
+ * to read do not fit across a phone at any canvas size, so the old floor of 3
+ * was not a floor, it was an instruction to hang the outer column off the edge
+ * of the viewBox. The gutters are tighter to match: a phone has no width to
+ * spend on 58 units of air between two cards.
+ */
+const NARROW_GRID_LIMITS = { minCols: 2, maxCols: 3, minRows: 2, maxRows: 7 };
+const NARROW_GUTTER_RANGE = { max: { x: 40, y: 44 }, min: { x: 16, y: 20 } };
+const NARROW_FREE_CELLS = 2;
 
 /** Spacing of the lattice of candidate positions tags are placed on. Fine
  *  enough that "nearest free spot" really is near, coarse enough that the
@@ -182,23 +248,29 @@ type Cell = { c: number; r: number };
  * the safe area, centred in it. Nothing draws this — it exists so that nine
  * rectangles share a small set of x and y values instead of nine each.
  */
-function gridGeometry(area: ReturnType<typeof safeArea>, projectCount: number) {
+function gridGeometry(
+  area: ReturnType<typeof safeArea>,
+  projectCount: number,
+  mode: LayoutMode
+) {
+  const limits = mode.narrow ? NARROW_GRID_LIMITS : GRID_LIMITS;
+  const gutters = mode.narrow ? NARROW_GUTTER_RANGE : GUTTER_RANGE;
   const usableW = area.ax * 2;
   const usableH = area.ay * 2;
-  const wanted = projectCount + FREE_CELLS;
+  const wanted = projectCount + (mode.narrow ? NARROW_FREE_CELLS : FREE_CELLS);
 
   let cell = { w: 0, h: 0 };
-  let cols = GRID_LIMITS.minCols;
-  let rows = GRID_LIMITS.minRows;
+  let cols = limits.minCols;
+  let rows = limits.minRows;
 
   for (let step = 0; step <= GUTTER_STEPS; step += 1) {
     const t = step / GUTTER_STEPS;
-    const gutterX = GUTTER_RANGE.max.x + (GUTTER_RANGE.min.x - GUTTER_RANGE.max.x) * t;
-    const gutterY = GUTTER_RANGE.max.y + (GUTTER_RANGE.min.y - GUTTER_RANGE.max.y) * t;
+    const gutterX = gutters.max.x + (gutters.min.x - gutters.max.x) * t;
+    const gutterY = gutters.max.y + (gutters.min.y - gutters.max.y) * t;
 
     cell = { w: CARD.w + gutterX, h: CARD.h + gutterY };
-    cols = clamp(Math.floor(usableW / cell.w), GRID_LIMITS.minCols, GRID_LIMITS.maxCols);
-    rows = clamp(Math.floor(usableH / cell.h), GRID_LIMITS.minRows, GRID_LIMITS.maxRows);
+    cols = clamp(Math.floor(usableW / cell.w), limits.minCols, limits.maxCols);
+    rows = clamp(Math.floor(usableH / cell.h), limits.minRows, limits.maxRows);
 
     if (cols * rows >= wanted) break;
   }
@@ -251,13 +323,14 @@ function meanAngle(angles: number[]): number | null {
 export function layoutHomes(
   graph: ProjectGraph,
   dims: LayoutDims,
-  inset: LayoutInset = {}
+  inset: LayoutInset = {},
+  mode: LayoutMode = WIDE
 ): Map<string, Home> {
   const area = safeArea(dims, inset);
   const projects = graph.nodes.filter(
     (n): n is Extract<GraphNode, { type: "project" }> => n.type === "project"
   );
-  const grid = gridGeometry(area, projects.length);
+  const grid = gridGeometry(area, projects.length, mode);
   const selected = projects.filter(isSelected);
   const rest = projects.filter((n) => !isSelected(n));
 
@@ -432,12 +505,12 @@ export function layoutHomes(
               y: points.reduce((sum, q) => sum + q.y, 0) / points.length,
             }
           : { x: area.cx, y: area.cy };
-      return { node, box: nodeBox(node), degree: owners.length, target };
+      return { node, box: nodeBox(node, mode), degree: owners.length, target };
     })
     .sort((a, b) => b.degree - a.degree || (a.node.id < b.node.id ? -1 : 1));
 
   const placed = projects.map((node) => ({
-    box: nodeBox(node),
+    box: nodeBox(node, mode),
     home: homes.get(node.id)!,
   }));
 
@@ -505,15 +578,16 @@ export function layoutHomes(
 /** Every candidate position, in a stable order — row by row from the top-left,
  *  so ties in the search below always resolve the same way. */
 function latticeSlots(area: ReturnType<typeof safeArea>): Home[] {
+  const step = SLOT_STEP;
   const slots: Home[] = [];
-  const cols = Math.max(1, Math.floor(area.width / SLOT_STEP.x));
-  const rows = Math.max(1, Math.floor(area.height / SLOT_STEP.y));
-  const originX = area.left + (area.width - (cols - 1) * SLOT_STEP.x) / 2;
-  const originY = (area.height - (rows - 1) * SLOT_STEP.y) / 2;
+  const cols = Math.max(1, Math.floor(area.width / step.x));
+  const rows = Math.max(1, Math.floor(area.height / step.y));
+  const originX = area.left + (area.width - (cols - 1) * step.x) / 2;
+  const originY = (area.height - (rows - 1) * step.y) / 2;
 
   for (let r = 0; r < rows; r += 1) {
     for (let c = 0; c < cols; c += 1) {
-      slots.push({ x: originX + c * SLOT_STEP.x, y: originY + r * SLOT_STEP.y });
+      slots.push({ x: originX + c * step.x, y: originY + r * step.y });
     }
   }
   return slots;

@@ -566,38 +566,76 @@
 }
 
 /*
- * Below phone width the band is short and narrow. The canvas is measured now
- * (see `useCanvas`), so the graph is no longer cropped there — it is laid out
- * into a tall narrow ellipse on a smaller canvas so the cards keep a usable
- * share of the screen. The panel moves to the bottom and its height is what
- * gets reserved out of the layout instead of its width.
+ * Below phone width the panel goes, and what is left is the graph.
+ *
+ * The panel is a column of prose beside a canvas, and a phone has room for
+ * one of those two things. Docking it to the bottom edge — which is what this
+ * block used to do — kept all of its cost (a fifth of a screen that is
+ * already small) for the part of its value that the canvas already carries:
+ * a node's name is written on the node. So on a phone it keeps only the
+ * legend, which is four short rows and the one thing the canvas cannot say
+ * about itself, in the bottom-left corner. Reset takes the top-left and
+ * `IndexShell`'s expand control the top-right; the bottom-right is Pixel's,
+ * site-wide.
+ *
+ * The graph gets the rest of the screen, and the canvas it is laid out in
+ * shrinks to match (`NARROW_AREA` in `WorkGraph.tsx`) so that what fills the
+ * space is bigger cards and readable labels rather than the same picture with
+ * more air around it.
  */
 @media (max-width: 40rem) {
   .panel {
     top: auto;
     bottom: 0.75rem;
     left: 0.75rem;
-    right: 0.75rem;
+    right: auto;
     width: auto;
+    min-height: 0;
     transform: none;
-    /* Wide enough on a phone that the two-column legend would fit; it is still
-       hidden below, because the graph needs the height more. */
-    gap: 0.6rem;
-    padding: 0.75rem 0.9rem;
+    gap: 0;
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.5rem;
   }
 
+  /* The kind, the name, the sentence and the facts — all of it. What a node is
+     is legible on the canvas at this size now, which is the trade this whole
+     block is making. */
   .panelBody {
-    min-height: 4.5rem;
-  }
-
-  /* Four rows of key against a canvas a few hundred pixels wide would take
-     more of the screen than the graph. The panel names whatever you touch, in
-     words, which is the same information without the block. */
-  .legend {
     display: none;
   }
 
+  /* Two columns rather than four rows: a corner block roughly as wide as it is
+     tall sits in the corner, where a four-row column would read as a panel
+     that had been squeezed rather than a key. */
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 0.3rem 0.7rem;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    font-size: 0.58rem;
+  }
+
+  /* Paired with `IndexShell`'s expand control at the same inset — see the note
+     on `.reset` above, which is why both numbers appear twice. */
   .reset {
+    top: 0.75rem;
     left: 0.75rem;
+    height: 2.25rem;
+    padding: 0 0.7rem;
+    gap: 0.35rem;
+  }
+
+  /*
+   * Titles, always.
+   *
+   * On a pointer the title arrives on hover — the moment before the click, and
+   * after the picture has already done the identifying. A touch has no such
+   * moment: the first tap on a card *is* the click, so a card whose title only
+   * appears on hover is a card you open without ever having read its name.
+   */
+  .cardCaption {
+    opacity: 1;
   }
 }
