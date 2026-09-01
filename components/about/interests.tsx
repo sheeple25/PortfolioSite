@@ -33,6 +33,13 @@ export type Interest = {
   /** One line, shown beside the panel. Sets up what the reader is looking at. */
   caption: string;
   /**
+   * What Pixel says when the pointer rests on this icon, in his voice rather
+   * than the page's — the caption describes the panel, this one talks the
+   * reader into opening it. Set as `data-pixel-say` on the icon; omit it and
+   * Pixel simply has nothing to add.
+   */
+  say?: string;
+  /**
    * Stand-in art, drawn on Pixel's own cell grid. Replaced by `art` when the
    * real pixelated photo cutouts land — see `PixelSprite.tsx`.
    */
@@ -66,6 +73,7 @@ export const INTERESTS: Interest[] = [
     offset: { x: "0.4rem", y: "-1.3rem", rotate: "-6deg" },
     label: "Travel",
     caption: "Everywhere I've managed to get to so far.",
+    say: "Vidush loves travelling — click to see everywhere he's been lately.",
     sprite: PLANE,
     panel: <DepartureBoard />,
   },
@@ -74,6 +82,7 @@ export const INTERESTS: Interest[] = [
     offset: { x: "-0.7rem", y: "0.9rem", rotate: "4.5deg" },
     label: "Reading",
     caption: "Picked it back up recently. Pull one off the shelf.",
+    say: "He's reading again. Pull something off the shelf and see.",
     sprite: BOOK,
     panel: (
       <PanelScroll>
@@ -86,6 +95,7 @@ export const INTERESTS: Interest[] = [
     offset: { x: "0.9rem", y: "-0.5rem", rotate: "7deg" },
     label: "Games",
     caption: "Hours sunk, honestly reported.",
+    say: "Ask him about his hours. He has agreed to report them honestly.",
     sprite: DPAD,
     panel: <Playtime />,
   },
@@ -94,6 +104,7 @@ export const INTERESTS: Interest[] = [
     offset: { x: "-0.4rem", y: "1.2rem", rotate: "-4.5deg" },
     label: "Pets",
     caption: "One dog of mine, one cat by association.",
+    say: "One dog, and one cat he insists counts. Photos pending.",
     sprite: PAW,
     panel: <PanelPlaceholder noun="The pets" waitingFor="photos" />,
   },

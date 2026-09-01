@@ -636,3 +636,69 @@ all five defects above were found that way, not by reading the grids.
 ### Not done
 
 The Chrome-dino runner. This pass was the wardrobe only.
+
+## 14. Build log — hover speech (`data-pixel-say`)
+
+Pixel reacts to what the cursor is resting on. Deterministic and hand-authored:
+no model call, no token spend, no latency. InScreen explains what a reader
+clicked; this explains what they are merely pointing at.
+
+### Authoring
+
+Put the attribute on anything, anywhere:
+
+```tsx
+<button data-pixel-say="Vidush loves travelling — click to see where he's been.">
+```
+
+That is the whole API. It is a plain HTML attribute rather than a component or
+a hook, which is what makes it free: no import, no client boundary, and it works
+on a server component — the `/about` interest icons stay server-rendered and
+still talk. One window-level listener (`useHoverSpeech`) resolves it with
+`closest`, so the innermost annotated ancestor wins and markup this module has
+never seen still works.
+
+Timing is in `hooks.ts`: a 260ms dwell before he speaks, so a cursor crossing a
+nav on its way somewhere else doesn't set him twitching, and a 900ms hold after
+the pointer leaves, so sweeping between two adjacent targets swaps the text
+rather than blanking the corner between them. Silent on coarse pointers —
+`data-pixel-say` describes a hover, and a tap is a click meant for the control
+underneath.
+
+### Where the line is drawn
+
+Three surfaces, one corner — the same slot above the mascot that a document
+annotation opens in.
+
+| Page | Surface | Notes |
+| --- | --- | --- |
+| `/projects`, `/writing`, `/about` | `IndexShell`'s corner note | A hover outranks the standing "Start with…" recommendation and reverts on leave. `/about` had no static note, so the slot was already free. |
+| Markdown `[slug]` pages | `PixelSpeech`, unless a note is open | An annotation the visitor deliberately opened outranks a passing hover. |
+| `/`, hand-built case studies | `PixelSpeech` | Neither of the other two mounts here; without this the attribute would silently do nothing on those pages. |
+
+They cannot stack, so the surfaces that own the slot by right hold
+`useCornerSlot()` and `PixelSpeech` stands down. The claim is ref-counted in an
+external store next to the accessory's, because two claimants legitimately
+overlap for a frame during a route change.
+
+Suppressed while the chat is open (Pixel is already talking, at length and about
+what was actually asked), while he is hidden, and once he reaches the footer —
+the box is anchored off `--companion-size` and rides `--corner-lift`, so with the
+mascot gone it would be a caption with nothing to caption.
+
+### Accessibility
+
+The hover line is `aria-hidden`, like the mascot. It paraphrases an element the
+visitor is already pointing at, and that element announces its own name; a
+screen reader reaching the line would hear the same thing twice, the second time
+without the control attached to it. `IndexShell`'s static note is real content
+and stays readable — the attribute is applied only while a hover is speaking.
+
+### Left open
+
+- Only `/about`'s four interest icons carry a line so far. Everything else is
+  copywriting, not code.
+- No variants: one target, one line, every time. `|`-separated alternates would
+  be a small change to `useHoverSpeech` if he starts sounding repetitive.
+- No `data-pixel-mood`. Pairing a line with an expression is nearly free and was
+  deliberately not done yet — the speech should earn its place first.

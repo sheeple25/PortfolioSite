@@ -458,6 +458,12 @@ export default function InterestBand() {
                       : open(interest.slug)
                   }
                   onKeyDown={(e) => onIconKeyDown(e, i)}
+                  /*
+                    Pixel's line for this icon. A plain attribute, read by one
+                    window-level listener in `useHoverSpeech` — nothing here
+                    subscribes to anything or needs to know he exists.
+                  */
+                  data-pixel-say={interest.say}
                 >
                   <span className={styles.tile}>
                     {interest.art ? (

@@ -11,7 +11,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { usePathname } from "next/navigation";
-import { useFlash } from "./hooks";
+import { useFlash, useHoverSpeech } from "./hooks";
 import { isAccessory, type Accessory, type Expression } from "./sprites";
 import {
   useChatSession,
@@ -90,6 +90,53 @@ function writeAccessory(next: Accessory | null) {
   accessoryListeners.forEach((listener) => listener());
 }
 
+/*
+ * The corner slot's claim count.
+ *
+ * An external store rather than provider state, for the same reason the
+ * accessory above is one: the claim is taken and released from consumers'
+ * effects, and routing that through `setState` is a cascading render the lint
+ * rules here reject. `useSyncExternalStore` is the shape React provides for a
+ * value that lives outside the render and notifies when it moves.
+ *
+ * Counted rather than a boolean because two claimants legitimately overlap for
+ * a frame during a route change — the outgoing page's panel has not released
+ * before the incoming index claims — and a boolean would let the second
+ * release blank a slot the first claimant still owns.
+ */
+let cornerClaims = 0;
+const cornerListeners = new Set<() => void>();
+
+function subscribeCorner(onStoreChange: () => void) {
+  cornerListeners.add(onStoreChange);
+  return () => {
+    cornerListeners.delete(onStoreChange);
+  };
+}
+
+const getCornerSnapshot = () => cornerClaims > 0;
+
+/** Nothing has claimed anything before the first paint. */
+const getServerCornerSnapshot = () => false;
+
+/**
+ * Take the corner. The returned release is idempotent — React may run an
+ * effect's cleanup more than once in development, and a claim that could be
+ * released twice would drive the count negative and wedge the slot open.
+ */
+function claimCornerSlot() {
+  cornerClaims += 1;
+  cornerListeners.forEach((listener) => listener());
+
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    cornerClaims -= 1;
+    cornerListeners.forEach((listener) => listener());
+  };
+}
+
 /** Where an `openChat` call came from. Analytics and tone both care. */
 export type ChatSource = "header" | "companion" | "screen";
 
@@ -127,6 +174,28 @@ type PixelContextValue = {
    * has to get out of the way when he arrives. One observer, one truth.
    */
   atFooter: boolean;
+  /**
+   * What Pixel should be saying about whatever the pointer is resting on, from
+   * the `data-pixel-say` attribute. `null` is silence.
+   *
+   * Raised here rather than in `PixelCompanion` because the mascot is not what
+   * displays it — three different surfaces do, depending on the page, and none
+   * of them is inside the companion. See `useHoverSpeech`.
+   */
+  saying: string | null;
+  /**
+   * Whether some surface is already drawing in the corner above the mascot.
+   *
+   * That corner is a single physical slot with three claimants — an index's
+   * static note, an open document annotation, and the roaming `PixelSpeech`
+   * that covers every page with neither. They are positioned identically and
+   * cannot be allowed to stack, so the ones that own the slot by right say so,
+   * and `PixelSpeech` stands down. Ref-counted: two claims overlapping across a
+   * route transition must not release the slot early.
+   */
+  cornerClaimed: boolean;
+  /** Claims the corner for as long as the caller holds it. Returns the release. */
+  claimCorner: () => () => void;
 
   /* ------------------------------------------------------------ the chat */
   chatOpen: boolean;
@@ -166,6 +235,11 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
     getServerAccessorySnapshot,
   );
   const [atFooter, setAtFooter] = useState(false);
+  const cornerClaimed = useSyncExternalStore(
+    subscribeCorner,
+    getCornerSnapshot,
+    getServerCornerSnapshot,
+  );
 
   const [chatOpen, setChatOpen] = useState(false);
   const [triggerPathname, setTriggerPathname] = useState<string | null>(null);
@@ -211,6 +285,14 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
     (next: Accessory | null) => writeAccessory(next),
     [],
   );
+
+  /*
+   * Suppressed while the sidebar is open: Pixel is already talking in there, at
+   * length and about what was actually asked, and a second voice narrating
+   * whatever the cursor drifts over undercuts it. Keyed on the pathname so a
+   * navigation takes the current line with it — see the hook.
+   */
+  const saying = useHoverSpeech(!chatOpen, pathname);
 
   const sendMessage = useCallback(
     (text: string) => {
@@ -261,6 +343,9 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
       accessory,
       setAccessory,
       atFooter,
+      saying,
+      cornerClaimed,
+      claimCorner: claimCornerSlot,
       chatOpen,
       openChat,
       closeChat,
@@ -282,6 +367,8 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
       accessory,
       setAccessory,
       atFooter,
+      saying,
+      cornerClaimed,
       chatOpen,
       openChat,
       closeChat,
@@ -319,4 +406,19 @@ export function usePixelMood(expression: Expression | null) {
     setMood(expression);
     return () => setMood(null);
   }, [expression, setMood]);
+}
+
+/**
+ * Hold the corner above the mascot for as long as this component is mounted.
+ *
+ * Called by whichever surface owns that slot on the current page — `IndexShell`
+ * for the whole of an index, `AnnotationPanel` only while a note is actually
+ * open. `PixelSpeech` reads the other end of it and keeps quiet rather than
+ * drawing a second box over the first.
+ */
+export function useCornerSlot(active = true) {
+  useEffect(() => {
+    if (!active) return;
+    return claimCornerSlot();
+  }, [active]);
 }

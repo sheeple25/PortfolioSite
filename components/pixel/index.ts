@@ -19,8 +19,14 @@
 export { default as Pixel, type PixelProps } from "./Pixel";
 export { default as PixelCompanion } from "./PixelCompanion";
 export { default as PacmanCursor } from "./PacmanCursor";
-export { PixelProvider, usePixel, usePixelMood } from "./PixelContext";
-export { useBlink, useFlash, useGaze } from "./hooks";
+export { default as PixelSpeech } from "./PixelSpeech";
+export {
+  PixelProvider,
+  usePixel,
+  usePixelMood,
+  useCornerSlot,
+} from "./PixelContext";
+export { useBlink, useFlash, useGaze, useHoverSpeech, SAY_ATTRIBUTE } from "./hooks";
 export { EXPRESSIONS, rowsToRuns, runsToPath, type Expression } from "./sprites";
 export { ACCESSORIES, ACCESSORY_KEYS, type Accessory } from "./sprites";
 

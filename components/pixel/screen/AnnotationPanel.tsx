@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
-import { usePixel } from "../PixelContext";
+import { usePixel, useCornerSlot } from "../PixelContext";
 import { useNotes } from "./NotesContext";
 import styles from "./notes.module.css";
 
@@ -34,6 +34,14 @@ export default function AnnotationPanel() {
   // `AnimatePresence` still runs the exit transition, so it slides away rather
   // than being cut off mid-sentence as the footer arrives.
   const active = atFooter ? undefined : open;
+
+  /*
+   * Hold the corner while a note is up, so `PixelSpeech` does not draw its
+   * hover line over the top of it. Only while one is genuinely open: with no
+   * note showing this page has nothing in that corner, and the hover line is
+   * welcome to it.
+   */
+  useCornerSlot(Boolean(active));
 
   return (
     <AnimatePresence>

@@ -1,0 +1,47 @@
+/*
+ * Pixel's hover line, on every page that has no richer surface of its own.
+ *
+ * The anchor is copied from `screen/notes.module.css` `.panel` and
+ * `chrome/IndexShell.module.css` `.note` on purpose rather than shared: all
+ * three draw in the same corner, and the mascot's aside appearing in one
+ * consistent place is the whole reason that corner exists. `--corner-lift` is
+ * in the sum so this rides up onto the footer with the mascot instead of being
+ * left behind over the page.
+ */
+.speech {
+  position: fixed;
+  right: calc(var(--shell-inset) + env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--corner-inset-block) + var(--corner-lift, 0px) + var(--companion-size) +
+      2.5rem + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: 45;
+  /* Widened by the padding, so the scrim insets the box rather than the text. */
+  width: calc(var(--notes-width) + 1.6rem);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--color-charcoal) 14%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  /* It is Pixel talking, not the page — mono, like the rest of his furniture. */
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--color-ink-soft);
+  /* Never eat a click meant for whatever is underneath it. */
+  pointer-events: none;
+}
+
+/* Matches `.note`: below this there is no margin left to sit in. */
+@media (max-width: 1080px) {
+  .speech {
+    display: none;
+  }
+}
+
+@media print {
+  .speech {
+    display: none;
+  }
+}

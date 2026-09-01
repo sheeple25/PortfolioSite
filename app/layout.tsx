@@ -5,7 +5,13 @@ import {
   Newsreader,
 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { PacmanCursor, PixelCompanion, PixelProvider, PixelSidebar } from "@/components/pixel";
+import {
+  PacmanCursor,
+  PixelCompanion,
+  PixelProvider,
+  PixelSidebar,
+  PixelSpeech,
+} from "@/components/pixel";
 import BottomEdge from "@/components/chrome/BottomEdge";
 import SectionGround from "@/components/chrome/SectionGround";
 import { ShutterProvider } from "@/components/chrome/Shutter";
@@ -143,6 +149,12 @@ export default function RootLayout({
             */}
             <PixelSidebar />
             <PixelCompanion />
+            {/*
+              Pixel's `data-pixel-say` line, for the pages with no annotation
+              column or index note of their own. Stands down where one of those
+              already owns the corner — see the component.
+            */}
+            <PixelSpeech />
             <PacmanCursor />
           </PixelProvider>
         </ShutterProvider>

@@ -1,9 +1,11 @@
 "use client";
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePixel, useCornerSlot } from "@/components/pixel";
+import { usePrefersReducedMotion } from "@/lib/hooks";
 import { useShutter } from "./Shutter";
 import useMastheadFit from "./useMastheadFit";
 import styles from "./IndexShell.module.css";
@@ -84,6 +86,13 @@ type IndexShellProps = {
    * Pixel's aside, in the same corner a document's annotations open in. Static
    * on an index — there is nothing here to ask about, so this is the one thing
    * the mascot has to say. Omitted when the section has no recommended piece.
+   *
+   * Goes away when Pixel reaches the footer, the same as the document
+   * annotation panel: the note is anchored to the mascot, and once he has
+   * climbed into the footer it would be left hanging over a room he has already
+   * left. Two other things want that corner at the footer too — the wardrobe
+   * opens directly above the sprite, and the footer has its own content there —
+   * so clearing it resolves all three at once.
    */
   note?: ReactNode;
   /**
@@ -146,6 +155,30 @@ export default function IndexShell({
 }: IndexShellProps) {
   const shutter = useShutter();
   const headerRef = shutter?.panelRef;
+
+  /*
+   * The corner note is anchored to the mascot, and the mascot climbs into the
+   * footer. `AnnotationPanel` already answers this for a document page; an
+   * index has the same problem and now the same answer, read from the same
+   * one observer in `PixelContext` rather than a second one here.
+   */
+  const { atFooter, saying } = usePixel();
+  const reducedMotion = usePrefersReducedMotion();
+
+  /*
+   * An index owns its corner for as long as it is mounted, whether or not it
+   * has anything in it this second — the slot below renders the hover line
+   * itself, so `PixelSpeech` drawing a second copy would be a duplicate rather
+   * than a fallback.
+   */
+  useCornerSlot();
+
+  /*
+   * A hover outranks the standing recommendation. The static note is what Pixel
+   * says when there is nothing better; pointing at something specific *is*
+   * something better, and it reverts the moment the pointer moves off.
+   */
+  const line = saying ?? note;
 
   /*
    * `children` is the switch between the two shapes rather than a separate
@@ -383,9 +416,25 @@ export default function IndexShell({
         is full screen — it is fixed at z-45 and would otherwise be the one thing
         left hovering over an otherwise empty screen.
       */}
-      {note && !expanded ? (
-        <aside className={styles.note}>{note}</aside>
-      ) : null}
+      <AnimatePresence>
+        {line && !expanded && !atFooter ? (
+          <motion.aside
+            className={styles.note}
+            /*
+              A hover line paraphrases something the visitor is already pointing
+              at, and that element announces itself — see `PixelSpeech`. The
+              standing recommendation is real content and stays readable.
+            */
+            aria-hidden={saying ? "true" : undefined}
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {line}
+          </motion.aside>
+        ) : null}
+      </AnimatePresence>
     </main>
   );
 }

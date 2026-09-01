@@ -118,3 +118,109 @@ export function useFlash(defaultMs = 700): [
 
   return [flashed, flash];
 }
+
+/**
+ * The attribute a page puts on anything Pixel should speak about:
+ *
+ * ```tsx
+ * <button data-pixel-say="Vidush loves travelling — click to see where.">
+ * ```
+ *
+ * A plain HTML attribute rather than a component or a hook, and that is the
+ * point: it costs an author nothing, needs no import, and works on a server
+ * component. The `/about` interest icons stay server-rendered and still talk.
+ */
+export const SAY_ATTRIBUTE = "data-pixel-say";
+
+/**
+ * How long the pointer has to rest on a target before Pixel says anything.
+ * Without it he narrates every element a cursor crosses on its way somewhere
+ * else, which reads as twitching rather than talking.
+ */
+const DWELL_MS = 260;
+
+/**
+ * How long a line survives the pointer leaving. Long enough to finish reading
+ * it, and long enough that sweeping between two adjacent targets swaps the text
+ * instead of blanking the corner in between.
+ */
+const QUIET_MS = 900;
+
+/**
+ * What Pixel should be saying about whatever the pointer is resting on, or
+ * `null` for silence.
+ *
+ * One listener on the window rather than a handler per target: the attribute is
+ * meant to be sprinkled anywhere, including onto markup this module never sees,
+ * and `closest` finds it from the event's target no matter how deeply the
+ * pointer landed inside it. Nesting resolves the way you would want, too — the
+ * innermost annotated ancestor wins.
+ *
+ * Silent on touch. `data-pixel-say` describes a hover, and a coarse pointer has
+ * none: the line would either never fire or fire on a tap that was meant for
+ * the link underneath it.
+ *
+ * @param enabled Speech is suppressed while this is false — the chat sidebar
+ *   being open, for instance, where Pixel is already talking.
+ * @param resetKey Changing this clears the current line. The provider passes
+ *   the pathname: the element being hovered unmounts on navigation without
+ *   ever firing a `pointerout`, so nothing else would take the line down.
+ */
+export function useHoverSpeech(
+  enabled: boolean,
+  resetKey?: string,
+): string | null {
+  /*
+   * The line is stored with the `resetKey` it was spoken under, and masked
+   * during render when that no longer matches. A navigation therefore takes the
+   * line down without an effect having to clear it — same shape as
+   * `expandedFor` in `IndexShell`, and for the same reason: adjusting state
+   * during render is what React asks for here, and clearing it from an effect
+   * is a cascading render the lint rules reject outright.
+   */
+  const [spoken, setSpoken] = useState<{
+    key: string | undefined;
+    text: string | null;
+  }>({ key: resetKey, text: null });
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (!window.matchMedia("(hover: hover)").matches) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    /*
+     * What the pointer is over *now*, which is not what Pixel is saying — the
+     * gap between the two is the dwell. Kept in a closure variable rather than
+     * state because nothing renders from it; it exists only so a `pointerover`
+     * onto a different element inside the same target is recognised as "no
+     * change" and doesn't restart the timer.
+     */
+    let target: string | null = null;
+
+    const onPointerOver = (event: PointerEvent) => {
+      const el = event.target;
+      if (!(el instanceof Element)) return;
+
+      const next =
+        el.closest(`[${SAY_ATTRIBUTE}]`)?.getAttribute(SAY_ATTRIBUTE)?.trim() ||
+        null;
+      if (next === target) return;
+      target = next;
+
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(
+        () => setSpoken({ key: resetKey, text: next }),
+        next === null ? QUIET_MS : DWELL_MS,
+      );
+    };
+
+    window.addEventListener("pointerover", onPointerOver, { passive: true });
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("pointerover", onPointerOver);
+    };
+  }, [enabled, resetKey]);
+
+  return enabled && spoken.key === resetKey ? spoken.text : null;
+}
