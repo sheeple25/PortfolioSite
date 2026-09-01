@@ -286,14 +286,47 @@
     width: 0;
   }
 
+  .sidebar {
+    /*
+     * `dvh`, so the panel is the height of the screen the visitor can actually
+     * see. `100vh` on a phone is the height with the browser chrome retracted,
+     * which put the input row and its send button below the fold until the
+     * page was scrolled — and a fixed, full-screen panel does not scroll.
+     */
+    height: 100vh;
+    height: 100dvh;
+  }
+
   .open {
     width: 100vw;
     width: 100dvw;
   }
 
   .inner {
+    /*
+     * The panel goes full screen here but this did not, so it stayed at
+     * `--sidebar-width` — whose clamp floor of 300px wins at every phone width,
+     * since 26vw of a 40rem viewport is only ~166px. The result was a 300px
+     * column of content inside a 390px panel: `.header`'s `margin-left: auto`
+     * put the close button at 300px rather than at the screen edge, with a
+     * strip of dead panel to the right of it.
+     *
+     * Viewport units rather than `100%` on purpose, for the reason the fixed
+     * width exists at all (see `.inner` at the top of this file): `100%` would
+     * track the parent as it animates open, and the text would visibly squish
+     * on every open instead of reflowing once.
+     */
+    width: 100vw;
+    width: 100dvw;
+
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    /*
+     * Landscape on a notched phone puts the cutout down one of these edges.
+     * Zero everywhere else, so this costs nothing on a device without one.
+     */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 }
 
