@@ -96,6 +96,15 @@
 }
 
 .panel {
+  /*
+   * Its own, rather than inherited from `.root.shown`. On touch the root stays
+   * transparent (see the `hover: none` block at the foot of this file), so the
+   * panel has to claim its taps directly or every costume in it would be dead.
+   * On a mouse this changes nothing — the root is already `auto` whenever a
+   * panel exists, because `open` implies `shown`.
+   */
+  pointer-events: auto;
+
   border: 1px solid rgba(247, 247, 247, 0.18);
   border-radius: 0.75rem;
   background: rgba(10, 10, 10, 0.92);
@@ -187,6 +196,38 @@
 .clear:focus-visible {
   outline: 2px solid var(--nav-pixel-accent, #0047ff);
   outline-offset: 2px;
+}
+
+/*
+ * Touch: the pill is simply always there.
+ *
+ * The reveal-on-hover is a mouse affordance and has no touch equivalent — a
+ * finger fires `pointerenter` on the way down and `pointerleave` on the way up,
+ * so the pill appeared and vanished inside the same tap and could never be
+ * pressed. Latching it open on tap would have worked, but it invents a gesture
+ * nobody is told about to protect a reveal that only reads as delightful when
+ * a cursor is doing the revealing. At the footer, where this is the only thing
+ * mounted, showing the pill outright costs nothing.
+ *
+ * `.root` deliberately keeps `pointer-events: none` here. It spans the gap up
+ * to the sprite and sits directly over the footer's "Back to top" link, so
+ * making the whole box solid would trade this bug for a worse one; the two
+ * children that need taps take them individually instead.
+ */
+@media (hover: none) {
+  .trigger {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+
+    /*
+     * A bigger target than the mouse gets. The pill is ~24px tall at the
+     * desktop metrics, and `.companion` scales the whole stack to 0.72 below
+     * 640px, which lands it near 17px — under any reasonable thumb.
+     */
+    padding: 0.55rem 0.95rem;
+    font-size: 0.78rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
