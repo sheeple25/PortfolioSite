@@ -1,7 +1,15 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { parseWritingDocument, plainTextFromMarkdown } from "./parse";
-import type { WritingDocument, WritingSummary } from "./types";
+import {
+  parseWritingDocument,
+  parseWritingFrontmatter,
+  plainTextFromMarkdown,
+} from "./parse";
+import type {
+  WritingDocument,
+  WritingFrontmatter,
+  WritingSummary,
+} from "./types";
 
 /*
  * A folder of markdown documents, loaded and parsed on the server.
@@ -65,6 +73,18 @@ export function createDocumentCollection(
    */
   const cache = new Map<string, WritingDocument>();
 
+  /*
+   * Frontmatter is cached in dev too, unlike the documents above.
+   *
+   * It only feeds `getSlugs`, which Next calls from `generateStaticParams` in a
+   * worker process on every request while developing. Re-reading the body there
+   * bought nothing — the slug list is decided by filenames and a `draft:` flag,
+   * both of which `readSlugs` re-globs each time — and it is the one path that
+   * ran on a hot loop. An edit to a file's frontmatter shows up on the next
+   * dev-server restart; an edit to its body still shows up on refresh.
+   */
+  const metaCache = new Map<string, WritingFrontmatter | null>();
+
   function readSlugs(): string[] {
     try {
       return readdirSync(contentDir)
@@ -95,6 +115,25 @@ export function createDocumentCollection(
     return doc;
   }
 
+  /** Frontmatter only — no body parse, no React elements. `null` if unreadable. */
+  function loadMeta(slug: string): WritingFrontmatter | null {
+    const cached = metaCache.get(slug);
+    if (cached !== undefined) return cached;
+
+    let meta: WritingFrontmatter | null;
+    try {
+      meta = parseWritingFrontmatter(
+        readFileSync(join(contentDir, `${slug}.md`), "utf8"),
+        slug
+      );
+    } catch {
+      meta = null;
+    }
+
+    metaCache.set(slug, meta);
+    return meta;
+  }
+
   function isPublished(doc: WritingDocument): boolean {
     return !doc.meta.draft || !IS_PRODUCTION;
   }
@@ -118,9 +157,11 @@ export function createDocumentCollection(
     },
 
     getSlugs() {
+      // Deliberately not `loadDocument`: see `loadMeta`. The published rule is
+      // the same one `isPublished` applies, read off the same `draft:` field.
       return readSlugs().filter((slug) => {
-        const doc = loadDocument(slug);
-        return doc !== null && isPublished(doc);
+        const meta = loadMeta(slug);
+        return meta !== null && (!meta.draft || !IS_PRODUCTION);
       });
     },
 

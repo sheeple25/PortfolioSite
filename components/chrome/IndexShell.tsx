@@ -99,8 +99,24 @@ type IndexShellProps = {
    * The header's texture, in the band below the masthead. A slot rather than a
    * prop with a fixed shape, so a page can put a video, a canvas or an animated
    * graph here without this component knowing. Omit for the flat ground.
+   *
+   * See `backgroundExpanded` for the full-screen state.
    */
   background?: ReactNode;
+  /**
+   * What the band shows instead once it is full screen.
+   *
+   * `/projects` needs this: collapsed it is the work board, expanded it is the
+   * knowledge graph — a genuinely different read of the same data rather than
+   * the same view drawn larger. Omit and the band simply grows, which is what
+   * `/writing` and `/about` want.
+   *
+   * Two slots rather than the render prop this obviously wants to be. The pages
+   * that use this shell are server components and this one is a client
+   * component, so a `(state) => ReactNode` could not cross the boundary; two
+   * already-rendered nodes can, and only one of them is ever mounted.
+   */
+  backgroundExpanded?: ReactNode;
   /**
    * The background is real navigation, not decoration.
    *
@@ -148,6 +164,7 @@ export default function IndexShell({
   intro,
   note,
   background,
+  backgroundExpanded,
   backgroundInteractive = false,
   banner,
   onStageElement,
@@ -375,7 +392,7 @@ export default function IndexShell({
             )}
             aria-hidden={backgroundInteractive ? undefined : "true"}
           >
-            {background}
+            {expanded && backgroundExpanded ? backgroundExpanded : background}
 
             {/*
               After the slot in the DOM, not before, so it paints over whatever

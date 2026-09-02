@@ -1,0 +1,540 @@
+/*
+ * The work board's layout.
+ *
+ * Two stacked regions, the same way `IndexShell` splits its own header: the
+ * facet rows ask for what they need and the rail takes everything left over.
+ * Nothing here is a viewport fraction, because the band this sits in is already
+ * a remainder — see `.backgroundFull` in `IndexShell.module.css`, which makes
+ * this element `position: absolute; inset: 0` inside it.
+ *
+ * That inset is also why there is no `height` below and no margin anywhere: an
+ * `inset: 0` element that is also given `height: 100%` *plus* a margin overflows
+ * its container by exactly the margin. Padding does the same job and cannot.
+ */
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 2vh, 1.5rem);
+  padding: clamp(1rem, 2.5vh, 1.75rem) 0 clamp(1rem, 2.5vh, 1.75rem);
+  min-height: 0;
+  color: var(--index-header-ink);
+
+  /*
+   * The rail bleeds to both window edges — a horizontally scrolling strip that
+   * stops short of the edge reads as a component sitting on the page, and the
+   * point of this one is that it runs off the side and there is more. The type
+   * above it does not bleed, so both share one gutter value.
+   */
+  --board-gutter: clamp(1rem, 4vw, 3rem);
+  --tile-gap: clamp(0.5rem, 1vw, 0.85rem);
+  --tile-w: clamp(9.5rem, 15vw, 13.5rem);
+  --tile-w-featured: clamp(12rem, 20vw, 18rem);
+}
+
+/* ---- Facet rows --------------------------------------------------------- */
+
+.facets {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.7rem);
+  /* Clear of the band's full-screen toggle, which is 2.75rem square at 1.25rem
+     from the top-right corner. */
+  padding: 0 calc(var(--board-gutter) + 3.25rem) 0 var(--board-gutter);
+}
+
+/*
+ * The one line of instruction, and then the answer.
+ *
+ * Newsreader here rather than mono: this is the only sentence on the band and
+ * it is addressed to a person, where everything below it is a control. Mono is
+ * for the furniture.
+ */
+.lede {
+  margin: 0;
+  font-size: clamp(0.82rem, 1.5vh, 0.95rem);
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--index-header-ink) 72%, transparent);
+}
+
+.ledeStrong {
+  font-weight: 600;
+  color: var(--index-header-ink);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+/* A fixed measure so the three labels form a column and the facets start on a
+   shared left edge — the rows are meant to be read down as much as across. */
+.rowLabel {
+  flex: none;
+  width: 5.25rem;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.rowFacets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.4rem;
+  min-width: 0;
+}
+
+.facet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.24rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 16%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--index-header-ink) 80%, transparent);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+/* Domain reads as a category and skill as a phrase — the same distinction the
+   graph drew with pills and bare text, kept here in casing so that every facet
+   can still be one uniform hit target. */
+.row:first-of-type .facet {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.62rem;
+}
+
+.facetCount {
+  font-size: 0.6rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-soft);
+}
+
+.facet:hover,
+.facet[data-active] {
+  color: var(--index-header-ink);
+  border-color: color-mix(in srgb, var(--index-header-ink) 48%, transparent);
+  background: color-mix(in srgb, var(--index-header-ink) 8%, transparent);
+}
+
+/* Selected is a state you left behind, so it is a filled chip rather than the
+   lit outline a preview gets — the two have to be tellable apart while a
+   preview is running over a row that already has a selection in it. */
+.facet[aria-pressed="true"] {
+  color: var(--index-band-ground);
+  background: var(--index-header-ink);
+  border-color: var(--index-header-ink);
+}
+
+.facet[aria-pressed="true"] .facetCount {
+  color: color-mix(in srgb, var(--index-band-ground) 70%, transparent);
+}
+
+.facet:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ---- The rail ----------------------------------------------------------- */
+
+.railWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/*
+ * Two rows, packed by column.
+ *
+ * `grid-auto-flow: column dense` is what makes this a two-row strip rather than
+ * a single line: items fill the first column top-to-bottom, then the next, and
+ * `dense` backfills any hole left behind. Every tile is one row tall and the
+ * columns size to their widest occupant, so the strip stays two rows of
+ * thumbnails whether there are nine projects or thirty — no authored positions
+ * to redo at the tenth.
+ *
+ * `touch-action` is deliberately left alone. The graph set `touch-action: none`
+ * so it could pan, which meant a finger anywhere on the band could not scroll
+ * the page and the footer became unreachable from it. A scroll container's
+ * default already gives a horizontal drag to the rail and a vertical one to the
+ * page, which is exactly the split wanted.
+ */
+.rail {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-auto-flow: column dense;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-auto-columns: max-content;
+  gap: var(--tile-gap);
+  /* Vertical padding buys room for the tiles' hover lift and focus ring, which
+     `overflow-y: hidden` would otherwise shear off at the rows' edges. */
+  padding: 0.35rem var(--board-gutter);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  /* The band is one screen with the footer under it — a gesture that runs out
+     of rail must not start scrolling something else instead. */
+  overscroll-behavior-x: contain;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * The edges, drawn only when there is something past them.
+ *
+ * On the wrapper rather than the scroller: a pseudo-element on the rail itself
+ * would be laid out in its scrolled content and travel with the tiles.
+ */
+.railWrap::before,
+.railWrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(2rem, 5vw, 4rem);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.railWrap::before {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    var(--index-band-ground),
+    transparent
+  );
+}
+
+.railWrap::after {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    var(--index-band-ground),
+    transparent
+  );
+}
+
+.railWrap[data-fade-start]::before,
+.railWrap[data-fade-end]::after {
+  opacity: 1;
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--index-band-ground) 82%, transparent);
+  backdrop-filter: blur(4px);
+  color: var(--index-header-ink);
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.chevronStart {
+  left: calc(var(--board-gutter) * 0.25);
+}
+
+.chevronEnd {
+  right: calc(var(--board-gutter) * 0.25);
+}
+
+.chevron:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chevron:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* A rail that fits its band has nothing to reach for, and a touch device has a
+   swipe. Both leave the chevrons as decoration over the first tile. */
+@media (hover: none) {
+  .chevron {
+    display: none;
+  }
+}
+
+/* ---- Tiles -------------------------------------------------------------- */
+
+.tile {
+  position: relative;
+  width: var(--tile-w);
+  /* Height comes from the row: a grid item stretches to its area by default,
+     and only the inline axis is pinned above. */
+  display: block;
+  border: none;
+  padding: 0;
+  border-radius: 0.4rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--index-header-ink) 6%, transparent);
+  scroll-snap-align: start;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.28s ease, filter 0.28s ease, transform 0.28s ease;
+}
+
+/*
+ * Selected work is wider, not taller.
+ *
+ * Spanning both rows was the obvious way to give it weight and it was wrong:
+ * three double-height tiles lead the rail, so the first thing on the screen
+ * would have been three large panels and the two-row strip would only start
+ * where they ended. The rail has to read as two rows of thumbnails from the
+ * first glance, and extra width says "look here" without costing that.
+ */
+.tile[data-featured] {
+  width: var(--tile-w-featured);
+}
+
+/*
+ * Dimmed, not removed.
+ *
+ * Far enough back that the lit set reads at a glance, near enough that the rest
+ * of the work is still legible as *there* — the visitor is being told what
+ * matches, not having the pool hidden from them. `saturate` does most of the
+ * work; opacity alone at this strength turned the covers to mush.
+ */
+.tile[data-dim] {
+  opacity: 0.32;
+  filter: saturate(0.35);
+}
+
+.tile:hover,
+.tile:focus-visible {
+  transform: translateY(-2px);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--index-header-ink) 12%, transparent),
+    color-mix(in srgb, var(--index-header-ink) 4%, transparent)
+  );
+}
+
+.logoMark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/*
+ * The wash the caption sits on, in whichever direction the cover needs —
+ * measured per cover by `scripts/measure-cover-ink.mjs` and carried here as
+ * `data-ink`, so nothing about this is a guess made at authoring time.
+ */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.tile[data-ink="light"] .scrim {
+  background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.78) 0%,
+    rgb(0 0 0 / 0.32) 38%,
+    rgb(0 0 0 / 0) 68%
+  );
+}
+
+.tile[data-ink="dark"] .scrim {
+  background: linear-gradient(
+    to top,
+    rgb(255 255 255 / 0.86) 0%,
+    rgb(255 255 255 / 0.4) 38%,
+    rgb(255 255 255 / 0) 68%
+  );
+}
+
+.caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.tile[data-ink="light"] .caption {
+  color: #fff;
+}
+
+.tile[data-ink="dark"] .caption {
+  color: #111;
+}
+
+.title {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.meta {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+/*
+ * The sentence is held back until the tile is pointed at or focused. Two rows
+ * of thumbnails each carrying a blurb is a wall of text at thumbnail size; the
+ * title and the place are what you scan, and the sentence is what you want once
+ * you have stopped on one.
+ */
+.blurb {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.24s ease, max-height 0.24s ease;
+}
+
+.tile:hover .blurb,
+.tile:focus-visible .blurb {
+  opacity: 0.9;
+  max-height: 4.5rem;
+}
+
+/* Selected work carries a larger name. The sentence stays held back the same as
+   everywhere else — a single-row tile does not have the height to show three
+   lines of it without the caption eating the cover. */
+.tile[data-featured] .title {
+  font-size: 0.88rem;
+}
+
+/* ---- Phones ------------------------------------------------------------- */
+
+/*
+ * The rows stack and the labels go above their facets — 5.25rem of label beside
+ * a wrapping row of chips leaves the chips a column too narrow to be worth
+ * reading on a phone.
+ */
+@media (max-width: 46rem) {
+  .board {
+    --tile-w: 9rem;
+    --tile-w-featured: 11.5rem;
+  }
+
+  .facets {
+    padding-right: var(--board-gutter);
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+
+  .rowLabel {
+    width: auto;
+  }
+
+  /* Skills is twelve chips and growing. On a phone that is most of the band, so
+     the rows scroll sideways on their own rather than wrapping the rail off the
+     bottom of the screen. */
+  .rowFacets {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 0.15rem;
+  }
+
+  .rowFacets::-webkit-scrollbar {
+    display: none;
+  }
+
+  .facet {
+    flex: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .blurb,
+  .scrim,
+  .facet,
+  .railWrap::before,
+  .railWrap::after {
+    transition: none;
+  }
+
+  .tile:hover,
+  .tile:focus-visible {
+    transform: none;
+  }
+}
+
+/* ---- Utility ------------------------------------------------------------ */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

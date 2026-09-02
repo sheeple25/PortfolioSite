@@ -56,3 +56,6 @@ yarn-error.log*
 
 # Agent worktrees. Transient by nature; one was committed by accident before.
 /.claude/worktrees/
+
+# Saved job descriptions - private, and postings vanish so they are kept locally
+/cv/jd/

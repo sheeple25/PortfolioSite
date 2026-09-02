@@ -2,7 +2,12 @@
 
 Cold-start doc. Last updated 2026-08-31.
 
-Related: `docs/ABOUT_PAGE.md`, `docs/TODO.md`.
+Related: `docs/ABOUT_PAGE.md`, `docs/TODO.md`, `docs/WORK_GRAPH_DEMOTION.md`.
+
+**Partly superseded (2026-09-01).** The graph this doc built is being demoted
+from `/projects`' primary navigation to its expanded view. Read
+`docs/WORK_GRAPH_DEMOTION.md` first. Also stale: §0's `CENTERING` constant no
+longer exists in `WorkGraph.tsx`.
 
 Status: **§§1–5 are built.** `/projects` and `/archive` are one page navigated
 by the graph, `/writing` is the typed nav, and every index is one screen plus

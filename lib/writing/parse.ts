@@ -442,6 +442,23 @@ function splitPreview(nodes: RootContent[]) {
   };
 }
 
+/**
+ * A document's frontmatter, without parsing the body.
+ *
+ * `generateStaticParams` only needs to know which slugs exist and which are
+ * drafts, but Next re-runs it in a worker process on every request in dev.
+ * Going through `parseWritingDocument` for that meant running the whole remark
+ * pipeline and building a React element tree per file, per request, inside that
+ * worker — the expensive half of the work, thrown away unread. Frontmatter is
+ * a leading `---` block, so it can be read without touching the body at all.
+ */
+export function parseWritingFrontmatter(
+  source: string,
+  slug: string
+): WritingFrontmatter {
+  return readFrontmatter(splitFrontmatter(source).data, slug);
+}
+
 export function parseWritingDocument(
   source: string,
   slug: string,
