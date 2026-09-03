@@ -48,11 +48,13 @@ and the content behind it doesn't.
 | askVidush queue | Parked | Designed, not built. Blocked on accounts |
 | **Chrome & interaction** | | |
 | Shutter page transition | Shipped | |
-| Sticker rating + analytics | Shipped, **needs rework** | Both function and appearance flagged in TODO |
+| Sticker rating + analytics | Shipped | 2026-09-02 pass: die-cut seal faces, centred viewBox, keyboard delete, `.rails-hidden` fix — awaiting Vidush's hands-on check |
 | Dark mode toggle | Shipped | Manual only; ignores `prefers-color-scheme` by design |
 | Pac-Man cursor | Shipped | "Feed it to Pixel" interaction not built |
 | Footer physics pit | Shipped, under review | To be replaced by a Pixel footer game; the wardrobe half is built |
 | Immersive chrome (hide on scroll) | Shipped | |
+| Masthead Pixel (`TitlePixel`) | Built, **unmounted** | Pixel as a title's full stop — dozes, wakes near the cursor, wears the session costume. Unmounted from `/projects` same day: two visible mascots read as confusing (Vidush). Kept for the prospective home page. The corner note's "ask me" (`AskPixelNote`) stays live |
+| Themed browser surfaces | Shipped 2026-09-02 | `::selection` (project accent on case studies via `--selection-bg`), `scrollbar-color`, `caret-color`, `accent-color` — globals.css |
 | Animated titles (8 per-project effects) | Shipped | |
 | **Page-specific** | | |
 | Bookshelf (About) | Shipped | 21 books, self-hosted covers |
@@ -60,10 +62,10 @@ and the content behind it doesn't.
 | About page content | **Placeholder** | Bookshelf only; intro says so |
 | Contact page | Shipped | |
 | STL viewer | Built, **unmounted** | Component ready; no `.stl` asset to show |
-| Charts (Bklit UI) | Vendored, **unused** | Two upstream bugs block adoption — §12 |
-| Home page | Redirect | `/` → `/projects` |
+| Charts (Bklit UI) | **In use** | Traces' figures render on it; two registry bugs fixed locally — §12 |
+| Home page | Shipped 2026-09-02 | One-viewport hero at `/`; Pixel walks to the companion's corner on exit (`components/home/`) |
 | **Infrastructure** | | |
-| SEO / sitemap / robots / OG | Shipped | No OG share image yet |
+| SEO / sitemap / robots / OG | Shipped | Share card at `app/opengraph-image.tsx` (+ twitter re-export); vendored TTFs in `lib/og/fonts/` |
 | Vercel Analytics + custom events | Shipped | |
 | Reduced-motion support | Shipped | Honoured by every animated surface |
 | CV auto-copy + last-commit stamp | Shipped | Footer CV/Portfolio links have **empty hrefs** |
@@ -83,7 +85,7 @@ The five that actually matter, pulled from `docs/TODO.md`:
    URL is recorded anywhere in the repo, so Matchbox/Mizan/Vortex are still
    full case studies instead of redirects.
 4. **The sticker widget needs a function+appearance pass.**
-5. **Traces' charts should move onto Bklit UI** — see §12.
+5. ~~Traces' charts should move onto Bklit UI~~ — **done 2026-09-02**, see §12.
 
 ---
 
@@ -94,7 +96,7 @@ Six public routes. There is no separate home page: `/` redirects to
 
 | Route | What it is |
 | --- | --- |
-| `/` | Redirect → `/projects` |
+| `/` | **Home** — one-viewport front door: name, thesis, stage Pixel, three doors (2026-09-02) |
 | `/projects` | **Work** — every project, navigated by the knowledge graph |
 | `/projects/<slug>` | One project. Canonical URL for *every* entry, whatever its section |
 | `/writing` | Essays index — the typed nav |
@@ -976,34 +978,33 @@ animated series paths, projection lines, reference areas, hover-dim, loading
 states and skeletons, pattern fills, and a full token set wired into
 `app/globals.css` (`--chart-*`).
 
-### The open decision
+### Resolved — Traces is on Bklit now (2026-09-02)
 
-**Bklit is meant to be this site's chart system.** The Figma frame for Traces
-labels its slot "custom bklit UI chart", and the old board build genuinely used
-it. The live Traces page instead draws its two figures as hand-rolled inline SVG
-in `app/projects/traces/sections/problem.data.tsx` — because of **two real bugs
-in the registry**, both documented in `docs/CASE_STUDY_FORMAT.md` §7:
+**Bklit is this site's chart system.** The Figma frame for Traces labels its
+slot "custom bklit UI chart", and the old board build genuinely used it. For a
+while the live page drew its two figures as hand-rolled inline SVG because of
+two real bugs in the registry; both are now **fixed locally at the source**
+(upstream was checked on 2026-09-02 and still ships both):
 
-1. **`BarChart` with `orientation="horizontal"` + `stacked` miscomputes the final
-   segment's width.** The men's row rendered its "Pass" band at `x=287.5,
-   width=-32.5`, so 47% of the bar — the whole point of the comparison —
-   silently did not draw, while the women's row came out correct.
-2. **`LineChart` forces a zero-based y-domain for all-positive data.**
-   `resolveTimeSeriesYDomain` returns `[0, max * 1.1]` and exposes no floor prop.
-   The "Love lost" series only moves between 130 and 152, so on a zero-based axis
-   it's a flat line and the rise-to-2021-and-fall-after — the shape the chart
-   exists to show — disappears.
+1. **`BarChart` horizontal + stacked final-segment width** — the geometry
+   subtracted two unrelated scaled positions (`scale(value) - scale(offset)`)
+   instead of scaling the cumulative span, so any segment smaller than the
+   running total before it went negative and didn't draw. Fixed in
+   `components/charts/bar.tsx`.
+2. **`LineChart` zero-based y-domain** — `resolveTimeSeriesYDomain` had no
+   floor. The registry now takes `yScaleDomainMin`
+   (`LineChart` → `time-series-chart-shell.tsx`), added for Traces' 130–152
+   "Love lost" series and available to every future chart.
 
-Both were worked around rather than fixed, on the reasoning that six rectangles
-justify neither patching shared infrastructure mid-task nor shipping a chart that
-drops half a bar. The bespoke version also prints the truncated axis (120–160,
-exactly as the source has it), so a reader can see the scale doesn't start at
-zero rather than having to infer it.
+`app/projects/traces/sections/problem.data.tsx` now renders both figures on the
+registry (tooltips carry the per-segment percentages the hand SVG printed;
+`role="img"` labels carry the sentence for screen readers). The one remaining
+hand-rolled piece is the year-label row under the line chart, because the
+registry's `XAxis` only prints month-day labels.
 
-> **Flagged as to-be-addressed** (`docs/TODO.md`): fix both at the source, then
-> swap the bespoke SVG back out. Check whether upstream has already fixed either
-> before patching locally. **Keeping the library is deliberate** — it's wanted for
-> future charts, not just this one.
+**A re-pull with `shadcn add` will overwrite both fixes** — diff
+`components/charts/bar.tsx` and `time-series-chart-shell.tsx`/`line-chart.tsx`
+before accepting an update, or re-apply from git history.
 
 The live Traces figures, for reference: a stacked-bar Tinder match/gender chart,
 a "Love lost" MAU line chart (both digitised off the original board), and a Hinge

@@ -368,6 +368,7 @@ surfaces in the normal review pass.
 
 | Date | Asked for | Who needed it | Worked around by | Status |
 |---|---|---|---|---|
+| 2026-09-02 | Reason-tagged `setHidden(reason, hidden)` + `stageRoutes` prop on `PixelProvider` | The home-page hero (mounts its own stage Pixel at `/`), and §12's footer game, which reserved exactly this before shipping | **Not worked around — built as a deliberate pass**, authorized by Vidush for the home-page build. See §15. | Done (§15) |
 | 2026-08-30 | `lib/pixel/system-prompt.ts` updated to read the new unified entry registry | Work/Archive entry-model unification (`lib/entries/`) | **Not worked around — the module was edited.** The prompt imported `getProjectSummaries` and `getArchiveSummaries`; both modules were deleted in the refactor, so the file could not compile untouched and there was no version of the change that left it alone. Rule broken knowingly, recorded here rather than quietly. | Needs review |
 
 **Detail on the 2026-08-30 row**, since it is an edit rather than a request.
@@ -702,3 +703,58 @@ and stays readable — the attribute is applied only while a hover is speaking.
   be a small change to `useHoverSpeech` if he starts sounding repetitive.
 - No `data-pixel-mood`. Pairing a line with an expression is nearly free and was
   deliberately not done yet — the speech should earn its place first.
+
+
+---
+
+## 15. Build log — reason-tagged hiding + stage routes (2026-09-02)
+
+Authorized by Vidush as part of the home-page build ("Yes, do the module
+pass"). Two changes in `PixelContext.tsx`, nothing else in the module touched:
+
+- **`setHidden(reason: string, hidden: boolean)`** replaces the bare boolean
+  setter. Internally a `Set<string>` of reasons; the companion hides while any
+  reason is held. This is the exact upgrade §12 reserved for the footer game
+  ("`hidden` is a single unowned boolean … a third writer makes last-writer-wins
+  a real bug") — built now because the home hero became the third writer-shaped
+  need first. The one existing caller (`components/UnderConstruction.tsx`) now
+  passes `"under-construction"`.
+- **`stageRoutes?: string[]` on `PixelProvider`** — routes where a page-owned
+  Pixel takes the stage and the companion must not also render. The layout
+  passes `["/"]`. A prop rather than route knowledge inside the module, and
+  derived (not an effect), so it holds during server render too: the companion
+  never flashes on `/` before hydration, and releases itself the moment the
+  route changes — which is what makes the home hero's walk-to-corner hand off
+  to a companion that is already waiting to mount.
+
+**The footer game is now unblocked** on its `setHidden("footer-game", true)`
+prerequisite.
+
+---
+
+## 16. Build log — one mind, two bodies (`PixelStage`, 2026-09-02)
+
+Authorized by Vidush for the home-page overhaul ("replace this with the same
+PixelBot from the other pages, but this one should be bigger", and "it needs
+to say hi how it chats on other pages, and respond to hover").
+
+- **`useCompanionMind.ts`** — everything `PixelCompanion` did that was *him*
+  rather than *where he is* (idle drift → sleepy → asleep, the hover
+  brightening on interactive targets, the click jolt, `mood`/`reaction` from
+  the context, route moods, the blink) moved into one hook. `PixelCompanion`
+  now calls it and is only the corner body plus the wardrobe. Behaviour is
+  unchanged; the resolution order gained one rung — `awake: false` sits just
+  under `reaction`/local flash and above `mood`, so a stage can hold him
+  asleep until his cue without a reaction being swallowed.
+- **`PixelStage.tsx`** — the second body, exported from the barrel. Fills
+  whatever box the page gives it (the home hero sets a clamp() and flies the
+  box to the corner on exit), runs the same mind, and **draws his speech box
+  above his own head**: it claims the corner (`useCornerSlot`, as
+  `IndexShell` does) so `PixelSpeech` stands down on stage routes, then shows
+  `saying ?? greeting`, *typed* character by character with a blinking caret
+  (`useTyped`; instant under reduced motion). The box is a deliberate copy of
+  `PixelSpeech.module.css`'s look, anchored to the stage instead of the
+  viewport.
+- Nothing else in the module touched. `PixelSpeech`, the sidebar, the
+  wardrobe and the hover-speech hook are as they were.
+

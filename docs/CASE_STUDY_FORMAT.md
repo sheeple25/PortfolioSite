@@ -323,19 +323,20 @@ colour it's given; hand it `var(--tp)` and the stops come out with no
 go straight onto the rect. Chart colours passed as data are **literals**;
 anything styled by class still goes through the tokens.
 
-**Two bugs in the shared chart registry (`components/charts/`), still unfixed:**
+**Two bugs in the shared chart registry (`components/charts/`), fixed locally
+on 2026-09-02** (upstream still ships both — diff before accepting a re-pull):
 
-1. `BarChart` with `orientation="horizontal"` + `stacked` miscomputes the final
-   segment's width — the men's row rendered its 47% band at `x=287.5,
-   width=-32.5`, so half the bar silently didn't draw.
-2. `LineChart` forces a zero-based y-domain for all-positive data
-   (`resolveTimeSeriesYDomain` returns `[0, max * 1.1]`, no floor prop), which
-   flattens any series that doesn't start near zero.
+1. `BarChart` with `orientation="horizontal"` + `stacked` miscomputed the final
+   segment's width — `scale(value) - scale(offset)` instead of the scaled
+   cumulative span, so a segment smaller than the running total before it went
+   negative and silently didn't draw. Fixed in `components/charts/bar.tsx`.
+2. `LineChart` forced a zero-based y-domain for all-positive data with no
+   floor. `yScaleDomainMin` now exists on `LineChart` and the shell
+   (`time-series-chart-shell.tsx`), added for Traces' 130–152 MAU series.
 
-Both were worked around by drawing Traces' two charts as plain SVG rather than
-patching shared chart infrastructure mid-task. **Fixing them properly is the
-open decision**: Bklit is meant to be this site's chart system, and Traces'
-figures are meant to move back onto it. See `docs/FEATURES.md` → Charts.
+Traces' two figures are back on the registry
+(`app/projects/traces/sections/problem.data.tsx`); the hand-rolled SVG they
+replaced is in git history.
 
 **A hydration warning in the dev overlay is a browser extension**, not the code
 — it injects `fdprocessedid` attributes and hits NavBar and ThemeToggle too.

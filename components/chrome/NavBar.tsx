@@ -27,7 +27,7 @@ const LINKEDIN = SOCIAL_LINKS.find((link) => link.label === "LinkedIn");
  */
 function ContactMenu({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <li className={styles.contactItem}>
+    <li className={styles.contactItem} data-nav="link">
       <TrackedAnchor
         href={MAIL_HREF}
         className={styles.link}
@@ -153,10 +153,21 @@ export default function NavBar() {
   return (
     <header className={styles.header} data-chrome="header">
       <nav className={styles.nav} aria-label="Primary">
-        {/* The header sits above the sheet, so this stays reachable with it open. */}
+        {/* The header sits above the sheet, so this stays reachable with it open.
+            The wordmark is the door to the front page (`/`, the home hero) —
+            "Work" in the tabs is how you reach the index, so home never needs
+            a tab of its own. */}
         <ShutterNavLink
-          href="/projects"
+          href="/"
           className={styles.wordmark}
+          /*
+            `data-nav` marks the bar's three groups — wordmark, tabs, controls —
+            for the home hero's arrival, which deals the bar in as its first
+            beat (`arrivalTimeline` in HomeHero.tsx) and needs stable handles
+            rather than hashed CSS-module class names. Nothing else reads them,
+            and they are inert on every other page.
+          */
+          data-nav="wordmark"
           onNavigate={() => setMenuOpen(false)}
           onPointerEnter={() => setLogoHovered(true)}
           onPointerLeave={() => setLogoHovered(false)}
@@ -169,7 +180,7 @@ export default function NavBar() {
           {NAV_LINKS.map((link) => {
             const current = isCurrent(pathname, link.href);
             return (
-              <li key={link.href}>
+              <li key={link.href} data-nav="link">
                 <ShutterNavLink
                   href={link.href}
                   className={cn(styles.link, current && styles.linkCurrent)}
@@ -184,7 +195,7 @@ export default function NavBar() {
           <ContactMenu />
         </ul>
 
-        <div className={styles.controls}>
+        <div className={styles.controls} data-nav="controls">
           <ThemeToggle />
 
           <button

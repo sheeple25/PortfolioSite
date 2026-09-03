@@ -1,0 +1,41 @@
+/*
+ * The slot is `inline-flex` so a width set on `.word` is the only thing that
+ * moves the closing bracket: the brackets sit flush against whatever width the
+ * word has. Same type as the surrounding `<h1>` (`IndexShell.module.css`'s
+ * `.title`); nothing here restates the face or size, it inherits both.
+ */
+.morph {
+  display: inline;
+}
+
+.slot {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.bracket {
+  display: inline-block;
+}
+
+/*
+ * `overflow: hidden` because mid-swap the run of characters is already the
+ * next word's length while the width is still tweening towards it; the
+ * overhang is clipped rather than pushing the bracket. Left-aligned so the
+ * word resolves from its first letter, where the scramble reveals from.
+ */
+.word {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+  vertical-align: baseline;
+}
+
+/* The twin the swap measures: same box model as `.word`, painted nowhere. */
+.measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}

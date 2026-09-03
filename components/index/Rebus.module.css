@@ -1,20 +1,12 @@
 /*
- * Overrides the standfirst's own size from inside the slot, rather than the
- * shell growing a size variant for one page's sake. `IndexShell` sets `.intro`
- * on the paragraph; this span is its child, so it wins on specificity without
- * needing `!important`.
+ * The marks' own sizing and spacing. The type size is not set here: this rule
+ * used to override `.intro` from inside the slot so the rebus could run larger
+ * than an ordinary standfirst, but that size is now `.intro`'s own on every
+ * index, and this span inherits it. Only the leading is still the rebus's —
+ * a line with a logo in it needs more room than a line of words.
  */
 .rebus {
   display: inline;
-  /*
-   * `--index-intro-scale` is the masthead fitter's last resort — 1 in every
-   * ordinary case. It has to be folded in here as well as on `.intro`, because
-   * this rule replaces that one's `font-size` outright rather than inheriting
-   * it; scaling only the paragraph would leave the rebus at full size and the
-   * fallback would do nothing on the one page that has ever needed it. See
-   * `components/chrome/useMastheadFit.ts`.
-   */
-  font-size: calc(clamp(1.3rem, 2.1vw, 1.85rem) * var(--index-intro-scale, 1));
   line-height: 1.55;
   /*
    * Words and marks are held apart a little more than normal word-spacing, so

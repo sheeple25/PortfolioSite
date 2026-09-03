@@ -1,18 +1,27 @@
 /*
- * Fixed to the left edge, vertically centred — the right edge already
- * belongs to Pixel's sidebar and companion (chat/PixelSidebar.module.css,
- * PixelCompanion.module.css), so this is the one side left free.
+ * Fixed to the right edge, a quarter of the way down the viewport.
  *
- * `left` sits slightly negative so both badges are partly clipped by the
- * viewport edge — read as tucked in rather than floating free — but shallow
- * enough that the visible, grabbable majority of each badge sits clear of
- * the ~20px strip iOS/Android reserve for the edge-swipe-back gesture. A
- * touch drag that starts on the visible badge shouldn't fight that gesture;
- * the click/tap fallback (see StickerVote.tsx) is the safer path regardless.
+ * It used to hang off the left edge at the vertical centre, and there it sat
+ * exactly where a page's opening paragraph or a case study's margin notes
+ * begin — the one place a floating badge is most in the way. The right edge
+ * already carries Pixel's chrome, but only at the bottom (the companion at
+ * `--corner-inset-block`, PixelCompanion.module.css) and, while it is open,
+ * behind the chat sidebar (z-55, PixelSidebar.module.css — the rail simply
+ * disappears under it, which is fine). High on that edge is the one strip
+ * nothing else claims, and it is where a sticker on a laptop lid would be.
+ *
+ * `right` sits deep enough negative that only roughly the left half of each
+ * sticker peeks out — tucked in like stickers half-peeled off the edge of a
+ * laptop lid, not floating free. That deliberately buries the hidden half in
+ * the ~20px strip iOS/Android reserve for the edge-swipe gesture; the visible
+ * half is still tappable, and the click/tap fallback (see StickerVote.tsx) —
+ * not an edge-anchored drag — is the intended touch path anyway. On hover the
+ * badge slides fully out via Motion's `whileHover` (`HOVER_SLIDE_X` in
+ * StickerVote.tsx — pinned to this `right`, change both).
  *
  * Real (non-zero) box, sized to the fan's actual bounding area — needed for
- * two things `top: 55%; transform: translateY(-50%)` and a zero-size anchor
- * would both break: centering the fan on that 55% mark via `-50%` of its
+ * two things `top: 25%; transform: translateY(-50%)` and a zero-size anchor
+ * would both break: centering the fan on that 25% mark via `-50%` of its
  * *own* height, and `app/globals.css`'s `.rails-hidden [data-chrome="rail"]`
  * rule, which slides this off-screen via `translateY(115%)` — also a
  * percentage of this element's own height, so it silently stops moving
@@ -23,20 +32,35 @@
  */
 .rail {
   position: fixed;
-  left: -12px;
-  top: 55%;
+  right: -2.4rem;
+  top: 25%;
   transform: translateY(-50%);
-  width: 4.4rem;
-  height: 6.1rem;
+  width: 4.6rem;
+  height: 7.2rem;
   z-index: 45;
   pointer-events: none;
 }
 
+/*
+ * `.rails-hidden`'s global rule slides a rail off its own bottom edge via
+ * `transform: translateY(115%)` — which, as the note in `globals.css` spells
+ * out, *replaces* this rail's `translateY(-50%)` centring and leaves the
+ * badges ~160px lower and still on screen instead of gone. `.band-expanded`
+ * already hides this rail by opacity for exactly that reason; this rule makes
+ * `.rails-hidden` (the immersive-chrome scroll-away) do the same. Specificity
+ * (two classes + attribute) outranks the global rule's class + attribute, so
+ * the centring transform is restated here and wins.
+ */
+:global(.rails-hidden) .rail[data-chrome="rail"] {
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
 .badge {
   position: absolute;
-  left: 0;
-  width: 4.4rem;
-  height: 4.4rem;
+  right: 0;
+  width: 4.6rem;
+  height: 4.6rem;
   padding: 0;
   border: none;
   background: none;
@@ -46,85 +70,183 @@
 }
 
 /* The fan itself: badges anchored to opposite ends of `.rail`'s taller box,
-   overlapping through the middle — reads as one card held slightly behind
-   the other, rather than two badges stacked apart with a gap. */
+   overlapping through the middle — reads as one sticker half-covering the
+   other on a sheet, rather than two squares stacked apart with a gap. */
 .badgeUp {
   top: 0;
   z-index: 2;
 }
 
 .badgeDown {
-  top: 1.7rem;
+  top: 2.6rem;
   z-index: 1;
 }
 
+/*
+ * `pointer-events: none`, not just a cursor change — this is the fix for the
+ * dead planted sticker. After a drag placement, the badge that placed the
+ * vote fades out *at the drop point* (Motion animates it to the frozen drag
+ * offset at opacity 0 — see `votedByThis` in StickerVote.tsx) and stays in
+ * the DOM there: a disabled, invisible button inside this z-index-45 rail,
+ * sitting exactly on top of the planted sticker in the z-index-20
+ * `.plantedLayer`. Opacity 0 doesn't remove an element from hit-testing, and
+ * a disabled button doesn't forward events to what's underneath — it just
+ * eats them — so every drag and double-click aimed at the planted sticker
+ * died on this ghost instead. Letting events pass through it entirely is
+ * both the fix and the honest state: a frozen badge has nothing left to do
+ * with a pointer.
+ */
 .badge:disabled {
+  pointer-events: none;
   cursor: default;
 }
 
-.badgeShape {
+/* Square ring on a square control — matches the sticker's die-cut corner
+   radius rather than drawing a circle around a square. */
+.badge:focus-visible,
+.badgePlanted:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/*
+ * Die-cut sticker construction: a square colour face inside a paper-white cut
+ * edge, slightly rounded corners, resting at a slight tilt like something
+ * actually slapped on. Literal colours, not theme tokens, on the same
+ * reasoning as the banner's institution stickers (see the note above
+ * `.dark .page` in case.module.css): a sticker is a fixed material laid onto
+ * the page, not chrome answering to the reader's theme — the white edge is
+ * exactly what keeps it legible on both the paper and the dark ground.
+ *
+ * The tilt is a CSS variable so the ~30s nudge keyframes below can wiggle
+ * *around* it (`calc(var(--tilt) + …)`) instead of stomping it — and it lives
+ * on this inner face, not the button, because Motion owns the button's
+ * transform (drag x/y, hover slide, scale) and two owners of one `transform`
+ * is the exact fight the old version kept losing.
+ */
+.sticker {
+  --tilt: -4deg;
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.16));
-  transition: filter 0.2s ease;
-}
-
-/* `filter: drop-shadow` (not `box-shadow`) so the shadow hugs the scalloped
-   silhouette instead of the badge's rectangular bounding box. */
-.badgeDragging .badgeShape,
-.badge:active:not(:disabled) .badgeShape {
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.3));
-}
-
-.badgeFace {
-  fill: #fdfbf7;
-  stroke-width: 2.5;
-}
-
-.badgeUp .badgeFace {
-  stroke: var(--color-accent);
-}
-
-.badgeDown .badgeFace {
-  stroke: var(--color-ink-soft);
-}
-
-.badgeContent {
-  position: relative;
-  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
+  border: 3px solid #fdfbf7;
+  border-radius: 3px;
+  /* box-shadow, because the silhouette is the border-box itself — no need for
+     the scalloped version's `filter: drop-shadow` silhouette-hugging trick. */
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+  transform: rotate(var(--tilt));
+  transition: box-shadow 0.2s ease;
   pointer-events: none;
 }
 
-.badgeUp .badgeContent {
-  color: var(--color-accent);
+.stickerUp {
+  --tilt: -4deg;
+  background: #0047ff;
 }
 
-.badgeDown .badgeContent {
-  color: var(--color-ink-soft);
+.stickerDown {
+  --tilt: 3deg;
+  background: #5c5747;
 }
 
-.badgeLabel {
-  font-family: var(--font-jetbrains-mono);
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+/* Picked up: the shadow deepens as the sticker lifts off the page. */
+.badgeDragging .sticker,
+.badge:active:not(:disabled) .sticker {
+  box-shadow:
+    0 14px 24px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.14);
 }
 
 /*
- * The permanent mark a vote leaves behind. `.plantedLayer` is a zero-size,
- * unpositioned anchor at the document origin (not inside `.rail`, which is
- * `position: fixed` and would anchor a child's `top`/`left` to the viewport
- * instead of the page) — its child positions itself in page coordinates via
- * inline `top`/`left`, so it stays attached to that spot on the content as
- * the page scrolls, like a sticker actually left there.
+ * `Pixel` sizes itself with px width/height attributes; explicit CSS on its
+ * root and svg wins over those — same pattern as TitlePixel.module.css. No
+ * `overflow: hidden` anywhere on the sticker: a costume from the wardrobe
+ * (bowler, horns, halo) is drawn above the head at negative sprite rows and
+ * must be free to overlap the face's padding.
+ */
+.stickerPixel {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.stickerPixel svg {
+  width: 100%;
+  height: 100%;
+}
+
+.stickerText {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: #fdfbf7;
+}
+
+/*
+ * The ~30s "psst, we're here" nudge: the whole animation lives in the first
+ * ~1s of the cycle (1.4% of 30s ≈ 0.4s out, settled by 4%), the rest is
+ * stillness. The two badges run the same keyframes with offset delays so
+ * they bob one after the other, not in lockstep. Scoped to
+ * `no-preference` even though globals.css also carries a blanket
+ * reduced-motion kill — this module shouldn't depend on that backstop.
+ *
+ * Silenced while hovered (the badge is sliding out — a wiggle underneath the
+ * pointer reads as flinching), while dragged, once frozen after a vote, and
+ * on the planted mark.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .sticker {
+    animation: sticker-nudge 30s linear infinite;
+    animation-delay: 6s;
+  }
+
+  .badgeDown .sticker {
+    animation-delay: 10s;
+  }
+
+  .badge:hover .sticker,
+  .badge:disabled .sticker,
+  .badgeDragging .sticker,
+  .badgePlanted .sticker {
+    animation: none;
+  }
+}
+
+@keyframes sticker-nudge {
+  0%,
+  4%,
+  100% {
+    transform: translateX(0) rotate(var(--tilt));
+  }
+
+  1.4% {
+    transform: translateX(-9px) rotate(calc(var(--tilt) - 3deg));
+  }
+
+  2.7% {
+    transform: translateX(-2px) rotate(calc(var(--tilt) + 2deg));
+  }
+}
+
+/*
+ * The permanent mark a vote leaves behind. `.plantedLayer` is a zero-size
+ * absolute anchor at the document origin — its containing block is the
+ * *initial containing block*, which only holds because `StickerVote` mounts
+ * as a direct child of `<body>` and neither `body` nor `html` is positioned,
+ * transformed or filtered (`body` being a flex column is fine; absolute
+ * children leave flex flow). Its child positions itself in page coordinates
+ * via inline `top`/`left`, so it stays attached to that spot on the content
+ * as the page scrolls, like a sticker actually left there. Not inside
+ * `.rail`, which is `position: fixed` and would anchor `top`/`left` to the
+ * viewport instead of the page.
  */
 .plantedLayer {
   position: absolute;
@@ -141,44 +263,56 @@
   position: absolute;
   /*
    * `left`/`top` (set inline in StickerVote.tsx) mark the drop point as a
-   * top-left corner by default — this margin re-centers the badge on that
-   * point instead. Not a transform: Motion drives `x`/`y` on this element as
-   * genuine pixel drag offsets (dragging to reposition after placement), and
-   * those wouldn't compose reliably with a percentage-based centering
-   * transform on the same axis.
+   * top-left corner by default — this margin (half the 4.6rem badge)
+   * re-centers the badge on that point instead. Not a transform: Motion
+   * drives `x`/`y` on this element as genuine pixel drag offsets (dragging
+   * to reposition after placement), and those wouldn't compose reliably with
+   * a percentage-based centering transform on the same axis.
    */
-  margin-left: -2.2rem;
-  margin-top: -2.2rem;
+  margin-left: -2.3rem;
+  margin-top: -2.3rem;
   pointer-events: auto;
   cursor: pointer;
 }
 
-.badgePlanted .badgeShape {
-  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.22));
+.badgePlanted .sticker {
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.22),
+    0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
 @media (max-width: 640px) {
   .rail {
-    width: 3rem;
-    height: 4.2rem;
+    /* Same ~half-visible tuck at the smaller size. */
+    right: -1.7rem;
+    width: 3.4rem;
+    height: 5.4rem;
   }
 
   .badge {
-    width: 3rem;
-    height: 3rem;
+    width: 3.4rem;
+    height: 3.4rem;
   }
 
   .badgeDown {
-    top: 1.2rem;
+    top: 2rem;
   }
 
   .badgePlanted {
-    margin-left: -1.5rem;
-    margin-top: -1.5rem;
+    margin-left: -1.7rem;
+    margin-top: -1.7rem;
   }
 
-  .badgeLabel {
-    font-size: 0.52rem;
+  .stickerPixel {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  /* "i love this" is 11 mono characters; at 3.4rem minus the cut edge this
+     is as big as it can be and still clear the border on both sides. */
+  .stickerText {
+    font-size: 0.42rem;
+    letter-spacing: 0;
   }
 }
 

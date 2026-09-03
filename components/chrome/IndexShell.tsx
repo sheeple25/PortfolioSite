@@ -74,6 +74,24 @@ type IndexShellProps = {
    */
   title: string;
   /**
+   * Replaces the title's full stop with a rendered mark — `/projects` puts a
+   * live Pixel there (see `TitlePixel`). The `title` string stays whole
+   * ("Work.") for the fitter's signature and assistive tech: the trailing dot
+   * is stripped only from what's painted, restated for screen readers, and the
+   * mark itself is decorative. Ignored when the title has no trailing dot to
+   * stand in for.
+   */
+  titleMark?: ReactNode;
+  /**
+   * What is painted in the `<h1>` instead of `title`, when the title is not a
+   * plain string — `/about` puts a word that morphs through a list here (see
+   * `MorphTitle`). `title` still carries the whole sentence: it stays the
+   * fitter's signature, the expand button's label and the page's own name for
+   * anything that reads the props rather than the paint. The node is
+   * responsible for its own accessible text. Wins over `titleMark`.
+   */
+  heading?: ReactNode;
+  /**
    * Standfirst, on the window's right edge.
    *
    * Its column widens itself rather than growing taller when it would otherwise
@@ -161,6 +179,8 @@ type IndexShellProps = {
 
 export default function IndexShell({
   title,
+  titleMark,
+  heading,
   intro,
   note,
   background,
@@ -278,10 +298,55 @@ export default function IndexShell({
    */
   const [expandedFor, setExpandedFor] = useState<string | null>(null);
   const expanded = expandedFor === title;
+  /*
+   * Two views swap with a fade, not a cut — and the band's own change of size
+   * happens in the gap between them.
+   *
+   * `expanded` is the intent: it drives the button, the scroll lock and which
+   * view is *asked for*. `settling` is true from the moment the intent changes
+   * until the outgoing view has finished fading (`onExitComplete` on the
+   * presence boundary below), and while it is true the layout stays with the
+   * view that is leaving. The stage therefore disappears (and the band snaps
+   * to full screen) at the one moment nothing is drawn in it, which is the
+   * only moment a snap is invisible. Flipping the layout at the same instant
+   * as the fade would reflow the departing view — a grid stretched to a new
+   * width while it is trying to leave, a graph re-laid mid-exit — and the
+   * outgoing `WorkGraph` in particular measures its frame on every resize.
+   *
+   * Only a band with two views needs the lag. A band that merely grows
+   * (`/writing`, `/about`) has nothing to fade, and a reader who has asked for
+   * less motion gets the cut they asked for: `full` follows `expanded`
+   * directly in both cases.
+   */
+  const swaps = Boolean(backgroundExpanded);
+  const [settling, setSettling] = useState(false);
   const setExpanded = useCallback(
-    (next: boolean) => setExpandedFor(next ? title : null),
-    [title],
+    (next: boolean) => {
+      setExpandedFor(next ? title : null);
+      /*
+       * Toggled, not set. A second press mid-fade sends the intent back to
+       * where the layout still is, so there is nothing left to lag — and the
+       * interrupted exit may never report completing, which would otherwise
+       * leave the layout waiting on it for good.
+       */
+      if (swaps && next !== expanded) setSettling((current) => !current);
+    },
+    [title, swaps, expanded],
   );
+
+  /*
+   * A navigation mid-fade leaves `settling` with no exit left to clear it —
+   * the presence boundary is unmounted along with the page, and the callback
+   * never comes. Reset it as the title changes, in the render itself, which
+   * is React's own pattern for state that belongs to a prop's previous value.
+   */
+  const [settlingFor, setSettlingFor] = useState(title);
+  if (settlingFor !== title) {
+    setSettlingFor(title);
+    setSettling(false);
+  }
+
+  const full = swaps && !reducedMotion && settling ? !expanded : expanded;
 
   /*
    * "No scroll at all", which takes the top of the page as well as both
@@ -350,7 +415,7 @@ export default function IndexShell({
       className={cn(
         styles.page,
         !hasSheet && styles.pageFull,
-        expanded && styles.pageExpanded,
+        full && styles.pageExpanded,
       )}
     >
       {/* The shutter's panel: this is what rolls up and back down. */}
@@ -373,7 +438,17 @@ export default function IndexShell({
         <div className={styles.stage} ref={stageRef}>
           <div className={styles.masthead} ref={mastheadEl}>
             <h1 className={styles.title} ref={titleEl}>
-              {title}
+              {heading ? (
+                heading
+              ) : titleMark && title.endsWith(".") ? (
+                <>
+                  {title.slice(0, -1)}
+                  <span className="sr-only">.</span>
+                  {titleMark}
+                </>
+              ) : (
+                title
+              )}
             </h1>
             <p className={styles.intro} ref={introEl}>
               {intro}
@@ -388,11 +463,63 @@ export default function IndexShell({
             className={cn(
               styles.background,
               !hasSheet && styles.backgroundFull,
-              expanded && styles.backgroundExpanded,
+              full && styles.backgroundExpanded,
             )}
             aria-hidden={backgroundInteractive ? undefined : "true"}
           >
-            {expanded && backgroundExpanded ? backgroundExpanded : background}
+            {/*
+              The swap between the two views, when there are two.
+
+              `mode="wait"`: the board leaves before the graph arrives, rather
+              than the two crossing. They are different shapes drawn in
+              different-sized bands — see `stageClear` — so an overlap would
+              have them fighting over one box for a third of a second.
+              `initial={false}` because the board's arrival is the GSAP entrance
+              in `WorkBoard`, and a fade under it would be two entrances.
+
+              A band with one view is rendered bare, exactly as before: the
+              wrapper exists to be animated, and `/writing` and `/about` have
+              nothing to animate between.
+            */}
+            {swaps ? (
+              <AnimatePresence
+                mode="wait"
+                initial={false}
+                onExitComplete={() => setSettling(false)}
+              >
+                {expanded ? (
+                  <motion.div
+                    key="expanded"
+                    className={styles.slot}
+                    initial={reducedMotion ? false : { opacity: 0, scale: 1.03 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{
+                      duration: reducedMotion ? 0 : 0.4,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    {backgroundExpanded}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="collapsed"
+                    className={styles.slot}
+                    initial={reducedMotion ? false : { opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{
+                      duration: reducedMotion ? 0 : 0.3,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    {background}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            ) : (
+              background
+            )}
 
             {/*
               After the slot in the DOM, not before, so it paints over whatever

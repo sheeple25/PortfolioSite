@@ -3,17 +3,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, type PanInfo } from "motion/react";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { track } from "@vercel/analytics";
+import { Pixel, SAY_ATTRIBUTE, usePixel, type Expression } from "@/components/pixel";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
-import { scallopedCirclePath } from "@/lib/scallopedCirclePath";
 import styles from "./StickerVote.module.css";
 
 type VoteType = "up" | "down";
 
 /** Below this, a release reads as mouse wobble during an intended click, not a placement — the badge snaps back and no vote is spent. */
 const MIN_DRAG_DISTANCE = 20;
+
+/*
+ * How far the badge slides out on hover, in px. Negative because the rail
+ * hangs off the *right* edge now, so "out" is leftward, into the page. Pinned
+ * to the rail's tuck in the module CSS (`.rail { right: -2.4rem }` = -38.4px
+ * at 16px root): the slide has to clear the whole hidden width plus a few px
+ * of breathing room, so the sticker reads as "stepping out to be picked up"
+ * rather than half-emerging. Change one, change the other.
+ */
+const HOVER_SLIDE_X = -42;
 
 type PlantedVote = {
   type: VoteType;
@@ -25,9 +34,35 @@ type PlantedVote = {
   dy: number;
 };
 
-const VOTE_COPY: Record<VoteType, { label: string; ariaVote: string }> = {
-  up: { label: "Good", ariaVote: "good" },
-  down: { label: "Bad", ariaVote: "bad" },
+const VOTE_COPY: Record<VoteType, { ariaVote: string }> = {
+  up: { ariaVote: "good" },
+  down: { ariaVote: "bad" },
+};
+
+/*
+ * Everything that makes the two stickers *different* lives in one table, so
+ * the rail badge and the planted mark can't drift apart. The colours are
+ * literal, not theme tokens — see the note above `.sticker` in the module CSS:
+ * a sticker is fixed material laid onto the page, and the mini Pixel's ink and
+ * eyes are part of that print run. `eyeColor` matches the face so the eyes
+ * read as punched through the white sprite, one ink per sticker.
+ */
+const STICKER_COPY: Record<
+  VoteType,
+  { label: string; expression: Expression; eyeColor: string; say: string }
+> = {
+  up: {
+    label: "i love this",
+    expression: "happy",
+    eyeColor: "#0047ff",
+    say: "Like the page? Peel this sticker off the edge and drop it anywhere — it sticks where you let go.",
+  },
+  down: {
+    label: "not a fan",
+    expression: "unimpressed",
+    eyeColor: "#5c5747",
+    say: "Not a fan? Drag this one out and drop it — Vidush reads the bad votes first.",
+  },
 };
 
 function storageKey(pathname: string) {
@@ -65,29 +100,40 @@ function writeVote(pathname: string, vote: PlantedVote) {
   }
 }
 
-const BADGE_VIEWBOX = 100;
-const BADGE_PATH = scallopedCirclePath(46, 15, 4.5);
-
-function BadgeFace({ type }: { type: VoteType }) {
-  const Icon = type === "up" ? ThumbsUp : ThumbsDown;
+/**
+ * The shared visual: a square die-cut sticker — white cut edge, colour face,
+ * a mini Pixel and a mono caption. Both the rail badges and the planted mark
+ * render this, so a vote lands looking exactly like the thing that was picked
+ * up. The mini Pixel wears the session costume (`usePixel().accessory`) for
+ * the same reason `TitlePixel` does: every Pixel on screen is the same
+ * character, and a hat that vanished on the stickers would break that.
+ */
+function StickerFace({ type }: { type: VoteType }) {
+  const { accessory } = usePixel();
+  const copy = STICKER_COPY[type];
   return (
-    <>
-      <svg viewBox={`0 0 ${BADGE_VIEWBOX} ${BADGE_VIEWBOX}`} className={styles.badgeShape} aria-hidden="true">
-        <path d={BADGE_PATH} className={styles.badgeFace} />
-      </svg>
-      <span className={styles.badgeContent} aria-hidden="true">
-        <Icon size={16} strokeWidth={1.75} />
-        <span className={styles.badgeLabel}>{VOTE_COPY[type].label}</span>
-      </span>
-    </>
+    <span
+      className={cn(styles.sticker, type === "up" ? styles.stickerUp : styles.stickerDown)}
+      aria-hidden="true"
+    >
+      <Pixel
+        expression={copy.expression}
+        accessory={accessory}
+        decorative
+        color="#fdfbf7"
+        eyeColor={copy.eyeColor}
+        className={styles.stickerPixel}
+      />
+      <span className={styles.stickerText}>{copy.label}</span>
+    </span>
   );
 }
 
 /**
- * One of the two rail badges — a "good" seal and a "bad" seal, both peeking
- * from the left edge (the right edge is Pixel's, see `components/pixel/chat/PixelSidebar.module.css`
- * / `PixelCompanion.module.css`). Two independent interaction paths land on
- * the same `onActivate`:
+ * One of the two rail badges — an "i love this" sticker and a "not a fan"
+ * sticker, both peeking from the right edge, high up — above the companion's
+ * corner and clear of the reading column; see the rail's note in the CSS.
+ * Two independent interaction paths land on the same `onActivate`:
  *
  * - Drag it anywhere on screen and release — a free `drag`, not the old
  *   constrained up/down gesture.
@@ -106,6 +152,12 @@ function BadgeFace({ type }: { type: VoteType }) {
  * `votedByThis`, so the badge just fades out exactly where it was let go —
  * no flight back to the rail, which is what actually breaks the "you picked
  * this up and put it down over there" read.
+ *
+ * The resting tilt lives in CSS (`--tilt` on `.sticker`), not in `animate`:
+ * the ~30s reminder pulse is a CSS keyframe animation on the inner face, and
+ * if Motion also owned `rotate` on this button the two would each write a
+ * transform containing rotation and visibly fight. Motion keeps x/y/scale/
+ * opacity on the button; CSS keeps rotation and the pulse on the face.
  */
 function RatingBadge({
   type,
@@ -129,7 +181,6 @@ function RatingBadge({
   onActivate: () => void;
 }) {
   const [frozenOffset, setFrozenOffset] = useState({ x: 0, y: 0 });
-  const baseRotate = type === "up" ? -9 : 9;
 
   const handleDragEnd = (event: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
     const placed = onDragEnd(event, info);
@@ -145,7 +196,14 @@ function RatingBadge({
         type === "up" ? styles.badgeUp : styles.badgeDown,
         dragging && styles.badgeDragging
       )}
-      drag={voted || reducedMotion ? false : true}
+      /*
+       * Not gated on `reducedMotion`: a drag is direct manipulation — the
+       * sticker tracks the pointer 1:1 with no motion of its own — which the
+       * reduced-motion preference doesn't ask to remove. Gating it here used
+       * to silently take the whole placement gesture away from those readers;
+       * only the decorative `whileDrag` flourish below stays gated.
+       */
+      drag={!voted}
       dragMomentum={false}
       onDragStart={onDragStart}
       onDragEnd={handleDragEnd}
@@ -159,19 +217,23 @@ function RatingBadge({
       animate={
         votedByThis
           ? { x: frozenOffset.x, y: frozenOffset.y, opacity: 0 }
-          : { x: 0, y: 0, rotate: baseRotate, opacity: voted ? 0.5 : 1 }
+          : { x: 0, y: 0, opacity: voted ? 0.5 : 1 }
       }
-      whileHover={voted ? undefined : { scale: 1.14, x: 6 }}
-      whileTap={voted ? undefined : { scale: 0.94 }}
-      whileDrag={reducedMotion ? undefined : { scale: 1.18, rotate: type === "up" ? 8 : -8 }}
+      // The reveal is functional (the badge is mostly tucked off-screen), so
+      // it still happens under reduced motion — just instantly.
+      transition={reducedMotion ? { duration: 0 } : undefined}
+      whileHover={voted ? undefined : { x: HOVER_SLIDE_X, scale: 1.05 }}
+      whileTap={voted ? undefined : { scale: 0.95 }}
+      whileDrag={reducedMotion ? undefined : { scale: 1.12, rotate: type === "up" ? 5 : -5 }}
       title={voted ? undefined : "Drag to rate"}
       aria-label={
         voted
           ? "Thanks for rating this page"
           : `Rate this page ${VOTE_COPY[type].ariaVote} — click, or drag the sticker anywhere on the page`
       }
+      {...{ [SAY_ATTRIBUTE]: STICKER_COPY[type].say }}
     >
-      <BadgeFace type={type} />
+      <StickerFace type={type} />
     </motion.button>
   );
 }
@@ -185,10 +247,13 @@ function RatingBadge({
  * Rendered as a sibling of the fixed rail rather than inside it: `.rail` is
  * `position: fixed`, which would make it the containing block for an
  * absolutely-positioned child and anchor `top`/`left` to the viewport instead
- * of the page. `.plantedLayer` is a zero-size, unpositioned anchor at the
- * document origin so its child's `top`/`left` (in page px, already including
- * scroll offset at the moment it was placed) land on the actual page
- * coordinate and scroll with the content, like a sticker really left there.
+ * of the page. `.plantedLayer` needs the *initial containing block* — the
+ * document origin — which it only gets because `StickerVote` mounts as a
+ * direct child of `<body>` and neither `body` nor `html` is positioned,
+ * transformed or filtered (verified against `app/globals.css`; `body` being a
+ * flex column doesn't matter, absolute children leave the flex flow). Keep it
+ * mounted there — re-parenting it under any positioned/transformed wrapper
+ * would silently offset every planted sticker.
  *
  * `left`/`top` fix the *original* drop point and never change; any dragging
  * since is expressed purely as Motion's own `x`/`y` (`vote.dx`/`vote.dy`),
@@ -214,7 +279,7 @@ function PlantedBadge({
   return (
     <div className={styles.plantedLayer}>
       <motion.div
-        className={cn(styles.badge, styles.badgePlanted, vote.type === "up" ? styles.badgeUp : styles.badgeDown)}
+        className={cn(styles.badge, styles.badgePlanted)}
         style={{ left: vote.x, top: vote.y }}
         initial={
           reducedMotion
@@ -223,31 +288,57 @@ function PlantedBadge({
         }
         animate={{ x: vote.dx, y: vote.dy, scale: 1, opacity: 1, rotate: 0 }}
         transition={reducedMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 22 }}
-        drag={!reducedMotion}
+        /*
+         * Unconditionally draggable — this used to be `drag={!reducedMotion}`,
+         * which read "reduced motion" as "no interaction" and left those
+         * readers with a sticker they could never reposition. Dragging is
+         * direct manipulation (the sticker follows the pointer exactly, no
+         * added motion), so the preference doesn't apply; the entrance spring
+         * above is what it governs, and that's already flattened to
+         * `duration: 0`.
+         */
+        drag
         dragMomentum={false}
         onDragEnd={(_event, info) => onMove(vote.dx + info.offset.x, vote.dy + info.offset.y)}
         onDoubleClick={onDelete}
-        title="Drag to move, double-click to cancel"
-        aria-label={`You rated this page ${VOTE_COPY[vote.type].ariaVote} — drag to move, double-click to remove`}
+        /* `role="button"` without a tab stop or key handling is a control a
+           keyboard can see but not reach — Delete/Backspace (and Enter, which
+           is what a screen reader will try first) all remove the vote, the
+           same as a pointer's double-click. */
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "Delete" || event.key === "Backspace" || event.key === "Enter") {
+            event.preventDefault();
+            onDelete();
+          }
+        }}
+        title="Drag to move, double-click to remove"
+        aria-label={`You rated this page ${VOTE_COPY[vote.type].ariaVote} — drag to move; press Enter or Delete to remove`}
         role="button"
+        {...{ [SAY_ATTRIBUTE]: "That one's yours — drag it to move it, double-click to peel it off." }}
       >
-        <BadgeFace type={vote.type} />
+        <StickerFace type={vote.type} />
       </motion.div>
     </div>
   );
 }
 
 /**
- * The page-rating widget: two badges — "Good" and "Bad" — peeking from the
- * left edge. Drag either one anywhere on the page and let go, or just click
- * it, to place a sticker there and cast the vote. One vote per page per
- * browser session (`sessionStorage`-guarded); once cast, both rail badges
- * fade and stop responding, and the planted sticker is the only remaining
- * trace — draggable to reposition, and restored at its exact spot (including
- * any repositioning) on every remount, so a mid-session refresh shows the
- * same picture as before. Double-clicking the planted sticker removes it and
- * clears the session's vote — the rail badges un-freeze immediately, letting
- * the visitor place a new one.
+ * The page-rating widget: two die-cut stickers — "i love this" and "not a
+ * fan" — peeking from the right edge. Drag either one anywhere on the page and
+ * let go, or just click it, to place it there and cast the vote. One vote per
+ * page per browser session (`sessionStorage`-guarded); once cast, both rail
+ * badges fade and stop responding, and the planted sticker is the only
+ * remaining trace — draggable to reposition, and restored at its exact spot
+ * (including any repositioning) on every remount, so a mid-session refresh
+ * shows the same picture as before. Double-clicking the planted sticker
+ * removes it and clears the session's vote — the rail badges un-freeze
+ * immediately, letting the visitor place a new one.
+ *
+ * Mounted inside `PixelProvider` (the mini Pixels wear the session costume)
+ * but still as a direct child of `<body>` — the provider renders no wrapper
+ * element, and `PlantedBadge`'s page-coordinate anchoring depends on that;
+ * see its comment.
  */
 export default function StickerVote() {
   const pathname = usePathname();
@@ -329,10 +420,11 @@ export default function StickerVote() {
       if (!rect) return;
 
       // A default landing spot clear of the rail itself, offset into the
-      // page rather than dropped right back on the badge that placed it.
+      // page (leftward, since the rail is on the right edge) rather than
+      // dropped right back on the badge that placed it.
       // `getBoundingClientRect()` is viewport-relative, so this addition of
       // `window.scrollX`/`scrollY` (unlike the drag path above) is correct.
-      const offsetX = 92;
+      const offsetX = -92;
       place(type, rect.left + rect.width / 2 + offsetX + window.scrollX, rect.top + rect.height / 2 + window.scrollY);
     },
     [place]

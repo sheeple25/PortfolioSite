@@ -1,10 +1,13 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { getEntries } from "@/lib/entries";
 import { getProjectGraph } from "@/lib/graph";
 import { formatDate } from "@/lib/format";
-import type { EntryMode, PeekContent } from "@/lib/entries/types";
+import type { EntryEmphasis, EntryMode, PeekContent } from "@/lib/entries/types";
 
 /*
- * The work board — the same pool the graph reads, shaped for rows and a rail.
+ * The work board — the same pool the graph reads, shaped for three facet
+ * columns over a two-row rail of the work.
  *
  * This is deliberately a *view over* `getProjectGraph()` rather than a second
  * walk of the registry. The graph module is the one place that knows a domain,
@@ -33,6 +36,13 @@ export type BoardFacet = {
   label: string;
   /** How many projects carry it. What the rows are ranked by. */
   count: number;
+  /**
+   * A monochrome mark for the facet's chip, for tools only. Present exactly
+   * when `public/logos/software/<slug>.svg` exists — decided here, where the
+   * filesystem can be asked, so the client never renders a chip around an
+   * asset that will 404. Absent means the chip falls back to text.
+   */
+  icon?: string;
 };
 
 export type BoardProject = {
@@ -53,8 +63,9 @@ export type BoardProject = {
   logoWidth?: number;
   /** Measured, not guessed — see `scripts/measure-cover-ink.mjs`. */
   coverInk: "light" | "dark";
-  /** Listed under Work. Drives order and tile size, nothing else. */
-  featured: boolean;
+  /** Width tier on the rail — 1 widest, 3 the base — and what the rail is
+   *  ordered by. Authored per entry in the registry; see `EntryEmphasis`. */
+  emphasis: EntryEmphasis;
   /** What the tile does, and where it goes. Resolved by `lib/entries`. */
   mode: EntryMode;
   href: string | null;
@@ -75,23 +86,43 @@ function byCountThenLabel(a: BoardFacet, b: BoardFacet): number {
 }
 
 /**
- * Work first, then everything else, each newest-first inside its group.
+ * Largest work first — tier 1, then 2, then 3, each newest-first inside its
+ * group.
  *
- * `getEntries()` already returns the pool date-sorted, so this only has to be a
- * stable partition — which is what keeps "which is newest" a property of the
- * data and "which comes first" a property of the section, rather than one sort
- * that half-answers both.
+ * `getEntries()` already returns the pool date-sorted, so this only has to be
+ * a stable partition — which is what keeps "which is newest" a property of the
+ * data and "which comes first" a property of the tier, rather than one sort
+ * that half-answers both. The board no longer sizes a tile by its tier — the
+ * top row is named outright (`LEAD_SLUGS` in `WorkBoard.tsx`) and every tile
+ * in a row is the same width — but this order still decides the second row's
+ * reading order, so it steps down through the tiers left to right rather than
+ * arriving in registry order.
  */
-function workFirst(a: BoardProject, b: BoardProject): number {
-  return Number(b.featured) - Number(a.featured);
+function byEmphasis(a: BoardProject, b: BoardProject): number {
+  return a.emphasis - b.emphasis;
+}
+
+/**
+ * The tool's logo, if one was shipped.
+ *
+ * The lookup key is the graph's own tag slug (`tool:after-effects` →
+ * `after-effects.svg`), so a logo lands on its facet by being named after it
+ * and nothing has to map the two. The SVGs are Simple Icons (CC0), recoloured
+ * at render time as CSS masks — see `.facetLogo` in `WorkBoard.module.css` —
+ * which is why any monochrome mark works and no per-theme variants exist.
+ */
+function toolIconFor(facetId: string): string | undefined {
+  const slug = facetId.slice("tool:".length);
+  const file = path.join(process.cwd(), "public", "logos", "software", `${slug}.svg`);
+  return existsSync(file) ? `/logos/software/${slug}.svg` : undefined;
 }
 
 export function getWorkBoard(): WorkBoardData {
   const graph = getProjectGraph();
 
-  /* The graph's own project nodes carry two things the registry doesn't
-     resolve on its own — `featured`, and the measured `coverInk`. Read them
-     from there rather than recomputing either. */
+  /* The graph's own project nodes carry one thing the registry doesn't
+     resolve on its own — the measured `coverInk` (and the card-specific cover
+     choice that goes with it). Read it from there rather than recomputing. */
   const graphProjects = new Map(
     graph.nodes
       .filter((node) => node.type === "project")
@@ -103,7 +134,13 @@ export function getWorkBoard(): WorkBoardData {
 
   for (const node of graph.nodes) {
     if (node.type === "project") continue;
-    facets.push({ type: node.type, id: node.id, label: node.label, count: 0 });
+    facets.push({
+      type: node.type,
+      id: node.id,
+      label: node.label,
+      count: 0,
+      icon: node.type === "tool" ? toolIconFor(node.id) : undefined,
+    });
     matches[node.id] = [];
   }
 
@@ -136,14 +173,14 @@ export function getWorkBoard(): WorkBoardData {
         logoInvert: node.logoInvert,
         logoWidth: node.logoWidth,
         coverInk: node.coverInk,
-        featured: node.featured,
+        emphasis: entry.emphasis,
         mode: entry.mode,
         href: entry.href,
         peek: entry.peek,
       };
     })
     .filter((project): project is BoardProject => project !== null)
-    .sort(workFirst);
+    .sort(byEmphasis);
 
   return { projects, facets: facets.sort(byCountThenLabel), matches };
 }

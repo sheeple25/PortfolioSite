@@ -182,6 +182,38 @@
   box-sizing: border-box;
 }
 
+/*
+ * The browser surfaces nobody draws — selection, scrollbar, caret, native
+ * form controls — ship in UA colours that belong to no design system, and
+ * they are the cheapest tell that a page was assembled rather than built.
+ * All four are pointed at the palette here.
+ *
+ * `--selection-bg` exists so a page with its own identity colour can retint
+ * selection without re-declaring the rule: the case-study chassis sets it to
+ * the project accent (`case.module.css`), everything else selects in site
+ * blue. White text is right on every value the token takes — the accent, the
+ * project colours, and the colourless projects' ink all sit dark enough.
+ */
+::selection {
+  background: var(--selection-bg, var(--color-accent));
+  color: #ffffff;
+}
+
+html {
+  /* Thumb on the warm border ramp, so it follows the theme swap. */
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+input,
+textarea {
+  caret-color: var(--color-accent);
+}
+
+:root {
+  /* Checkboxes, radios, progress — anything still drawn by the UA. */
+  accent-color: var(--color-accent);
+}
+
 html {
   scroll-behavior: smooth;
   /* Anchor jumps land below the sticky header rather than under it. */
@@ -205,7 +237,17 @@ body {
    * transition so the page edge and the panel edge move together.
    */
   margin-right: 0;
-  transition: margin-right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  /*
+   * `background-color` is in here for `/`, whose ground is full-bleed site blue
+   * (`.home-ground` below) while every other page is near-white. The class is
+   * toggled on a route change, so without a transition the walk away from the
+   * home page — Pixel gliding to the corner over half a second — would happen
+   * across a hard cut from blue to cream. Same easing family as the sidebar
+   * push, and short enough that a light/dark toggle still feels immediate.
+   */
+  transition:
+    margin-right 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.45s ease;
 }
 
 /*
@@ -496,4 +538,58 @@ button {
   --color-charcoal: #ffffff;
   --color-muted: color-mix(in srgb, #ffffff 82%, transparent);
   --color-accent: #ffffff;
+}
+
+/*
+ * The front door's ground: the whole document goes site blue for as long as `/`
+ * is mounted.
+ *
+ * Set on `<html>` for the same reason `.index-ground` above is — several pieces
+ * of site chrome (`BottomEdge` most visibly) are fixed elements in the root
+ * layout and sit outside the page's subtree, so an override scoped to the hero
+ * cannot reach them, and one of them washing the foot of the window in the old
+ * `--color-bg` would lay a cream band across the bottom of a blue page. Putting
+ * it here takes the body's background — and so the overscroll area — with it.
+ *
+ * It writes `--color-bg` *from* `--color-accent` rather than restating the blue:
+ * the ground is not a new colour, it is the site's one accent used at full
+ * bleed, and there must be no second literal that can drift away from it.
+ *
+ * `SectionGround` toggles the class on a route change; the inline script in
+ * `app/layout.tsx` puts it on before the first paint, so a cold load of `/`
+ * never flashes cream.
+ */
+.home-ground {
+  --color-bg: var(--color-accent);
+}
+
+/*
+ * The bar over that blue. Same technique as `.hero-chrome` above — re-point the
+ * tokens rather than name a nav link, so anything added to the bar later is
+ * retinted too — with one deliberate addition: `--nav-pixel-accent`.
+ *
+ * `.hero-chrome` pointedly leaves that variable alone, because over a case
+ * study's hero image it still has to carry *that project's* colour. Here the
+ * ground already is the site accent, so a pill, a logo mark and a current-page
+ * marker drawn in it would be invisible. They go white instead, and the Ask
+ * Pixel pill inverts — see `.askPixel` in `NavBar.module.css` for the ink that
+ * then goes on it.
+ */
+.home-ground [data-chrome="header"] {
+  --color-charcoal: #ffffff;
+  --color-muted: color-mix(in srgb, #ffffff 70%, transparent);
+  --color-accent: #ffffff;
+  --nav-pixel-accent: #ffffff;
+}
+
+/*
+ * The home hero deals the bar in as the first beat of its arrival (see
+ * `arrivalTimeline` in `HomeHero.tsx`). The bar lives in the root layout rather
+ * than in the page, so its "not placed yet" state has to be declared out here
+ * where a rule can reach it. The hero sets the attribute in a layout effect and
+ * clears it when the timeline ends — and only on a true arrival, never on a
+ * client-side return to `/`.
+ */
+[data-chrome="header"][data-nav-intro="pending"] [data-nav] {
+  visibility: hidden;
 }

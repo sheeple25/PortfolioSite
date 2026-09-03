@@ -48,6 +48,26 @@ const SAMPLE_BAND = 0.34;
  */
 const THRESHOLD = 0.45;
 
+/**
+ * Covers whose answer is the owner's rather than the measurement's.
+ *
+ * The measurement asks one question — is the band under the caption bright —
+ * and answers it correctly for both of these: Traces and Vortex are pale
+ * exactly where the words go. What it cannot see is the rest of the rail. A
+ * white wash on two tiles in a row of otherwise dark-scrimmed ones reads as
+ * two tiles that lost their picture, and the board is looked at as a set
+ * before any one tile is read. Both covers carry white type on a dark scrim
+ * well enough, so the set wins.
+ *
+ * Applied after measuring so the file stays regenerable: re-running the script
+ * keeps these rather than reverting them.
+ */
+const OVERRIDES = {
+  "/archive/traces-card.webp": "light",
+  "/archive/traces-hero.webp": "light",
+  "/archive/vortex-hero.webp": "light",
+};
+
 /** sRGB -> relative luminance, gamma-corrected (WCAG's definition). */
 function luminance(r, g, b) {
   const lin = (c) => {
@@ -95,7 +115,8 @@ async function measureDir(urlDir) {
     }
     const mean = total / (data.length / info.channels);
 
-    entries.push([`${urlDir}/${name}`, mean > THRESHOLD ? "dark" : "light"]);
+    const url = `${urlDir}/${name}`;
+    entries.push([url, OVERRIDES[url] ?? (mean > THRESHOLD ? "dark" : "light")]);
   }
   return entries;
 }

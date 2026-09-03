@@ -18,6 +18,8 @@
 /* ---------------------------------------------------------------- the mascot */
 export { default as Pixel, type PixelProps } from "./Pixel";
 export { default as PixelCompanion } from "./PixelCompanion";
+/* The same mind in a bigger body, in the page's flow rather than the corner. */
+export { default as PixelStage } from "./PixelStage";
 export { default as PacmanCursor } from "./PacmanCursor";
 export { default as PixelSpeech } from "./PixelSpeech";
 export {

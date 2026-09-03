@@ -15,7 +15,7 @@ import {
 import BottomEdge from "@/components/chrome/BottomEdge";
 import SectionGround from "@/components/chrome/SectionGround";
 import { ShutterProvider } from "@/components/chrome/Shutter";
-import { INDEX_ROUTES } from "@/components/chrome/sections";
+import { HOME_ROUTE, INDEX_ROUTES } from "@/components/chrome/sections";
 import Footer from "@/components/chrome/Footer";
 import NavBar from "@/components/chrome/NavBar";
 import StickerVote from "@/components/chrome/StickerVote";
@@ -57,10 +57,10 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   /*
-   * No `images` entry yet: there is no share card in `public/`, and an
-   * `openGraph.images` pointing at a missing file previews worse than none at
-   * all. Everything else here is what makes a shared link render as something
-   * other than a bare URL.
+   * No `images` entry here by design: `app/opengraph-image.tsx` /
+   * `app/twitter-image.tsx` are the share card, and the file convention emits
+   * the `og:image` / `twitter:image` tags (with dimensions and alt) itself —
+   * a hand-written `images` entry would just be a second copy to keep in step.
    */
   openGraph: {
     type: "website",
@@ -70,7 +70,9 @@ export const metadata: Metadata = {
     url: SITE_URL,
   },
   twitter: {
-    card: "summary",
+    /* `summary_large_image` — the card is a full 1200x630, and the small
+       square crop mangles its left-aligned composition. */
+    card: "summary_large_image",
     title: `${SITE_NAME} Portfolio`,
     description: SITE_DESCRIPTION,
   },
@@ -107,15 +109,18 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             /*
-             * The index ground goes on before first paint for the same reason
+             * The page grounds go on before first paint for the same reason
              * the theme does: an effect runs after the first frame, so a cold
-             * load of an index would flash the light default first. The route
-             * list is interpolated from `sections.ts` rather than written out
-             * here, so the two cannot drift.
+             * load would flash the light default first — most glaringly on
+             * `/`, whose ground is full-bleed site blue. Both route lists are
+             * interpolated from `sections.ts` rather than written out here, so
+             * they cannot drift from what `SectionGround` toggles afterwards.
              */
-            __html: `(function(){try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");if(${JSON.stringify(
+            __html: `(function(){try{var r=document.documentElement;if(localStorage.getItem("theme")==="dark")r.classList.add("dark");if(${JSON.stringify(
               INDEX_ROUTES,
-            )}.indexOf(location.pathname)>-1)document.documentElement.classList.add("index-ground")}catch(e){}})()`,
+            )}.indexOf(location.pathname)>-1)r.classList.add("index-ground");if(location.pathname===${JSON.stringify(
+              HOME_ROUTE,
+            )})r.classList.add("home-ground")}catch(e){}})()`,
           }}
         />
       </head>
@@ -134,7 +139,10 @@ export default function RootLayout({
             client-side navigation — the sprite keeps its idle timer, gaze and
             blink across route changes instead of remounting cold on every link.
           */}
-          <PixelProvider>
+          {/* `/` is the home hero's stage — it mounts its own Pixel, so the
+              corner companion stands down there (SSR-consistently; see the
+              `stageRoutes` note in PixelContext). */}
+          <PixelProvider stageRoutes={["/"]}>
             <NavBar />
             {/*
               `.appMain` is the flex child that grows, which is what holds the
@@ -156,13 +164,18 @@ export default function RootLayout({
             */}
             <PixelSpeech />
             <PacmanCursor />
+            {/*
+              Fixed to the left edge — Pixel's sidebar and companion both live
+              on the right (above), so the left is the one side left for
+              chrome. Inside PixelProvider because the stickers' mini Pixels
+              wear the session costume (`usePixel().accessory`); the provider
+              renders no wrapper element, so this is still a direct child of
+              <body> — which the planted sticker's page-coordinate anchoring
+              depends on (see `.plantedLayer` in StickerVote.module.css).
+            */}
+            <StickerVote />
           </PixelProvider>
         </ShutterProvider>
-        {/*
-          Fixed to the left edge — Pixel's sidebar and companion both live on
-          the right (above), so the left is the one side left for chrome.
-        */}
-        <StickerVote />
         {/*
           Vercel Web Analytics: automatic pageviews site-wide, plus the
           `track()` custom events fired from IndexCard, Footer and

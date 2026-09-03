@@ -165,8 +165,8 @@ export default function UnderConstruction({
   // Pixel is the hero here, so the corner companion stands down for the
   // lifetime of this page rather than doubling the character on screen.
   useEffect(() => {
-    setHidden(true);
-    return () => setHidden(false);
+    setHidden("under-construction", true);
+    return () => setHidden("under-construction", false);
   }, [setHidden]);
 
   useEffect(() => {

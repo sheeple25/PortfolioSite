@@ -57,6 +57,9 @@ export interface LineChartProps {
   xDomainSlotCount?: number;
   /** Tween y-domain when brush changes the visible x-range. Default: false */
   tweenYDomainOnXDomainChange?: boolean;
+  /** Floors the y-axis here instead of at zero — for an all-positive series
+   *  that lives far from zero and would otherwise flatten into a line. */
+  yScaleDomainMin?: number;
   /** Inline container styles (e.g. fixed height for brush strip). */
   style?: CSSProperties;
   /** Fires when the internal chart phase changes (e.g. OG capture readiness). */
@@ -154,6 +157,7 @@ interface ChartInnerProps {
   xDomain?: [Date, Date];
   xDomainSlotCount?: number;
   tweenYDomainOnXDomainChange?: boolean;
+  yScaleDomainMin?: number;
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onPhaseChange: (phase: ChartPhase) => void;
@@ -176,6 +180,7 @@ function ChartInner({
   xDomain,
   xDomainSlotCount,
   tweenYDomainOnXDomainChange,
+  yScaleDomainMin,
   children,
   containerRef,
   onPhaseChange,
@@ -204,6 +209,7 @@ function ChartInner({
       xDomainSlotCount={xDomainSlotCount}
       yDomainTween={yDomainTween}
       yDomainTweenDuration={yDomainTweenDuration}
+      yScaleDomainMin={yScaleDomainMin}
     >
       {children}
     </TimeSeriesChartInner>
@@ -227,6 +233,7 @@ export function LineChart({
   xDomain,
   xDomainSlotCount,
   tweenYDomainOnXDomainChange = false,
+  yScaleDomainMin,
   style,
   onPhaseChange,
   children,
@@ -283,6 +290,7 @@ export function LineChart({
             xDomainSlotCount={xDomainSlotCount}
             yDomainTween={yDomainTween}
             yDomainTweenDuration={yDomainTweenDuration}
+            yScaleDomainMin={yScaleDomainMin}
           >
             {children}
           </ChartInner>

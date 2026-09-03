@@ -1,168 +1,383 @@
 /*
  * The work board's layout.
  *
- * Two stacked regions, the same way `IndexShell` splits its own header: the
- * facet rows ask for what they need and the rail takes everything left over.
- * Nothing here is a viewport fraction, because the band this sits in is already
- * a remainder — see `.backgroundFull` in `IndexShell.module.css`, which makes
- * this element `position: absolute; inset: 0` inside it.
+ * One window, by rule. The band this sits in is the remainder of a screen
+ * (`.backgroundFull` in `IndexShell.module.css`, which absolutely fills the
+ * presence slot the board is mounted in), and the board must never ask for
+ * more: the facet columns take the height they need at the top and the rail
+ * takes *everything left*, packing the work into two rows of that height. When
+ * the pool outgrows the width, the rail scrolls sideways — never down. That is
+ * the owner's constraint, and everything below is in service of it; a version
+ * that let the page scroll was built and rejected.
  *
- * That inset is also why there is no `height` below and no margin anywhere: an
- * `inset: 0` element that is also given `height: 100%` *plus* a margin overflows
- * its container by exactly the margin. Padding does the same job and cannot.
+ * `height: 100%` against the slot, which is an `inset: 0` box and so has a
+ * definite height to resolve against. Padding rather than margin for the same
+ * reason as before — a margin on top of a percentage height overflows the slot
+ * by exactly the margin.
  */
 .board {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
   gap: clamp(0.9rem, 2vh, 1.5rem);
   padding: clamp(1rem, 2.5vh, 1.75rem) 0 clamp(1rem, 2.5vh, 1.75rem);
-  min-height: 0;
   color: var(--index-header-ink);
 
   /*
    * The rail bleeds to both window edges — a horizontally scrolling strip that
    * stops short of the edge reads as a component sitting on the page, and the
-   * point of this one is that it runs off the side and there is more. The type
-   * above it does not bleed, so both share one gutter value.
+   * point of this one is that when it runs off the side there is more. The
+   * type above it does not bleed, so both share one gutter value.
    */
-  --board-gutter: clamp(1rem, 4vw, 3rem);
+  --board-gutter: var(--page-gutter);
   --tile-gap: clamp(0.5rem, 1vw, 0.85rem);
-  --tile-w: clamp(9.5rem, 15vw, 13.5rem);
-  --tile-w-featured: clamp(12rem, 20vw, 18rem);
+
+  /*
+   * The site blue, written out rather than read from `--color-accent`, because
+   * `IndexShell`'s `.page` retargets that token to the index chrome's ink for
+   * the whole header — reading it here would give the selected chip the same
+   * colour as everything else. `WorkGraph.module.css` routes around the same
+   * thing the same way. The lifted value in dark mode is the same hue with
+   * enough luminance to read as a border and as ink on near-black; the fill
+   * stays the true blue in both themes because white type on it is what has
+   * the contrast.
+   */
+  --board-accent: #0047ff;
+  --board-accent-ink: #0047ff;
 }
 
-/* ---- Facet rows --------------------------------------------------------- */
+:global(.dark) .board {
+  --board-accent-ink: #6690ff;
+}
+
+/* ---- Facet columns ------------------------------------------------------ */
 
 .facets {
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: clamp(0.4rem, 1vh, 0.7rem);
-  /* Clear of the band's full-screen toggle, which is 2.75rem square at 1.25rem
-     from the top-right corner. */
-  padding: 0 calc(var(--board-gutter) + 3.25rem) 0 var(--board-gutter);
+  gap: clamp(1rem, 2vw, 1.5rem);
+  /*
+   * Clear of the band's full-screen toggle, which is 2.75rem square at 1.25rem
+   * from the top-right corner — so its left edge is 4rem in, and 4.25rem is
+   * that plus a hair.
+   *
+   * `max()` rather than `gutter + 3.25rem`: the button is positioned against
+   * the *band's* edge, not inset by the gutter, so adding the two reserved a
+   * second gutter's worth of width that nothing was ever going to use — three
+   * wasted rem at the widths this page is read at, taken out of the column
+   * that needs them most. Where the gutter is already wider than the button,
+   * the gutter alone clears it.
+   */
+  padding: 0 max(var(--board-gutter), 4.25rem) 0 var(--board-gutter);
 }
 
 /*
- * The one line of instruction, and then the answer.
+ * Three columns, read across: what the work is about, what made it, and the
+ * named competencies. The three headings sit on a shared grid line, which is
+ * what makes the page read as one table with three heads rather than three
+ * lists.
  *
- * Newsreader here rather than mono: this is the only sentence on the band and
- * it is addressed to a person, where everything below it is a control. Mono is
- * for the furniture.
+ * The tracks are *not* equal. `--column-tracks` is written by `WorkBoard` from
+ * the data — each column's share is the ink its chips carry, so the twelve
+ * skills get about half the row and the six tools about a fifth, and all three
+ * wrap to roughly the same depth once they are open. The fallback is the equal
+ * thirds this used to be, for the frame before the property lands.
+ *
+ * The gutter between them is a floor, not a feature. It used to open to
+ * 2.75rem at a desktop width, which is most of a chip: every rem of gutter is
+ * a rem the widest column wraps sooner, and the hairline under each heading is
+ * what separates the three sets — it doesn't need a canyon's help.
  */
-.lede {
-  margin: 0;
-  font-size: clamp(0.82rem, 1.5vh, 0.95rem);
-  line-height: 1.35;
-  color: color-mix(in srgb, var(--index-header-ink) 72%, transparent);
+.columns {
+  display: grid;
+  grid-template-columns: var(--column-tracks, repeat(3, minmax(0, 1fr)));
+  gap: clamp(1rem, 1.8vw, 1.6rem);
+  align-items: start;
 }
 
-.ledeStrong {
-  font-weight: 600;
-  color: var(--index-header-ink);
-}
-
-.row {
+/* No `gap`: the air under the heading belongs to the cloud, so that a shut
+   column gives it back along with the chips and costs exactly one line. */
+.column {
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-}
-
-/* A fixed measure so the three labels form a column and the facets start on a
-   shared left edge — the rows are meant to be read down as much as across. */
-.rowLabel {
-  flex: none;
-  width: 5.25rem;
-  font-family: var(--font-jetbrains-mono);
-  font-size: 0.58rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-ink-soft);
-}
-
-.rowFacets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.4rem;
+  flex-direction: column;
   min-width: 0;
 }
 
+/*
+ * A small mono head with a hairline under it, the width of its column. The
+ * hairline is the only line on the board and it is what makes three clouds of
+ * chips read as three labelled sets rather than one cloud with words in it.
+ *
+ * It is also the reveal — "Sort by Skills" is the button that opens all three
+ * clouds at once (see `.cloud`). Styled as a heading rather than as a control:
+ * a column head that looked like a button would compete with the chips under
+ * it, which are the actual controls, and the whole ranking of this block
+ * depends on them winning. The chevron is the only thing that says it presses.
+ */
+.columnLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 0.45rem;
+  border: 0;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--index-header-ink) 12%, transparent);
+  background: none;
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--color-ink-soft);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.columnLabel {
+  cursor: pointer;
+}
+
+.columnLabel:hover {
+  color: var(--board-accent-ink);
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--board-accent-ink) 40%,
+    transparent
+  );
+}
+
+.columnLabel:focus-visible {
+  outline: 2px solid var(--board-accent-ink);
+  outline-offset: 3px;
+}
+
+/* Takes the leftover so the count and the chevron sit against the column's
+   right edge, over the end of the hairline they share. */
+.columnHeading {
+  flex: 1;
+  min-width: 0;
+}
+
+/* How big the set is — the only thing on a shut column saying there is one.
+   Tabular so a two-digit count doesn't walk the chevron sideways. */
+.columnMore {
+  flex: none;
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--index-header-ink) 52%, transparent);
+}
+
+.columnChevron {
+  flex: none;
+  /* On the type's own line rather than its baseline — a glyph-shaped icon in a
+     baseline-aligned row sits a third of its height too low. */
+  align-self: center;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.columnLabel[aria-expanded="true"] .columnChevron {
+  transform: rotate(180deg);
+}
+
+/*
+ * Shut to nothing until the heading is pressed.
+ *
+ * The board may not grow downward (see the note at the top of this file), so
+ * the facets and the rail are in direct competition for one window: a row of
+ * chips is a row of thumbnail. At rest the columns are three headings and the
+ * rail has everything else. `max-height: 0` rather than `display: none` so the
+ * chips stay laid out — that is what makes the open height measurable while
+ * the cloud is shut, and what gives the reveal something to ease across.
+ *
+ * `FacetColumn` writes the open height on; the top margin is the air under the
+ * heading, which is the cloud's rather than the column's `gap` so that a shut
+ * column gives it back too.
+ *
+ * The slack is for the focus ring: `overflow: hidden` clips a 2px outline at
+ * 2px offset as readily as it clips a chip, and a keyboard user arrowing along
+ * the top row would lose the top half of every ring. Padding pays for the ring
+ * and the negative margin gives the space back, so nothing moves.
+ */
+.cloud {
+  --chip-h: 1.6rem;
+  --chip-row-gap: 0.4rem;
+  --cloud-slack: 4px;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--chip-row-gap) 0.45rem;
+  min-width: 0;
+  max-height: 0;
+  opacity: 0;
+  padding: var(--cloud-slack);
+  margin: calc(var(--cloud-slack) * -1);
+  overflow: hidden;
+  transition:
+    max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s ease;
+}
+
+.cloud[data-open] {
+  margin-top: calc(0.7rem - var(--cloud-slack));
+  opacity: 1;
+}
+
+/*
+ * A chip: paper, a hairline, mono caps. One shape for all three columns — the
+ * earlier build ranked the rows by chip weight (bigger for Domain, quieter for
+ * Skills), which the column heads now do on their own. What ranks a chip here
+ * is only its state: previewed gets the accent as an outline, selected gets it
+ * as a fill.
+ */
 .facet {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.24rem 0.6rem;
-  border: 1px solid color-mix(in srgb, var(--index-header-ink) 16%, transparent);
-  border-radius: 999px;
-  background: transparent;
-  color: color-mix(in srgb, var(--index-header-ink) 80%, transparent);
+  /* An explicit height rather than one that falls out of the padding, so the
+     cloud's pre-measurement clamp above is exactly two rows and not two rows
+     and a sliver of a third. `--chip-h` is the same value both read. */
+  height: var(--chip-h);
+  padding: 0 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--index-header-ink) 14%, transparent);
+  border-radius: 0.35rem;
+  background: var(--color-white);
+  color: color-mix(in srgb, var(--index-header-ink) 86%, transparent);
   font-family: var(--font-jetbrains-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 500;
-  line-height: 1.3;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
   transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 }
 
-/* Domain reads as a category and skill as a phrase — the same distinction the
-   graph drew with pills and bare text, kept here in casing so that every facet
-   can still be one uniform hit target. */
-.row:first-of-type .facet {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.62rem;
+.facetLabel {
+  min-width: 0;
 }
 
+/*
+ * A tool's mark — the facet's SVG played as a mask over `currentColor`, the
+ * Traces chain-arrow trick: one asset, every palette. The chip's own colour
+ * transitions (hover, pressed, dark mode) recolour the logo for free, which
+ * is the entire reason these are masks and not <img>s.
+ */
+.facetLogo {
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-left: -0.1rem;
+  background: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+/* Tucked in small: the count is a footnote to the name, not part of it. */
 .facetCount {
-  font-size: 0.6rem;
+  font-size: 0.56rem;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
   color: var(--color-ink-soft);
 }
 
+/* A preview is a question, so it is an outline — the chip stays paper and the
+   accent is drawn around and through it. */
 .facet:hover,
 .facet[data-active] {
-  color: var(--index-header-ink);
-  border-color: color-mix(in srgb, var(--index-header-ink) 48%, transparent);
-  background: color-mix(in srgb, var(--index-header-ink) 8%, transparent);
+  color: var(--board-accent-ink);
+  border-color: var(--board-accent-ink);
 }
 
-/* Selected is a state you left behind, so it is a filled chip rather than the
-   lit outline a preview gets — the two have to be tellable apart while a
-   preview is running over a row that already has a selection in it. */
+.facet:hover .facetCount,
+.facet[data-active] .facetCount {
+  color: color-mix(in srgb, var(--board-accent-ink) 70%, transparent);
+}
+
+/* Selected is a state you left behind, so it is a filled chip — and it has to
+   stay tellable from a preview running over the same column. The white type
+   is safe as a literal: the fill is the true blue in both themes. */
 .facet[aria-pressed="true"] {
-  color: var(--index-band-ground);
-  background: var(--index-header-ink);
-  border-color: var(--index-header-ink);
+  color: #fff;
+  background: var(--board-accent);
+  border-color: var(--board-accent);
 }
 
 .facet[aria-pressed="true"] .facetCount {
-  color: color-mix(in srgb, var(--index-band-ground) 70%, transparent);
+  color: color-mix(in srgb, #fff 72%, transparent);
 }
 
 .facet:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--board-accent-ink);
   outline-offset: 2px;
 }
 
 /* ---- The rail ----------------------------------------------------------- */
 
+/*
+ * The remainder. `flex: 1` with `min-height: 0` is what makes the rail's
+ * height "whatever the columns left" rather than "whatever the tiles want" —
+ * a flex item's default `min-height: auto` would put the content back in as a
+ * floor and let the band grow, which is the one thing it may not do.
+ *
+ * A floor of its own all the same, so that on a short window the rows are
+ * never squeezed to a sliver: below this the board overflows the band instead,
+ * which on a 600px-tall window is the lesser evil.
+ */
 .railWrap {
   position: relative;
   flex: 1;
-  min-height: 0;
+  min-height: clamp(7rem, 22svh, 11rem);
   display: flex;
 }
 
 /*
- * Two rows, packed by column.
+ * Two rows of tiles that scroll together, sideways only.
  *
- * `grid-auto-flow: column dense` is what makes this a two-row strip rather than
- * a single line: items fill the first column top-to-bottom, then the next, and
- * `dense` backfills any hole left behind. Every tile is one row tall and the
- * columns size to their widest occupant, so the strip stays two rows of
- * thumbnails whether there are nine projects or thirty — no authored positions
- * to redo at the tenth.
+ * A grid rather than two stacked scrollers, because the rows must move as one
+ * — a swipe on the bottom row has to carry the top with it, and one scroll
+ * position means one pair of chevrons. Two `minmax(0, …fr)` tracks: the rows
+ * divide the rail's height in the ratio on the tracks — the lead row takes a
+ * little more — and the `0` minimum stops a tall tile's content from ever
+ * bidding the height up (every tile's contents are absolutely positioned
+ * anyway, precisely so nothing inside one has a height to bid).
+ *
+ * The single column track is `minmax(100%, max-content)`, and that one line is
+ * the whole overflow mechanism. Its minimum is the rail's own width, so both
+ * rows are at least as wide as the window and their tiles grow to fill it edge
+ * to edge; its maximum is the wider row's `max-content`, which — because every
+ * tile has `flex-basis: 0` and absolutely positioned contents — is exactly the
+ * sum of that row's floors and gaps. Nine tiles' floors add up to well under a
+ * desktop width, so today the track is `100%` and nothing scrolls. When the
+ * floors outgrow the window, the track grows past it, *both* rows are laid out
+ * to the wider one's width (a track is one width for every item in it), and
+ * the grid's overflow is what the scroller scrolls. No per-count breakpoints,
+ * no measuring: adding a project changes the sum and the track follows.
+ *
+ * `container-type: size` makes the rail the reference for `cqh`, which is how
+ * `--row-h` — the number every floor is a ratio of — can be read straight off
+ * the layout: the rail's content height is two rows and one gap, and the
+ * shorter (bottom) row is `(100cqh - gap) / 2.18` of it — see the row track
+ * below. Size containment is safe here because the rail's box
+ * comes from the flex line above it in both axes; there is nothing for its
+ * contents to have sized. The variable is only ever *used* on the tiles, where
+ * the unit resolves against this element.
+ *
+ * `overflow-y: hidden` because a lit tile's ring and the odd sub-pixel would
+ * otherwise put a vertical scrollbar on a box that must never scroll that way;
+ * the vertical padding buys the ring its room. No `scroll-snap`: the lit tile
+ * changes width, and an engine that re-snaps after layout would tug the rail
+ * every time the pointer moved.
  *
  * `touch-action` is deliberately left alone. The graph set `touch-action: none`
  * so it could pan, which meant a finger anywhere on the band could not scroll
@@ -174,24 +389,42 @@
   flex: 1;
   min-width: 0;
   display: grid;
-  grid-auto-flow: column dense;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  grid-auto-columns: max-content;
+  /*
+   * The top row is the taller one — the three lead case studies get a little
+   * more of the rail than the six behind them. A ratio rather than a fixed
+   * difference, so the step survives every band height; `--row-h` below is
+   * the *shorter* row, since it is only ever used as the base for the tiles'
+   * minimum widths and the conservative number is the right one there.
+   */
+  grid-template-rows: minmax(0, 1.18fr) minmax(0, 1fr);
+  grid-template-columns: minmax(100%, max-content);
   gap: var(--tile-gap);
-  /* Vertical padding buys room for the tiles' hover lift and focus ring, which
-     `overflow-y: hidden` would otherwise shear off at the rows' edges. */
   padding: 0.35rem var(--board-gutter);
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x proximity;
   scrollbar-width: none;
   /* The band is one screen with the footer under it — a gesture that runs out
      of rail must not start scrolling something else instead. */
   overscroll-behavior-x: contain;
+  container-type: size;
+  --row-h: calc((100cqh - var(--tile-gap)) / 2.18);
 }
 
 .rail::-webkit-scrollbar {
   display: none;
+}
+
+/*
+ * One row: tiles side by side, sharing the row's width by weight. `min-width:
+ * 0` so the row's own minimum never fights the track — the track's minimum is
+ * already `100%`, and the *floors* live on the tiles, where the max-content
+ * calculation can see them.
+ */
+.row {
+  display: flex;
+  gap: var(--tile-gap);
+  min-width: 0;
+  min-height: 0;
 }
 
 /*
@@ -268,7 +501,7 @@
 }
 
 .chevron:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--board-accent-ink);
   outline-offset: 2px;
 }
 
@@ -282,36 +515,82 @@
 
 /* ---- Tiles -------------------------------------------------------------- */
 
+/*
+ * While the arrival timeline is writing transform/opacity every frame (see
+ * the effect in WorkBoard.tsx), the tile's own transitions must not chase it:
+ * a CSS transition applied on top of a per-frame tween smears the motion into
+ * mush. The attribute exists only for the entrance's duration.
+ */
+.board[data-entering] .tile {
+  transition: none;
+}
+
+/*
+ * A tile is an equal share of its row, and a floor.
+ *
+ * `flex: var(--w) 1 0` with `--w` unset, i.e. `1 1 0` — every tile in a row
+ * takes the same width, and nothing about its contents can bias that. The
+ * top row is the three lead case studies (`LEAD_SLUGS` in WorkBoard.tsx) and
+ * so runs at a third each; the row under it divides evenly among the rest.
+ * The variable is kept because `[data-lit]` below multiplies it, so a per-tile
+ * weight could be reintroduced without touching the growth rule. Height comes
+ * from the row.
+ *
+ * The floor is an aspect ratio of the row's height: the narrowest a tile may
+ * be drawn before the row is allowed to run off the side instead. It is well
+ * under the rest width on purpose — the floor only decides when the rail
+ * starts scrolling. At 0.72 a row of six on a 1440×900 window (rows ≈ 8.5rem)
+ * asks ≈ 590px of ≈ 1310px, so the pool has room to roughly double before the
+ * rail scrolls; the tiles keep a legible shape either way.
+ *
+ * The `min-width` before the `calc` is the fallback for an engine without
+ * container-query units: a fixed floor that keeps the rows honest even where
+ * `cqh` is dropped at parse time.
+ */
 .tile {
   position: relative;
-  width: var(--tile-w);
-  /* Height comes from the row: a grid item stretches to its area by default,
-     and only the inline axis is pinned above. */
   display: block;
+  flex: var(--w, 1) 1 0;
+  --floor: 0.72;
+  min-width: 6rem;
+  min-width: calc(var(--row-h) * var(--floor));
+  min-height: 0;
   border: none;
   padding: 0;
-  border-radius: 0.4rem;
+  border-radius: 0.5rem;
   overflow: hidden;
   background: color-mix(in srgb, var(--index-header-ink) 6%, transparent);
-  scroll-snap-align: start;
   cursor: pointer;
   text-align: left;
   text-decoration: none;
   color: inherit;
-  transition: opacity 0.28s ease, filter 0.28s ease, transform 0.28s ease;
+  transition:
+    flex-grow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
 }
 
 /*
- * Selected work is wider, not taller.
+ * The lit tile takes more of its row and the neighbours give it up.
  *
- * Spanning both rows was the obvious way to give it weight and it was wrong:
- * three double-height tiles lead the rail, so the first thing on the screen
- * would have been three large panels and the two-row strip would only start
- * where they ended. The rail has to read as two rows of thumbnails from the
- * first glance, and extra width says "look here" without costing that.
+ * Growth on `flex-grow`, not on a transform: a scaled tile would sit on top of
+ * the ones beside it, where a heavier weight makes the row *make room* — the
+ * neighbours contract by exactly what the lit tile takes and the row's width
+ * never changes. `flex-grow` is animatable, so the stylesheet's transition on
+ * `.tile` carries both the lit tile out and its neighbours in, with no
+ * geometry measured anywhere. It is a layout animation and costs layout each
+ * frame — for nine tiles with absolutely-filled covers that is well inside a
+ * frame budget, and nothing else on the page reflows with it.
+ *
+ * Only where hover is real. A finger cannot hover, and a tile that grows
+ * under a tap is a tile that moves before it can be released; the component
+ * never lights one from a touch, and this guards the keyboard case on a touch
+ * device as well.
  */
-.tile[data-featured] {
-  width: var(--tile-w-featured);
+@media (hover: hover) {
+  .tile[data-lit] {
+    flex-grow: calc(var(--w, 1) * 1.55);
+  }
 }
 
 /*
@@ -327,13 +606,22 @@
   filter: saturate(0.35);
 }
 
-.tile:hover,
-.tile:focus-visible {
-  transform: translateY(-2px);
+/* Pointing at a dimmed tile is asking what it is, so it comes part of the way
+   back — not all the way, or the facet's answer would stop being readable
+   while the pointer crosses the rail. */
+.tile[data-dim][data-lit] {
+  opacity: 0.7;
+  filter: saturate(0.7);
+}
+
+/* The lit tile's ring paints over its neighbours' edges; it sits on top for
+   the duration so the join never shows. */
+.tile[data-lit] {
+  z-index: 1;
 }
 
 .tile:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--board-accent-ink);
   outline-offset: 2px;
 }
 
@@ -344,6 +632,9 @@
   overflow: hidden;
 }
 
+/* `cover`, so a tile that is changing width under the pointer crops the
+   picture rather than stretching it — the composition is held, the edges
+   give. */
 .media {
   position: absolute;
   inset: 0;
@@ -372,44 +663,91 @@
 }
 
 /*
- * The wash the caption sits on, in whichever direction the cover needs —
- * measured per cover by `scripts/measure-cover-ink.mjs` and carried here as
- * `data-ink`, so nothing about this is a guess made at authoring time.
+ * The wash the type sits on, in whichever direction the cover needs — the
+ * direction is measured per cover by `scripts/measure-cover-ink.mjs` and
+ * carried here as `data-ink`, so nothing about this is a guess made at
+ * authoring time.
+ *
+ * Two gradients now rather than one, because the caption has moved to both
+ * edges: the name is at the top of the tile and the place and term run along
+ * the bottom, so the middle of the cover — the part worth looking at — is the
+ * part left alone.
+ *
+ * It appears with the caption and for the same reason (see `.caption`): a
+ * darkened tile with no words on it is just a dimmed picture.
  */
 .scrim {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  opacity: 0;
   transition: opacity 0.28s ease;
 }
 
 .tile[data-ink="light"] .scrim {
-  background: linear-gradient(
-    to top,
-    rgb(0 0 0 / 0.78) 0%,
-    rgb(0 0 0 / 0.32) 38%,
-    rgb(0 0 0 / 0) 68%
-  );
+  background:
+    linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.72) 0%,
+      rgb(0 0 0 / 0.26) 34%,
+      rgb(0 0 0 / 0) 58%
+    ),
+    linear-gradient(
+      to top,
+      rgb(0 0 0 / 0.72) 0%,
+      rgb(0 0 0 / 0.26) 34%,
+      rgb(0 0 0 / 0) 58%
+    );
 }
 
 .tile[data-ink="dark"] .scrim {
-  background: linear-gradient(
-    to top,
-    rgb(255 255 255 / 0.86) 0%,
-    rgb(255 255 255 / 0.4) 38%,
-    rgb(255 255 255 / 0) 68%
-  );
+  background:
+    linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.82) 0%,
+      rgb(255 255 255 / 0.32) 34%,
+      rgb(255 255 255 / 0) 58%
+    ),
+    linear-gradient(
+      to top,
+      rgb(255 255 255 / 0.82) 0%,
+      rgb(255 255 255 / 0.32) 34%,
+      rgb(255 255 255 / 0) 58%
+    );
 }
 
+/*
+ * The caption fills the tile and pins its two parts to the edges: the name at
+ * the top, the place and the term on one line along the bottom.
+ *
+ * All of it is held back until the tile is pointed at. Nine tiles each
+ * carrying a permanent name, a place and a date is a wall of small type over
+ * nine pictures, and the covers are what the rail is for — the words are the
+ * answer to "what is this one", which is a question you ask by stopping on it.
+ * That is also the moment the tile has grown enough to hold them. One fade on
+ * the caption rather than one per part, so the whole block arrives together.
+ */
 .caption {
   position: absolute;
-  inset: auto 0 0 0;
+  inset: 0;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 0.12rem;
-  padding: 0.55rem 0.65rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  opacity: 0;
+  transition: opacity 0.24s ease;
+}
+
+.tile:hover .caption,
+.tile:focus-visible .caption,
+.tile[data-lit] .caption,
+.tile:hover .scrim,
+.tile:focus-visible .scrim,
+.tile[data-lit] .scrim {
+  opacity: 1;
 }
 
 .tile[data-ink="light"] .caption {
@@ -420,11 +758,32 @@
   color: #111;
 }
 
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-height: 0;
+}
+
 .title {
   font-family: var(--font-jetbrains-mono);
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-weight: 600;
   line-height: 1.2;
+}
+
+/*
+ * Place at one end of the line, term at the other, with the tile's own width
+ * between them — the pair reads as the tile's footer rather than as a second
+ * sentence. `baseline` so the two sit on one line whatever their lengths do;
+ * both are `.meta`, so an empty `place` simply leaves the term against the
+ * right edge.
+ */
+.footline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .meta {
@@ -435,73 +794,78 @@
   opacity: 0.78;
 }
 
-/*
- * The sentence is held back until the tile is pointed at or focused. Two rows
- * of thumbnails each carrying a blurb is a wall of text at thumbnail size; the
- * title and the place are what you scan, and the sentence is what you want once
- * you have stopped on one.
- */
+/* Clamped rather than free: on the shorter row a tall blurb would run into the
+   footline, and three lines is as much as anyone reads off a thumbnail. */
 .blurb {
-  margin-top: 0.2rem;
-  font-size: 0.68rem;
-  line-height: 1.3;
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transition: opacity 0.24s ease, max-height 0.24s ease;
-}
-
-.tile:hover .blurb,
-.tile:focus-visible .blurb {
+  font-size: 0.7rem;
+  line-height: 1.35;
   opacity: 0.9;
-  max-height: 4.5rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
 }
 
-/* Selected work carries a larger name. The sentence stays held back the same as
-   everywhere else — a single-row tile does not have the height to show three
-   lines of it without the caption eating the cover. */
-.tile[data-featured] .title {
+/* Larger work carries a larger name, one step per tier. */
+.tile[data-emphasis="1"] .title {
+  font-size: 1.05rem;
+}
+
+.tile[data-emphasis="2"] .title {
   font-size: 0.88rem;
 }
 
-/* ---- Phones ------------------------------------------------------------- */
+/* ---- Breakpoints -------------------------------------------------------- */
 
 /*
- * The rows stack and the labels go above their facets — 5.25rem of label beside
- * a wrapping row of chips leaves the chips a column too narrow to be worth
- * reading on a phone.
+ * Phones. The facets stack — three columns of chips at this width are three
+ * narrow ragged lists — and the rail becomes *one* row: the two row elements
+ * are laid side by side in a single grid row, so the strip is the full height
+ * the columns leave and reads as one line of work to swipe along. With the
+ * band a fraction of a phone screen, two rows would be two lines of postage
+ * stamps. Every floor is raised to a landscape shape at the same time, which
+ * is what makes the strip overflow — here the rail is *meant* to scroll, and
+ * a swipe is the affordance.
+ *
+ * The row elements size to their content rather than the track, since a
+ * strip that is meant to run off the side has no width to stretch to.
  */
-@media (max-width: 46rem) {
-  .board {
-    --tile-w: 9rem;
-    --tile-w-featured: 11.5rem;
-  }
-
+@media (max-width: 48rem) {
   .facets {
     padding-right: var(--board-gutter);
   }
 
-  .row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.25rem;
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
   }
 
-  .rowLabel {
-    width: auto;
+  .rail {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: max-content max-content;
+    --row-h: 100cqh;
   }
 
-  /* Skills is twelve chips and growing. On a phone that is most of the band, so
-     the rows scroll sideways on their own rather than wrapping the rail off the
-     bottom of the screen. */
-  .rowFacets {
+  .tile {
+    --floor: 1.35;
+  }
+}
+
+/*
+ * The chip clouds stop wrapping and scroll sideways instead. Twenty-six chips
+ * stacked in three clouds is most of a phone screen before the first tile,
+ * and the tiles are what the page is for; a strip that scrolls under a thumb
+ * keeps every facet reachable and the work within one swipe.
+ */
+@media (max-width: 30rem) {
+  .cloud {
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
-    padding-bottom: 0.15rem;
   }
 
-  .rowFacets::-webkit-scrollbar {
+  .cloud::-webkit-scrollbar {
     display: none;
   }
 
@@ -510,19 +874,51 @@
   }
 }
 
+/* ---- Motion ------------------------------------------------------------- */
+
+/*
+ * No hover, so nothing to reveal — the caption would never appear at all, and
+ * a strip of unlabelled pictures is not navigable. On a touch device the name
+ * and the footline are simply always on; the blurb stays out, since the tiles
+ * there are half a phone wide and the sentence is what does not fit.
+ */
+@media (hover: none) {
+  .caption,
+  .scrim {
+    opacity: 1;
+  }
+
+  .blurb {
+    display: none;
+  }
+}
+
+/*
+ * No growth, no width transition; a ring says which tile is meant. The
+ * `flex-grow` reset outranks the `(hover: hover)` rule above by coming later
+ * at equal specificity, so the lit tile keeps its resting weight.
+ */
 @media (prefers-reduced-motion: reduce) {
   .tile,
   .blurb,
   .scrim,
   .facet,
+  .cloud,
+  .columnLabel,
+  .columnChevron,
   .railWrap::before,
   .railWrap::after {
     transition: none;
   }
 
+  .tile[data-lit] {
+    flex-grow: var(--w, 1);
+  }
+
   .tile:hover,
-  .tile:focus-visible {
-    transform: none;
+  .tile[data-lit] {
+    outline: 2px solid var(--board-accent-ink);
+    outline-offset: 2px;
   }
 }
 

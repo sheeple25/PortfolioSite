@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   nudgeScrollFrame,
   useScrollFrame,
   type ScrollSnapshot,
 } from "@/lib/useScrollFrame";
+import { isHomeRoute, isIndexRoute } from "@/components/chrome/sections";
 import { cn } from "@/lib/utils";
 import styles from "./BottomEdge.module.css";
 
@@ -29,8 +31,31 @@ import styles from "./BottomEdge.module.css";
 /** Below this much left to scroll, treat it as arrived and clear the fade. */
 const SETTLED_PX = 24;
 
+/*
+ * Which pages get a fade, and which do not.
+ *
+ * The fade is for documents — a case study, a piece of writing — where content
+ * really does run past the bottom of the screen and the band is telling you so.
+ *
+ * The main pages are not that. The front door and the three indexes are each
+ * composed to exactly one window: the only thing under the fold is the footer,
+ * and `/projects` even runs its own overflow sideways (see `WorkBoard`). On all
+ * four the band was never hinting at content — it just sat over the bottom of a
+ * finished composition at rest, muddying the last row of it.
+ *
+ * Named off `sections.ts` rather than a list of its own, so a fifth main page
+ * inherits the rule by being a main page instead of by being remembered here.
+ *
+ * Only the fade is held back. The clearance measurement below still runs on
+ * every page — the mascot and the corner note need `--corner-lift` regardless.
+ */
+function fadesBottom(pathname: string) {
+  return !isHomeRoute(pathname) && !isIndexRoute(pathname);
+}
+
 export default function BottomEdge() {
   const [overflowing, setOverflowing] = useState(false);
+  const pathname = usePathname();
 
   /** Last value written to `--corner-lift`; `-1` means never written. */
   const lift = useRef(-1);
@@ -88,6 +113,8 @@ export default function BottomEdge() {
     };
   }, []);
 
+
+  if (!fadesBottom(pathname)) return null;
 
   return (
     <div

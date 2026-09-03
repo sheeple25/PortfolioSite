@@ -56,6 +56,20 @@ export type EntryMode =
 /** Which index the entry is listed on. A view, not a schema — see above. */
 export type EntrySection = "work" | "archive";
 
+/**
+ * How much room the entry's tile takes on the work board — 1 is widest, 3 is
+ * the base size an unmarked entry gets.
+ *
+ * A separate field rather than a reading of `section`, for the same reason
+ * `mode` is: they answer different questions. `section` says which index lists
+ * the work; emphasis says how loudly the board should point at it, and the
+ * second tier is archive work (Kobble, Vashi, Flux) that the section split
+ * cannot see. Three named tiers rather than a free number so the rail keeps a
+ * legible rhythm — a strip where every tile is its own width reads as noise,
+ * not ranking.
+ */
+export type EntryEmphasis = 1 | 2 | 3;
+
 /** A destination outside the entry's own page. */
 export type EntryLink = {
   href: string;
@@ -143,6 +157,8 @@ export type Entry = {
   section: EntrySection;
   mode: EntryMode;
   source: EntrySource;
+  /** Tile width tier on the work board. Omitted means 3, the base size. */
+  emphasis?: EntryEmphasis;
   /** Present whatever the mode is. See `PeekContent`. */
   peek?: PeekContent;
   /** Present whatever the mode is — a `case-study` can keep a dead link warm. */
@@ -156,6 +172,8 @@ export type Entry = {
  */
 export type ResolvedEntry = WritingSummary & {
   section: EntrySection;
+  /** The authored tier, with the default already applied. */
+  emphasis: EntryEmphasis;
   /**
    * The mode actually in effect, which can differ from the authored one: an
    * entry set to `link` with no `link` payload falls back rather than

@@ -170,6 +170,29 @@
   transition: opacity 0.18s ease;
 }
 
+/*
+ * The one page whose ground is the accent itself inverts this pill: globals.css
+ * points `--nav-pixel-accent` at white for the whole bar there, so the fill has
+ * already flipped by the time this rule runs and only the ink is left to fix.
+ *
+ * It is set as `--color-white` rather than as `color`, because the mascot drawn
+ * inside the pill takes its body from that same token (`Pixel`'s `color` prop,
+ * two lines up in NavBar.tsx). One declaration turns the label and the ghost
+ * blue together, while the ghost's eyes — which read `--nav-pixel-accent` —
+ * stay white against it. Scoped to the pill so the rest of the bar's whites,
+ * including the contact dropdown's paper, are untouched.
+ *
+ * The ink is `--color-bg`, not `--color-accent`, and that is not a shortcut:
+ * `.home-ground` already re-pointed `--color-accent` to white for the whole
+ * bar, so reading it back here would paint white on white. `--color-bg` is the
+ * one thing in scope still holding the blue — it was computed from the accent
+ * up on `<html>`, before the bar's override, and inherits down untouched. It is
+ * also the truer description of the pill: a hole punched in the page's ground.
+ */
+:global(.home-ground) .askPixel {
+  --color-white: var(--color-bg);
+}
+
 .askPixel:hover,
 .askPixel:focus-visible {
   opacity: 0.88;

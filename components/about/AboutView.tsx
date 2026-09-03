@@ -4,6 +4,7 @@ import { useState } from "react";
 import IndexShell from "@/components/chrome/IndexShell";
 import CursorImageTrail from "./CursorImageTrail";
 import InterestBand from "./InterestBand";
+import MorphTitle from "./MorphTitle";
 
 /*
  * The About page's body.
@@ -39,9 +40,12 @@ import InterestBand from "./InterestBand";
 export default function AboutView({
   intro,
   trailImages,
+  selves,
 }: {
   intro: React.ReactNode;
   trailImages: string[];
+  /** The words the title steps through: `Vidush the [designer]`, then the rest. */
+  selves: readonly string[];
 }) {
   const [stage, setStage] = useState<HTMLElement | null>(null);
 
@@ -49,7 +53,12 @@ export default function AboutView({
     <>
       <CursorImageTrail images={trailImages} bounds={stage} />
       <IndexShell
+        /* Still "About." underneath: the fitter's signature, the expand
+           button's label and the `expandedFor` key all read the string, and
+           "View About full screen" is the sentence they should make. What is
+           painted is the morphing title. */
         title="About."
+        heading={<MorphTitle lead="Vidush the" words={selves} />}
         intro={intro}
         onStageElement={setStage}
         background={<InterestBand />}

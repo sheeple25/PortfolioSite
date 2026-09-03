@@ -174,7 +174,7 @@ export default function Footer() {
                 <span className={styles.signalHash}>
                   {lastCommit.shortHash}
                 </span>{" "}
-                {lastCommit.subject}
+                made with caffeine and claude code &lt;3
               </p>
             )}
           </div>

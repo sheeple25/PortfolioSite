@@ -162,8 +162,9 @@ export function BannerImage({
  * text wall. Same fill/crop as `BannerImage` (`.bannerImage`'s shared rules
  * in `case.module.css`); the only difference is the element underneath.
  *
- * Autoplay convention matches the index tile's own video cover
- * (`components/index/TileGrid.tsx`): muted, looped, `playsInline`, and off
+ * Autoplay convention matches the work rail's own video cover
+ * (`components/work/WorkBoard.tsx`'s `TileVideo`): muted, looped,
+ * `playsInline`, and off
  * entirely under `prefers-reduced-motion` — falling back to `poster` as a
  * still frame rather than a blank box.
  */

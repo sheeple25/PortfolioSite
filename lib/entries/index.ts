@@ -142,6 +142,7 @@ function resolve(entry: Entry): ResolvedEntry | null {
     sectionTitles,
     noteCount,
     section: entry.section,
+    emphasis: entry.emphasis ?? 3,
     mode,
     hasPage,
     href,

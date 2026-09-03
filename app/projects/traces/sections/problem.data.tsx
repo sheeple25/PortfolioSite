@@ -1,6 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { Bar } from "@/components/charts/bar";
+import { BarChart } from "@/components/charts/bar-chart";
+import { BarYAxis } from "@/components/charts/bar-y-axis";
+import { Grid } from "@/components/charts/grid";
+import { Line } from "@/components/charts/line";
+import { LineChart } from "@/components/charts/line-chart";
+import { ChartTooltip } from "@/components/charts/tooltip";
 import styles from "@/components/case-study/case.module.css";
 
 /**
@@ -40,65 +47,36 @@ const CHART_INK = "var(--ink)";
 const CHART_TINT = "#fabde6";
 
 /**
- * Read directly off the board's Tinder match/gender chart — these are the exact
- * percentages plotted there, so digitising them isn't fabricating data. The
- * board scan itself lived at `public/traces-board/chart-functional.webp` and
- * was removed with the labs; the spread it was cut from survives at
+ * Read directly off the board's own Tinder match/gender chart — these are the
+ * exact percentages plotted there, so digitising them isn't fabricating data.
+ * The board scan itself lived at `public/traces-board/chart-functional.webp`
+ * and was removed with the labs; the spread it was cut from survives at
  * `source/traces-extract/a_failures.png`, and the scan is in git history.
  *
  * The source plots green/blue/red; re-expressed here in the project's magenta
  * and ink so the chart belongs to the page rather than importing another
  * document's palette.
  */
-const TINDER = [
-  {
-    name: "Male",
-    labelsAbove: true,
-    segments: [
-      { value: 1, fill: CHART_PINK, label: "1%", labelAt: 1.5 },
-      { value: 52, fill: CHART_INK, label: "52%", labelAt: 27 },
-      { value: 47, fill: CHART_TINT, label: "47%", labelAt: 76.5 },
-    ],
-  },
-  {
-    name: "Female",
-    labelsAbove: false,
-    segments: [
-      { value: 1.8, fill: CHART_PINK, label: "1.8%", labelAt: 2 },
-      { value: 3.2, fill: CHART_INK, label: "3.2%", labelAt: 8.5 },
-      { value: 95, fill: CHART_TINT, label: "95%", labelAt: 52.5 },
-    ],
-  },
+const TINDER_DATA = [
+  { name: "Male", match: 1, likeNoMatch: 52, pass: 47 },
+  { name: "Female", match: 1.8, likeNoMatch: 3.2, pass: 95 },
 ];
 
-/*
- * User units. The left column holds the row names; the axis fills the rest.
- *
- * `labelAt` above is where each segment's percentage is printed, in axis units.
- * Most sit at their segment's midpoint; the two slivers on the women's row
- * would collide there, so they are nudged apart exactly as the source does it.
- * Placing them by hand is fine here — this reproduces one known chart, it is
- * not a component that has to lay out arbitrary data.
- */
-const BAR = { width: 700, axisLeft: 64, axisWidth: 620, rowHeight: 52 };
-const ROW_Y = [56, 146];
-const pctX = (p: number) => BAR.axisLeft + (p / 100) * BAR.axisWidth;
-
 /**
- * The men-and-women-on-Tinder chart, drawn directly.
+ * The men-and-women-on-Tinder chart, on the shared chart registry at last.
  *
- * KNOWN BKLIT BUG — this is one of the two things blocking a move back onto the
- * shared chart registry (`components/charts`, vendored Bklit UI). This started
- * on Bklit's `BarChart` with `orientation="horizontal"` and `stacked`. That
- * combination miscomputes the width of the last segment: the men's row rendered
- * its "Pass" band at `x=287.5, width=-32.5`, so 47% of the bar — the whole
- * point of the comparison — silently did not draw, while the women's row came
- * out correct. It is a bug in the shared chart rather than in the data, and the
- * old board build had it too.
+ * This was hand-rolled SVG for a while: Bklit's `BarChart` with
+ * `orientation="horizontal"` + `stacked` miscomputed the final segment's width
+ * (`scale(value) - scale(offset)` instead of the scaled span, so the men's
+ * "Pass" band came out at negative width and silently didn't draw). That is
+ * fixed at the source now — see the note in `components/charts/bar.tsx` — so
+ * the figure is back on the registry, which is what the Figma frame's
+ * "custom bklit UI chart" slot asked for all along.
  *
- * Six rectangles justify neither fixing a shared component in the middle of
- * this work nor shipping a chart that drops half a bar. Drawing it here also
- * gets the per-segment percentages the source prints and the registry doesn't.
+ * The per-segment percentages the hand SVG printed on the bands now live in
+ * the tooltip's rows; the sentence the whole figure exists to say is carried
+ * for screen readers by the `role="img"` label, and the two headline rates are
+ * already printed in the stats row above the figure.
  */
 function TinderChart() {
   return (
@@ -123,60 +101,44 @@ function TinderChart() {
           Pass
         </span>
       </div>
-      <svg
-        className={styles.sparkline}
-        viewBox={`0 0 ${BAR.width} 216`}
+      <div
         role="img"
         aria-label="Of the profiles men like on Tinder, 1% match and 52% do not; they pass on 47%. Of those women like, 1.8% match and 3.2% do not; they pass on 95%."
       >
-        {TINDER.map((row, r) => {
-          let cursor = 0;
-          return (
-            <g key={row.name}>
-              <text
-                className={styles.sparkTick}
-                x={BAR.axisLeft - 12}
-                y={ROW_Y[r] + BAR.rowHeight / 2}
-                textAnchor="end"
-                dominantBaseline="middle"
-              >
-                {row.name}
-              </text>
-              {row.segments.map((seg) => {
-                const x = pctX(cursor);
-                const w = pctX(cursor + seg.value) - x;
-                cursor += seg.value;
-                return (
-                  <rect
-                    key={seg.label}
-                    x={x}
-                    y={ROW_Y[r]}
-                    width={w}
-                    height={BAR.rowHeight}
-                    fill={seg.fill}
-                  />
-                );
-              })}
-              {row.segments.map((seg) => (
-                <text
-                  key={seg.label}
-                  className={styles.sparkValue}
-                  style={{ fill: seg.fill }}
-                  x={pctX(seg.labelAt)}
-                  y={
-                    row.labelsAbove
-                      ? ROW_Y[r] - 10
-                      : ROW_Y[r] + BAR.rowHeight + 20
-                  }
-                  textAnchor="middle"
-                >
-                  {seg.label}
-                </text>
-              ))}
-            </g>
-          );
-        })}
-      </svg>
+        <BarChart
+          data={TINDER_DATA}
+          xDataKey="name"
+          orientation="horizontal"
+          stacked
+          aspectRatio="2.8 / 1"
+          barGap={0.45}
+          margin={{ top: 8, right: 16, bottom: 8, left: 64 }}
+        >
+          <BarYAxis />
+          <Bar dataKey="match" fill={CHART_PINK} />
+          <Bar dataKey="likeNoMatch" fill={CHART_INK} />
+          <Bar dataKey="pass" fill={CHART_TINT} />
+          <ChartTooltip
+            rows={(point) => [
+              {
+                color: CHART_PINK,
+                label: "Like & match",
+                value: `${String(point.match)}%`,
+              },
+              {
+                color: CHART_INK,
+                label: "Like, no match",
+                value: `${String(point.likeNoMatch)}%`,
+              },
+              {
+                color: CHART_TINT,
+                label: "Pass",
+                value: `${String(point.pass)}%`,
+              },
+            ]}
+          />
+        </BarChart>
+      </div>
       <p className={styles.chartCredit}>
         Women match with 36% of those they like; men with under 2% — source
         Duro.Data, Swipestats.io
@@ -190,111 +152,89 @@ function TinderChart() {
  * (source Sensor Tower). Read from the plotted line, so these are close
  * approximations rather than the exact underlying dataset. The board scan lived
  * at `public/traces-board/chart-structural.webp` before the labs were removed;
- * it is recoverable from git history. Annual to 2022, then quarterly, which is why four of the
- * eight points carry no year label.
+ * it is recoverable from git history.
+ *
+ * The dates are synthetic and evenly spaced one per month, matching the
+ * board's own uniform point spacing: the registry's `XAxis` only ever prints
+ * "month day" labels — wrong for a five-year annual-then-quarterly span — so
+ * real calendar dates would buy nothing, and `LOVE_LOST_LABELS` drives the
+ * labels actually shown, in a plain row under the plot. Annual to 2022, then
+ * quarterly, which is why half the points carry no year label.
  */
-const LOVE_LOST = [
-  { value: 130, label: "2019" },
-  { value: 149, label: "’20" },
-  { value: 152, label: "’21" },
-  { value: 151, label: "’22" },
-  { value: 148, label: "’23" },
-  { value: 143, label: "" },
-  { value: 138, label: "" },
-  { value: 134, label: "’24" },
+const LOVE_LOST_DATA = [
+  { date: new Date(2019, 0, 1), mau: 130 },
+  { date: new Date(2019, 1, 1), mau: 149 },
+  { date: new Date(2019, 2, 1), mau: 152 },
+  { date: new Date(2019, 3, 1), mau: 151 },
+  { date: new Date(2019, 4, 1), mau: 148 },
+  { date: new Date(2019, 5, 1), mau: 143 },
+  { date: new Date(2019, 6, 1), mau: 138 },
+  { date: new Date(2019, 7, 1), mau: 134 },
 ];
 
-/* The source's axis, kept: it starts at 120, not at zero. */
-const Y_MIN = 120;
-const Y_MAX = 160;
-const Y_TICKS = [120, 130, 140, 150, 160];
-
-/* User units for the plot. The SVG scales to its container from these. */
-const PLOT = { width: 700, height: 210, top: 14, right: 44, bottom: 26, left: 8 };
-
-const plotW = PLOT.width - PLOT.left - PLOT.right;
-const plotH = PLOT.height - PLOT.top - PLOT.bottom;
-const xAt = (i: number) => PLOT.left + (i / (LOVE_LOST.length - 1)) * plotW;
-const yAt = (v: number) =>
-  PLOT.top + ((Y_MAX - v) / (Y_MAX - Y_MIN)) * plotH;
+const LOVE_LOST_LABELS = [
+  "2019",
+  "’20",
+  "’21",
+  "’22",
+  "’23",
+  "",
+  "",
+  "’24",
+];
 
 /**
- * The monthly-active-users decline, drawn directly rather than through the
- * chart registry.
+ * The monthly-active-users decline, on the registry.
  *
- * `LineChart` forces a zero-based y-domain for all-positive data — see
- * `resolveTimeSeriesYDomain` in `components/charts/time-series-chart-shell.tsx`,
- * which returns `[0, max * 1.1]` and exposes no way to set a floor. This series
- * only moves between 130 and 152, so on a zero-based axis it is a flat line and
- * the shape the chart exists to show — the rise to 2021 and the fall after it —
- * disappears. Getting it back would mean adding a domain-floor prop to a shared
- * chart component for one figure on one page.
- *
- * Eight points and five gridlines do not need that machinery. Drawn here, the
- * truncated axis is *printed* (120 to 160, on the right, exactly as the source
- * has it), so the reader can see the scale doesn't start at zero rather than
- * having to infer it.
+ * The blocker was `LineChart` forcing a zero-based y-domain for all-positive
+ * data, which flattened this 130–152 series into a straight line. The registry
+ * now takes `yScaleDomainMin` (added for exactly this figure), so the source's
+ * own truncated axis — it starts at 120, not zero — is expressed as a prop,
+ * and the credit line still *says* so rather than leaving the reader to infer
+ * it from unlabelled gridlines.
  */
 function LoveLostChart() {
-  const line = LOVE_LOST.map((d, i) => `${xAt(i)},${yAt(d.value)}`).join(" ");
-
   return (
     <figure className={styles.chart}>
       <figcaption className={styles.chartTitle}>
         Love lost — selected dating apps, monthly active users, millions
       </figcaption>
-      <svg
-        className={styles.sparkline}
-        viewBox={`0 0 ${PLOT.width} ${PLOT.height}`}
+      <div
         role="img"
         aria-label="Monthly active users across six dating apps rise from 130 million in 2019 to a peak of 152 million in 2021, then fall steadily to 134 million by 2024."
       >
-        {Y_TICKS.map((t) => (
-          <g key={t}>
-            <line
-              className={styles.sparkGrid}
-              x1={PLOT.left}
-              x2={PLOT.left + plotW}
-              y1={yAt(t)}
-              y2={yAt(t)}
-            />
-            <text
-              className={styles.sparkTick}
-              x={PLOT.left + plotW + 8}
-              y={yAt(t)}
-              dominantBaseline="middle"
-            >
-              {t}
-            </text>
-          </g>
-        ))}
-
-        <polyline className={styles.sparkLine} points={line} />
-
-        {LOVE_LOST.map((d, i) => (
-          <circle
-            key={i}
-            className={styles.sparkDot}
-            cx={xAt(i)}
-            cy={yAt(d.value)}
-            r={3}
+        <LineChart
+          data={LOVE_LOST_DATA}
+          xDataKey="date"
+          aspectRatio="2.8 / 1"
+          yScaleDomainMin={120}
+          margin={{ top: 12, right: 16, bottom: 8, left: 8 }}
+          style={{ touchAction: "pan-y" }}
+        >
+          <Grid
+            horizontal
+            stroke="color-mix(in srgb, var(--tp) 22%, transparent)"
+            strokeDasharray="0"
+            fadeHorizontal={false}
           />
-        ))}
-
-        {LOVE_LOST.map((d, i) =>
-          d.label ? (
-            <text
-              key={i}
-              className={styles.sparkTick}
-              x={xAt(i)}
-              y={PLOT.height - 6}
-              textAnchor="middle"
-            >
-              {d.label}
-            </text>
-          ) : null,
-        )}
-      </svg>
+          <Line dataKey="mau" stroke={CHART_PINK} strokeWidth={2.5} />
+          <ChartTooltip
+            showDatePill={false}
+            rows={(point) => [
+              {
+                color: CHART_PINK,
+                label: "Users",
+                value: `${String(point.mau)}M`,
+              },
+            ]}
+          />
+        </LineChart>
+        <div className={styles.chartAxisRow} aria-hidden="true">
+          {LOVE_LOST_LABELS.map((label, i) => (
+            <span key={`${label}-${i}`}>{label}</span>
+          ))}
+        </div>
+      </div>
       <p className={styles.chartCredit}>
         Badoo, Bumble, Grindr, Hinge, Match and Tinder. Annual to 2022, then
         quarterly; axis starts at 120 — source Sensor Tower, approximated from

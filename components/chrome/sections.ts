@@ -12,6 +12,19 @@ import { ENTRIES } from "@/lib/entries/registry";
 /** The section indexes, all built on `IndexShell`. */
 export const INDEX_ROUTES = ["/projects", "/writing", "/about"] as const;
 
+/**
+ * The front door, which carries a ground of its own: full-bleed site blue, bar
+ * included (`.home-ground` in globals.css). It is named here rather than
+ * written out at each use for the same reason `INDEX_ROUTES` is — the document
+ * ground and the inline script that sets it before first paint both need it,
+ * and the two must not drift.
+ */
+export const HOME_ROUTE = "/";
+
+export function isHomeRoute(pathname: string) {
+  return pathname === HOME_ROUTE;
+}
+
 /** Carries the dark index ground, and renders a full-window header section. */
 export function isIndexRoute(pathname: string) {
   return (INDEX_ROUTES as readonly string[]).includes(pathname);

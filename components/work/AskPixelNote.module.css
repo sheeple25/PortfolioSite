@@ -1,0 +1,29 @@
+/*
+ * Inline with the note's own sentence — this is a phrase that happens to be
+ * pressable, not a control dropped into prose. Weight + underline carry the
+ * affordance instead of colour: the note sits on the index ground in both
+ * themes, and the ink it inherits is already guaranteed legible there, which
+ * a literal accent blue on the dark ground is not.
+ */
+.ask {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+}
+
+.ask:hover {
+  text-decoration-thickness: 2.5px;
+}
+
+.ask:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 2px;
+}

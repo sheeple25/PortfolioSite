@@ -19,6 +19,21 @@ const TRAIL_IMAGES = [
   "/about/books/the-alchemist-18144590.jpg",
 ];
 
+/*
+ * Who the title says Vidush is, in the order it says so. `designer` leads
+ * because it is the one a visitor arrived expecting; everything after it is
+ * the point of the page. Each is one short word or a hyphenated pair: the
+ * slot is a headline, and a phrase in it would wrap.
+ */
+const SELVES = [
+  "designer",
+  "cat-haver",
+  "reader",
+  "gamer",
+  "traveller",
+  "researcher",
+] as const;
+
 export const metadata: Metadata = {
   title: "About",
 };
@@ -34,7 +49,8 @@ export default function About() {
   return (
     <AboutView
       trailImages={TRAIL_IMAGES}
-      intro="I build structure out of ambiguity, and I can implement what I specify. Most of what I do sits between the research that decides what a thing should be and the build that makes it real."
+      selves={SELVES}
+      intro="I don’t like talking about myself much, but here’s a peek into what I get up to when I’m not working."
     />
   );
 }

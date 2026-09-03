@@ -1,0 +1,483 @@
+/*
+ * The front door, built to the Figma frame: one viewport of site blue with
+ * nothing on it but type.
+ *
+ * **The ground is the accent.** `.home-ground` in globals.css floods the whole
+ * document — body, overscroll, the fixed chrome — with `--color-accent` for as
+ * long as `/` is mounted, and retints the nav bar white over it. This file
+ * only has to lay type on that field.
+ *
+ * **Four blocks, placed rather than flowed.** The tracks below are the frame's
+ * own proportions, measured off it rather than invented: a wide left margin,
+ * the column the greeting and the name share, a gutter, and the narrow column
+ * Pixel talks from. Nothing is centred and nothing is evenly spaced — the
+ * composition is the point, so the numbers are the design, not a default.
+ *
+ * **Three voices, three faces.** The mono is the site's UI voice (the greeting,
+ * the blurb, Pixel); the name is Newsreader, the reading face, at a size
+ * nothing else on the site ever reaches. That jump is the whole hierarchy: you
+ * read one word, then the small print around it.
+ */
+.hero {
+  /*
+   * On this page the accent *is* the ground, so the accent role passes to
+   * white — otherwise every blue thing inside the hero (Pixel's own body, the
+   * focus ring on his hit area) is drawn in the colour of the field it sits
+   * on and disappears.
+   *
+   * `--nav-pixel-accent` is what `Pixel.tsx` colours the mascot from, and
+   * `--color-accent` is what `PixelStage`'s focus outline uses. `--selection-bg`
+   * has to be pinned off the accent for the same reason: a white selection
+   * behind white text selects nothing visible.
+   */
+  --color-accent: #ffffff;
+  --nav-pixel-accent: #ffffff;
+  /*
+   * Pinned literals, not tokens, and deliberately so: this ground is the site
+   * accent, which does not answer to the theme, so a hero that took its ink
+   * from `--color-white` would paint itself near-black the moment dark mode was
+   * on. Everything below inherits this `color` rather than restating it.
+   *
+   * `--selection-bg` is the light theme's charcoal for the same reason — the
+   * default is `--color-accent`, and this page has just made that white, which
+   * would mean dragging across the page selected nothing you could see.
+   */
+  --selection-bg: #1e1e1e;
+  color: #ffffff;
+
+  /*
+   * The three sizes, as shares of the viewport width — the frame is 1999px
+   * wide, so 1.45vw is its 29px mono and 14vw its 280px serif. Upper bounds
+   * are set well clear of a 1080p window so the composition keeps scaling on a
+   * big monitor instead of stranding the type at a fixed size in a growing
+   * field.
+   */
+  --home-mono: clamp(0.95rem, 1.45vw, 1.9rem);
+  --home-small: clamp(0.78rem, 0.98vw, 1.25rem);
+  --home-name: clamp(3.25rem, 14vw, 22rem);
+
+  display: grid;
+  /*
+   * left margin | greeting + name + blurb | gutter | Pixel
+   *
+   * Sampled from the frame: 27.6% / 44.9% / 10.5% / 17.0% of the space between
+   * the page gutters. The empty first track is not slack — it is what puts the
+   * whole page off-centre and to the right, which is the composition.
+   */
+  grid-template-columns:
+    minmax(0, 28fr)
+    minmax(0, 45fr)
+    minmax(0, 10fr)
+    minmax(0, 17fr);
+  /*
+   * air | greeting | gap | name | gap | blurb + Pixel's words | Pixel | air.
+   *
+   * **The name's two gaps are one number.** Rows 3 and 5 are the same `fr`, so
+   * the space above "vidush" and the space below it are equal by construction
+   * at every window height — no measuring, nothing to re-tune. That is what
+   * makes the word sit optically centred between the line above and the
+   * paragraph below: the leftover space either side of the glyphs happens to
+   * cancel out (the greeting's descenders and the name's ascender slack above;
+   * the name's baseline-to-line-box slack and the blurb's ascender slack
+   * below), so equal box gaps read as equal optical gaps.
+   *
+   * This is also why the greeting and the name are two grid items rather than
+   * one block with a margin between them: a margin is a fixed distance and the
+   * gap below the name is elastic, so the two could only ever match at one
+   * window height.
+   *
+   * **Row 6 is the shared floor.** The blurb and Pixel's words both end there —
+   * see the `align-self` rules on each — so the last line of the sentence
+   * finishes level with "Vidush's work". Pixel himself hangs below it in row 7.
+   *
+   * Every air row is `minmax(0, …fr)` rather than plain `fr`, which is *not*
+   * pedantry: a bare `fr` track carries an automatic minimum, so on a short
+   * window the air would refuse to compress and push the page past the one
+   * viewport this screen is supposed to be. These collapse instead.
+   */
+  grid-template-rows:
+    minmax(0, 1.2fr)
+    auto
+    minmax(0, 1fr)
+    auto
+    minmax(0, 0.2fr)
+    auto
+    auto
+    minmax(0, 1fr);
+  /*
+   * Exactly one viewport, not "at least" one: the arrival is composed to be
+   * taken in whole, and a hero that runs a few pixels long turns the first
+   * gesture on the site into a scrollbar. The footer starts immediately below.
+   */
+  height: calc(100svh - var(--nav-height));
+  padding: clamp(1rem, 3vh, 2.5rem) var(--page-gutter) clamp(1.25rem, 4vh, 3rem);
+}
+
+/* ------------------------------------------------------- the greeting + name */
+
+/*
+ * "hi." / "nice to meet you. i’m" — the mono voice, small, standing well clear
+ * of the name it hands off to. The distance is the grid's (row 3), not a margin
+ * here, so it stays equal to the distance on the other side of the name.
+ */
+.greeting {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+  margin: 0;
+  font-family: var(--font-jetbrains-mono);
+  font-size: var(--home-mono);
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/*
+ * One line per block, each clipping its own text so the line can be pushed up
+ * out of it. `min-height` holds the box open while the text is still below it.
+ */
+.line {
+  display: block;
+  min-height: 1.55em;
+  overflow: hidden;
+  /* Opens the clip past the descenders and cancels the space again, so the
+     mask costs the line nothing in metrics. */
+  padding: 0.08em 0.3em 0.22em 0;
+  margin: -0.08em -0.3em -0.22em 0;
+}
+
+.lineText {
+  display: inline-block;
+}
+
+/* ----------------------------------------------------------------- the name */
+
+/*
+ * The one word the page is built around. Newsreader, regular weight, lowercase,
+ * set several times larger than anything else on the site — the serif against
+ * all that mono is what makes it read as a signature rather than a heading.
+ */
+.name {
+  grid-column: 2;
+  grid-row: 4;
+  align-self: start;
+  margin: 0;
+  font-family: var(--font-newsreader);
+  font-weight: 400;
+  font-size: var(--home-name);
+  line-height: 0.6;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+/*
+ * One clipping mask per letter, so the word can be dealt out left to right.
+ * The padding opens the clip past the ascenders (the `d` and `h` reach well
+ * above a 0.86 line box) and the matching negative margins hand the space
+ * straight back — without that the masks would add a quarter of an em of lead
+ * to a 280px line.
+ *
+ * `overflow: hidden` on an inline-block moves its baseline to the bottom margin
+ * edge. That is fine here precisely because every letter carries the identical
+ * box, so they all shift together and the word still sits on one line.
+ */
+.letterMask {
+  display: inline-block;
+  overflow: hidden;
+  padding: 0.3em 0 0.14em;
+  margin: -0.3em 0 -0.14em;
+}
+
+.letter {
+  display: inline-block;
+}
+
+/* ---------------------------------------------------------------- the blurb */
+
+/*
+ * What I do, in the same mono as the greeting but pushed to the right-hand end
+ * of the name's column — it hangs off the end of the word rather than starting
+ * under it, which is what keeps the lower half of the page from lining up into
+ * a second, competing left edge.
+ */
+.blurb {
+  grid-column: 2;
+  grid-row: 6;
+  /* Bottom-aligned against Pixel's words in the same row — see `.hero`'s row
+     comment, and the `@supports` block below for how that alignment is taken
+     off the two blocks' last baselines rather than their boxes. */
+  align-self: end;
+  justify-self: end;
+  max-width: 30ch;
+  margin: 0;
+  font-family: var(--font-jetbrains-mono);
+  font-size: var(--home-mono);
+  font-weight: 400;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/*
+ * Word-level masks, same trick as the name's letters: each word rises out of
+ * its own box. Horizontal padding is cancelled by the margin so the word gaps
+ * stay the font's own.
+ */
+.mask {
+  display: inline-block;
+  overflow: hidden;
+  padding: 0.1em 0.06em 0.24em;
+  margin: -0.1em -0.06em -0.24em;
+}
+
+.word {
+  display: inline-block;
+}
+
+/* The job title, the one emphasis in the sentence. */
+.strong {
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------- Pixel's own column */
+
+/*
+ * What Pixel says and the two ways on — his words only. He himself is a
+ * separate grid item one row down, so that this block can end on the same line
+ * as the blurb while he hangs below it.
+ */
+.pixelCol {
+  grid-column: 4;
+  grid-row: 6;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(1rem, 2.4vh, 2.25rem);
+  min-width: 0;
+}
+
+/*
+ * His voice — the one thing on the page that is not part of the arrival. It
+ * holds his standing line until you point at something, then shows what he has
+ * to say about it (`saying` from the Pixel context, exactly as the corner box
+ * does everywhere else). The frame gives it no bubble and no border: on this
+ * page he simply talks in the margin.
+ */
+.voice {
+  margin: 0;
+  max-width: 26ch;
+  font-family: var(--font-jetbrains-mono);
+  font-size: var(--home-small);
+  line-height: 1.45;
+  /*
+   * Present but silent until he wakes. It is styled invisible rather than left
+   * out of the tree so it holds its own space from the first frame — the two
+   * links and Pixel underneath it must not jump when he finally speaks, and a
+   * line that shoved the column down on arrival would be the one piece of this
+   * page that moved without being choreographed to.
+   */
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.voice[data-shown] {
+  opacity: 1;
+}
+
+.jumps {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(0.5rem, 1.5vh, 1.25rem);
+}
+
+.jump {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.9em;
+  font-family: var(--font-jetbrains-mono);
+  font-size: var(--home-small);
+  line-height: 1.45;
+  text-decoration: none;
+  /* The underline grows from the left on hover — same gesture as the nav. */
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jump:hover,
+.jump:focus-visible {
+  background-size: 100% 1px;
+}
+
+.jump:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+
+/* The trailing arrow, which nudges toward the page it opens. */
+.cue {
+  display: inline-block;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jump:hover .cue,
+.jump:focus-visible .cue {
+  transform: translateX(0.35em);
+}
+
+/*
+ * The slot owns layout, the stage owns motion. When a link is clicked the stage
+ * goes `position: fixed` and flies to the companion's corner (`walkThrough` in
+ * HomeHero.tsx) while the slot keeps this box open, so nothing behind the
+ * flight reflows.
+ *
+ * The upper bound is `--companion-size` on purpose: at a wide window he is
+ * already exactly the size he will be in the corner, so the flight is a move
+ * rather than a shrink.
+ */
+/*
+ * The blurb and Pixel's words are different sizes on different leadings, so
+ * ending their *boxes* on the same line leaves their last lines of type a few
+ * pixels apart — the line box below a 21px sentence set at 1.55 carries more
+ * air under its baseline than the one below a 14px link set at 1.45. Aligning
+ * the last baselines instead is what actually puts the end of the sentence
+ * level with "Vidush’s work", which is the thing anyone is looking at.
+ *
+ * Guarded because the fallback for an unsupported `last baseline` is `start`,
+ * which would drop both blocks to the top of the row and lose the alignment
+ * entirely. Browsers without it keep the `align-self: end` above and land
+ * within a few pixels.
+ */
+@supports (align-self: last baseline) {
+  .blurb,
+  .pixelCol {
+    align-self: last baseline;
+  }
+}
+
+.slot {
+  grid-column: 4;
+  grid-row: 7;
+  justify-self: end;
+  margin-top: clamp(0.5rem, 2.2vh, 1.75rem);
+  width: clamp(3rem, 4vw, var(--companion-size));
+  height: clamp(3rem, 4vw, var(--companion-size));
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------- the arrival */
+
+/*
+ * Before the timeline has placed anything, the page's own blocks stay out of
+ * sight. The bar is hidden by its own rule in globals.css, because it lives in
+ * the root layout and not in here.
+ *
+ * Deliberately `visibility`, not `opacity`: the intro measures nothing on this
+ * page, but a hidden-by-opacity block still takes hit-testing, and a link you
+ * can click before you can see it is worse than one you cannot.
+ */
+.hero[data-intro="pending"] :is(.greeting, .name, .blurb, .jumps, .slot) {
+  visibility: hidden;
+}
+
+/* ----------------------------------------------------------- narrow screens */
+
+/*
+ * A laptop still gets the frame's composition, but the wide left margin is the
+ * first thing that has to go — below about a 1024px window it stops reading as
+ * deliberate emptiness and starts reading as a broken column.
+ */
+@media (max-width: 64rem) {
+  .hero {
+    grid-template-columns:
+      minmax(0, 8fr)
+      minmax(0, 54fr)
+      minmax(0, 6fr)
+      minmax(0, 32fr);
+    --home-name: clamp(3rem, 17vw, 14rem);
+  }
+}
+
+/*
+ * One column on a phone, the four blocks in speaking order. The name steps up
+ * to 22vw so it still dominates — the ranking between the three sizes is what
+ * the whole layout is built on, and it has to survive the stack.
+ */
+@media (max-width: 40rem) {
+  .hero {
+    --home-mono: clamp(0.9rem, 3.9vw, 1.15rem);
+    --home-small: clamp(0.72rem, 3.1vw, 0.9rem);
+    --home-name: clamp(3rem, 22vw, 7rem);
+
+    grid-template-columns: minmax(0, 1fr);
+    /*
+     * greeting | name | air | blurb | Pixel's words | Pixel | air. Stacked, so
+     * the two things the wide layout is built on both fall away: there is no
+     * second column left to bottom-align against, and the name's gaps are set
+     * by margins rather than by a pair of matched `fr` rows, because in a
+     * single column the space above it is the greeting's own leading.
+     */
+    grid-template-rows:
+      auto
+      auto
+      minmax(0, 1fr)
+      auto
+      auto
+      auto
+      minmax(0, 0.35fr);
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .greeting {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    margin-bottom: clamp(0.75rem, 2.5vh, 1.5rem);
+  }
+
+  .name {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .blurb {
+    grid-column: 1;
+    grid-row: 4;
+    justify-self: start;
+    align-self: end;
+    max-width: none;
+  }
+
+  .pixelCol {
+    grid-column: 1;
+    grid-row: 5;
+    align-self: start;
+    margin-top: clamp(1.25rem, 4vh, 2.25rem);
+    gap: 1rem;
+  }
+
+  .slot {
+    grid-column: 1;
+    grid-row: 6;
+    margin-top: 0.75rem;
+  }
+}
+
+/* --------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .jump,
+  .cue,
+  .voice {
+    transition: none;
+  }
+}

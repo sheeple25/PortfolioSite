@@ -10,6 +10,12 @@ import type { Entry } from "./types";
  *   mode:    "case-study" | "peek" | "link"   — what its tile does
  *   section: "work" | "archive"               — which index it's listed on
  *
+ * A third, optional dial sets how much width the work board's rail gives a
+ * tile — `emphasis: 1` (widest) on the three built-out case studies,
+ * `emphasis: 2` on Kobble, Vashi and Flux, and nothing on the rest, which
+ * fall to the base tier. It's Vidush's ranking, not a derivation — see
+ * `EntryEmphasis` in `./types.ts`.
+ *
  * Promoting Flux from an archive entry to a Work case study is two words on
  * one line. Dropping Matchbox to a peek is one. Nothing else moves.
  *
@@ -30,6 +36,7 @@ export const ENTRIES: readonly Entry[] = [
     slug: "unflattening",
     section: "work",
     mode: "case-study",
+    emphasis: 1,
     source: {
       kind: "page",
       readingMinutes: 12,
@@ -74,6 +81,7 @@ export const ENTRIES: readonly Entry[] = [
     slug: "traces",
     section: "work",
     mode: "case-study",
+    emphasis: 1,
     source: {
       kind: "page",
       readingMinutes: 10,
@@ -134,6 +142,7 @@ export const ENTRIES: readonly Entry[] = [
     slug: "loco",
     section: "work",
     mode: "case-study",
+    emphasis: 1,
     source: {
       kind: "page",
       readingMinutes: 9,
@@ -184,6 +193,7 @@ export const ENTRIES: readonly Entry[] = [
     slug: "kobble",
     section: "archive",
     mode: "case-study",
+    emphasis: 2,
     source: {
       kind: "page",
       readingMinutes: 2,
@@ -222,6 +232,7 @@ export const ENTRIES: readonly Entry[] = [
     slug: "vashi",
     section: "archive",
     mode: "case-study",
+    emphasis: 2,
     source: {
       kind: "page",
       readingMinutes: 2,
@@ -272,7 +283,7 @@ export const ENTRIES: readonly Entry[] = [
    * it needs the actual CEPT URL, which isn't recorded anywhere in the repo.
    * Left as-is rather than guessed at.
    */
-  { slug: "flux", section: "archive", mode: "case-study", source: { kind: "document" } },
+  { slug: "flux", section: "archive", mode: "case-study", emphasis: 2, source: { kind: "document" } },
   { slug: "mizan", section: "archive", mode: "case-study", source: { kind: "document" } },
   { slug: "vortex", section: "archive", mode: "case-study", source: { kind: "document" } },
   { slug: "matchbox", section: "archive", mode: "case-study", source: { kind: "document" } },

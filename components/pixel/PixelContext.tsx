@@ -163,7 +163,15 @@ type PixelContextValue = {
   reaction: Expression | null;
   react: (expression: Expression, ms?: number) => void;
   hidden: boolean;
-  setHidden: (hidden: boolean) => void;
+  /**
+   * Reason-tagged, because `hidden` used to be one unowned boolean and the
+   * footer-game item in `docs/PIXELBOT_BUILD.md` §12 flagged a third writer as
+   * a real last-writer-wins bug before one existed. Each caller owns a reason
+   * string ("under-construction", "footer-game", …) and toggles only that;
+   * the companion hides while *any* reason is held, and no caller can undo
+   * another's. Built 2026-09-02 — see §15 of the build log.
+   */
+  setHidden: (reason: string, hidden: boolean) => void;
   /** The costume from the footer wardrobe. `null` is the bare mascot. */
   accessory: Accessory | null;
   setAccessory: (accessory: Accessory | null) => void;
@@ -225,9 +233,34 @@ type PixelContextValue = {
 
 const PixelContext = createContext<PixelContextValue | null>(null);
 
-export function PixelProvider({ children }: { children: React.ReactNode }) {
+export function PixelProvider({
+  children,
+  stageRoutes = [],
+}: {
+  children: React.ReactNode;
+  /**
+   * Routes where a page-owned Pixel takes the stage and the corner companion
+   * must not also appear — the home hero mounts its own `<Pixel>` and hands
+   * off to the corner on exit. A prop rather than knowledge of the app's
+   * routes baked in here: the layout owns the route map, this module only
+   * honours it. Read during server render too (`usePathname` resolves on the
+   * server), so the companion never flashes before hydration on these routes.
+   */
+  stageRoutes?: string[];
+}) {
   const [mood, setMood] = useState<Expression | null>(null);
-  const [hidden, setHidden] = useState(false);
+  const [hiddenReasons, setHiddenReasons] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const setHidden = useCallback((reason: string, next: boolean) => {
+    setHiddenReasons((prev) => {
+      if (prev.has(reason) === next) return prev;
+      const draft = new Set(prev);
+      if (next) draft.add(reason);
+      else draft.delete(reason);
+      return draft;
+    });
+  }, []);
   const [reaction, react] = useFlash(REACTION_MS);
   const accessory = useSyncExternalStore(
     subscribeAccessory,
@@ -248,6 +281,8 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname();
   const chat = useChatSession();
+
+  const hidden = hiddenReasons.size > 0 || stageRoutes.includes(pathname);
 
   /*
    * A handoff has to open the sidebar *and* send its first message, but the
@@ -364,6 +399,7 @@ export function PixelProvider({ children }: { children: React.ReactNode }) {
       reaction,
       react,
       hidden,
+      setHidden,
       accessory,
       setAccessory,
       atFooter,

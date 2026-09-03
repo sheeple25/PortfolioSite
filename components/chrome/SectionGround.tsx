@@ -2,10 +2,12 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { isIndexRoute } from "./sections";
+import { isHomeRoute, isIndexRoute } from "./sections";
 
 /**
- * Keeps the dark index ground on `<html>` in step with the route.
+ * Keeps the page grounds on `<html>` in step with the route — the index ground
+ * on `/projects`, `/writing` and `/about`, and the home page's full-bleed blue
+ * on `/`.
  *
  * Renders nothing. It exists because the ground used to be added and removed by
  * `IndexShell`'s own mount and unmount, and that produced a white flash on
@@ -27,10 +29,12 @@ export default function SectionGround() {
   const pathname = usePathname();
 
   useEffect(() => {
-    document.documentElement.classList.toggle(
-      "index-ground",
-      isIndexRoute(pathname),
-    );
+    const root = document.documentElement;
+    root.classList.toggle("index-ground", isIndexRoute(pathname));
+    /* Mutually exclusive with the above by construction — `/` is not an index
+       route — but toggled independently so neither has to know about the
+       other. Both write `--color-bg`; only one can ever be on. */
+    root.classList.toggle("home-ground", isHomeRoute(pathname));
   }, [pathname]);
 
   return null;

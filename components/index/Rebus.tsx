@@ -5,11 +5,12 @@ import styles from "./Rebus.module.css";
  * A standfirst written as a rebus — logos and emoji standing in for words
  * rather than illustrating them.
  *
- * Set larger than an ordinary standfirst because it has to be: a logo sitting
- * in a line of type needs the line tall enough for the mark to carry the same
- * optical weight as the words around it. Shrink the type and the marks turn
- * into specks, which is why the size lives here rather than being left to the
- * caller.
+ * A logo sitting in a line of type needs the line tall enough for the mark to
+ * carry the same optical weight as the words around it. That requirement used
+ * to be met by setting the rebus larger than the standfirst around it; it is
+ * now met by every standfirst being that size — see `.intro` in
+ * `components/chrome/IndexShell.module.css`. All this keeps of its own is the
+ * extra leading and word-spacing the marks need.
  */
 
 /**

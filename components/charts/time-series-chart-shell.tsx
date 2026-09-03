@@ -102,13 +102,20 @@ function collectNumericExtents(
 function resolveTimeSeriesYDomain(
   data: Record<string, unknown>[],
   dataKeys: string[],
-  yScaleDomainMax: number | undefined
+  yScaleDomainMax: number | undefined,
+  yScaleDomainMin: number | undefined
 ): [number, number] {
   if (yScaleDomainMax != null && yScaleDomainMax > 0) {
-    return [0, yScaleDomainMax * 1.1];
+    return [yScaleDomainMin ?? 0, yScaleDomainMax * 1.1];
   }
 
   const { minValue, maxValue } = collectNumericExtents(data, dataKeys);
+
+  if (yScaleDomainMin != null) {
+    const span = maxValue - yScaleDomainMin;
+    const top = span <= 0 ? yScaleDomainMin + 1 : maxValue + span * 0.1;
+    return [yScaleDomainMin, top];
+  }
 
   if (minValue >= 0) {
     const top = maxValue <= 0 ? 100 : maxValue * 1.1;
@@ -153,6 +160,9 @@ export interface TimeSeriesChartInnerProps {
   composedStackGap?: number;
   /** When set, drives the y-axis max instead of scanning `lines` (e.g. stacked bar totals). */
   yScaleDomainMax?: number;
+  /** When set, floors the y-axis here instead of at zero — for a series that
+   *  lives far from zero and flattens into a line against a zero baseline. */
+  yScaleDomainMin?: number;
   /** Loading vs ready — drives chart phase until transition orchestration lands. */
   chartStatus?: ChartStatus;
   loadingLabel?: string;
@@ -198,6 +208,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   composedStackOffsets,
   composedStackGap,
   yScaleDomainMax,
+  yScaleDomainMin,
   chartStatus = DEFAULT_CHART_STATUS,
   loadingLabel,
   yDomainTween = true,
@@ -220,9 +231,13 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         usesDefaultOnly && yScaleDomainMax != null
           ? yScaleDomainMax
           : undefined;
-      return resolveTimeSeriesYDomain(sourceData, dataKeys, domainMax);
+      const domainMin =
+        usesDefaultOnly && yScaleDomainMin != null
+          ? yScaleDomainMin
+          : undefined;
+      return resolveTimeSeriesYDomain(sourceData, dataKeys, domainMax, domainMin);
     },
-    [lines, yScaleDomainMax]
+    [lines, yScaleDomainMax, yScaleDomainMin]
   );
 
   const skeletonData = useMemo(() => {

@@ -1,0 +1,37 @@
+/*
+ * The mark sits where the title's full stop was, so it is sized in `em` — it
+ * scales with the title, which is a share of the window's height
+ * (`--index-title-size`), instead of carrying a second set of breakpoints.
+ * 0.72em keeps it reading as punctuation-made-mascot rather than an
+ * illustration crashing the headline; at a desktop size that is ~47px and at
+ * the title's own 1.6rem floor still ~18px, enough for the eyes to read.
+ *
+ * `vertical-align: baseline` on an inline-block with no in-flow text puts its
+ * bottom margin edge on the baseline — which lands Pixel's feet exactly where
+ * the period's dot sat.
+ */
+.mark {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  margin-left: 0.1em;
+  vertical-align: baseline;
+  line-height: 0;
+}
+
+/*
+ * `Pixel` sizes itself with width/height attributes in px; the CSS wins over
+ * the attributes, so the sprite fills the em-sized mark instead. Overflow
+ * stays visible the whole way up — a costume from the wardrobe (bowler,
+ * horns, halo) is drawn above the head at negative sprite rows and must not
+ * be clipped by this box.
+ */
+.pixel {
+  width: 100%;
+  height: 100%;
+}
+
+.pixel svg {
+  width: 100%;
+  height: 100%;
+}

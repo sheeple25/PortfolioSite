@@ -33,16 +33,21 @@
   --index-peek: 30svh;
 
   /*
-   * The least room the stage gets on a single-window page, and so — since the
-   * band takes whatever is left of the window — the most the band can have.
+   * The least room the stage gets on a single-window page.
    *
-   * A floor rather than a fixed boundary. The stage grows past this whenever
-   * its own contents need to (`/about` puts a logo marquee under the masthead),
-   * and only pages whose masthead is shorter than this actually sit at it. That
-   * is the difference between one dial that works on all three indexes and
-   * three magic numbers that each go stale the first time the type reflows.
+   * `0` — the stage hugs its own type and the band takes everything else. It
+   * was `30svh`, on the reasoning that the head of the page wanted a floor as
+   * well as a ceiling; in practice the floor only ever bit on the pages whose
+   * masthead was *shortest*, and what it bought them was a gap between the
+   * last line of the standfirst and the top of the band. The ceiling
+   * (`--index-stage-max`) is the half of that pair that protects the band, and
+   * it is untouched.
+   *
+   * Kept as a token rather than deleted: it is still the name for "the least
+   * room the stage may have", the short-window rule at the foot of this file
+   * still sets it, and a page that wants a floor back has somewhere to say so.
    */
-  --index-stage-min: 30svh;
+  --index-stage-min: 0;
 
   /*
    * The masthead's two halves are pinned to the window's own edges rather than
@@ -60,12 +65,64 @@
    * only ever widens from here.
    *
    * `--index-intro-scale` multiplies the standfirst's type size. It is the
-   * fitter's last resort and stays at 1 in almost every case; both `.intro`
-   * here and `.rebus` in Rebus.module.css fold it into their own clamp.
+   * fitter's last resort and stays at 1 in almost every case; `.intro` below
+   * folds it into its clamp, and every index inherits that one size.
    */
   --index-masthead-gap: clamp(2rem, 6vw, 6rem);
-  --index-intro-width: 30rem;
+  /*
+   * The standfirst's measure, in multiples of its own type size rather than in
+   * `rem`. A fixed column with type that shrinks is a column that holds more
+   * words per line, so the paragraph would drop from three lines to two on the
+   * way into a zoom and the masthead's height would stop being a clean
+   * proportion of the window. 14.6 is the old 30rem read against the old
+   * 2.05rem standfirst, so the measure is unchanged at the size it was set at.
+   */
+  --index-intro-width: calc(14.6 * var(--index-intro-size));
   --index-intro-scale: 1;
+
+  /*
+   * The masthead's scale — a share of the window's height, and nothing else.
+   *
+   * The head of the page is a proportion, not a size: title, standfirst and
+   * the air around them take the same slice of the screen whatever the screen
+   * is, and in particular whatever the page is zoomed to. These were `vw`
+   * clamps, and the `rem` cap on each is what broke that. Past about 1200px
+   * wide the `vw` term is over the cap, so the type sits at the cap — a fixed
+   * number of CSS pixels. Zoom to 150% and the CSS-pixel viewport shrinks by a
+   * third while that fixed number does not, so the masthead comes back as half
+   * again as much of the screen: on a 2560×1440 display the stage went from
+   * 29% of the window to 41% of it, and the board underneath — which is the
+   * page's navigation — paid for every pixel.
+   *
+   * `svh` *is* the zoom. At 150% the window is 845 CSS px instead of 1265, an
+   * `svh` is two-thirds of what it was, and the masthead comes back the same
+   * fraction of the same screen. `svh` rather than `vh`/`dvh` for the reason
+   * given further down: the height that is always visible, and one that does
+   * not move as mobile toolbars do.
+   *
+   * An earlier pass at this kept the old clamps as a `min()` ceiling, on the
+   * reasoning that nothing should get bigger than it was. That silently undid
+   * the whole thing — at 2560×1265 the ceiling is lower than the proportion at
+   * every zoom the browser offers, so the ceiling always won and the type
+   * never moved. A proportion with a fixed cap is a fixed size.
+   *
+   * The numbers are the previous desktop sizes read as a fraction of that
+   * window, so nothing moves at 2560×1440 at 100%: 4.1rem ≈ 5.2svh,
+   * 2.05rem ≈ 2.6svh, 4.5rem ≈ 5.7svh, 4rem ≈ 5.05svh. The consequence to know
+   * about is the other end — a window this proportion of *small* gets type
+   * this proportion of small, so a 1440×900 laptop now reads the masthead at
+   * about 60% of what it used to. That is the rule working, not failing: it is
+   * the same trade in the direction nobody was complaining about.
+   *
+   * The `max()` floors are the one non-proportional thing here, and they sit
+   * far below any ordinary window — a landscape phone, or a zoom past 250%.
+   * Below them the type stops being readable and overflowing the proportion is
+   * the better of two bad outcomes.
+   */
+  --index-title-size: max(1.5rem, 5.2svh);
+  --index-intro-size: max(0.95rem, 2.6svh);
+  --index-masthead-top: max(1rem, 5.7svh);
+  --index-masthead-bottom: max(0.75rem, 5.05svh);
 
   /*
    * `--index-header-ground` and `--index-header-ink` are declared in
@@ -130,7 +187,20 @@
 }
 
 .pageFull .stage {
-  min-height: var(--index-stage-min);
+  /*
+   * The stage hugs its type. `--index-stage-min` is left at `0` here rather
+   * than at the token's own value: a floor under the head of the page is dead
+   * air on every index whose masthead comes in under it — a two-line
+   * standfirst on a tall window left a visible gap between the last line of
+   * type and the top of the band, and the band is the navigation. The ceiling
+   * (`--index-stage-max`, below) is the constraint that was actually doing the
+   * work; a floor only ever cost the band height.
+   *
+   * The token stays declared on `.page` because the short-window rule at the
+   * bottom of this file still reads it, and because "the least the stage may
+   * have" is worth having a name for the day a page wants one back.
+   */
+  min-height: var(--index-stage-min, 0);
   /* Never squeezed to make room for the band — the band is the flexible one. */
   flex: 0 0 auto;
 
@@ -275,6 +345,18 @@
 }
 
 /*
+ * The presence wrapper. Nothing of its own: it is absolutely filled by the
+ * `.backgroundFull` rule above like any other content of the band, and while
+ * a view is leaving or arriving the wrapper is what carries the opacity and
+ * the slight scale, so the view inside never has to know it is being
+ * animated. Each view fills the wrapper in turn — the board by `height: 100%`
+ * against its definite box, the graph by its own frame.
+ */
+.slot {
+  display: block;
+}
+
+/*
  * Full screen: the stage goes, and the band takes the header.
  *
  * The header section is *already* exactly one window (`min-height: 100svh`),
@@ -391,14 +473,14 @@
    * (`padding-inline: var(--page-gutter)` in NavBar.module.css). The title
    * therefore starts on the same vertical as the wordmark above it and the
    * standfirst ends on the same vertical as the theme toggle, at every width.
-   * Because the gutter is `clamp(1.25rem, 5vw, 4rem)` and the type sizes below
-   * are `vw`-based clamps too, the whole masthead is a function of the viewport
-   * — which is what makes it track a browser zoom, since zooming is exactly a
-   * change in the CSS-pixel viewport.
+   *
+   * The inset stays on the gutter, which is the horizontal rhythm the whole
+   * site shares. The masthead's *vertical* sizes are a different question and
+   * are answered in `svh` — see `--index-title-size` and the tokens beside it.
    */
   width: 100%;
   padding-inline: var(--page-gutter);
-  padding-top: clamp(2rem, 5vw, 4.5rem);
+  padding-top: var(--index-masthead-top);
 
   /*
    * Title against the left edge, standfirst against the right, and the window
@@ -429,6 +511,14 @@
 /*
  * Air between the last line of the standfirst and the top of the band.
  *
+ * `--index-masthead-bottom`, which is the gutter's value read as a share of
+ * the window's height — so at an ordinary desktop size the air under the text
+ * box is still the air beside it, and it now shrinks with the type it belongs
+ * to when the page is zoomed (see `--index-title-size`). The band takes
+ * everything the masthead doesn't (`.backgroundFull` is `flex: 1 1 0`), so
+ * this padding is the whole of what separates the two: shrink it and the
+ * ground steps up, grow it and the ground steps down.
+ *
  * Only when the masthead is the whole stage. Once the type is tall enough to
  * push the stage past its floor, the band's edge is the masthead's own bottom
  * edge — with nothing here the standfirst would sit directly on the hairline.
@@ -440,7 +530,7 @@
  * the two can't drift apart.
  */
 .masthead:last-child {
-  padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  padding-bottom: var(--index-masthead-bottom);
 }
 
 /*
@@ -459,7 +549,7 @@
   color: var(--index-header-ink);
   font-family: var(--font-space-grotesk);
   font-weight: 700;
-  font-size: clamp(2.4rem, 5.5vw, 4.1rem);
+  font-size: var(--index-title-size);
   line-height: 1.02;
   letter-spacing: -0.035em;
   margin: 0;
@@ -468,10 +558,16 @@
 .intro {
   font-family: var(--font-newsreader);
   /*
+   * One standfirst size for every index. It was set here at a smaller clamp and
+   * overridden larger on `/projects` alone, because the rebus needed the line
+   * tall enough to carry a logo; the result was Work reading at one size and
+   * About and Writing at another. The rebus's size won — it is the one that was
+   * right — so it lives here now and `.rebus` inherits it.
+   *
    * `--index-intro-scale` is 1 unless `useMastheadFit` has run out of width to
    * give — see the token's note at the top of this file.
    */
-  font-size: calc(clamp(1.05rem, 1.5vw, 1.35rem) * var(--index-intro-scale, 1));
+  font-size: calc(var(--index-intro-size) * var(--index-intro-scale, 1));
   line-height: 1.45;
   /* Held back from the title so the two still read as a pair on the dark ground. */
   color: color-mix(in srgb, var(--index-header-ink) 78%, transparent);
@@ -623,8 +719,9 @@
    * Exempt, because the reasoning above doesn't apply: there is no peek to
    * make room for, and collapsing the header to the height of its own type
    * would leave the background — which on these routes is the whole
-   * navigation — with no box to draw in at all. The stage gives up its floor
-   * instead, so the band still has somewhere to go on a landscape phone.
+   * navigation — with no box to draw in at all. The one-window shape keeps
+   * its full screen and the band takes whatever the type leaves, which on a
+   * landscape phone is the only way it gets anywhere to draw at all.
    */
   .pageFull {
     --index-stage-min: 0;

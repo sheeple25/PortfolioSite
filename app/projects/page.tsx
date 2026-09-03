@@ -3,7 +3,8 @@ import { getEntries } from "@/lib/entries";
 import { getProjectGraph } from "@/lib/graph";
 import { getWorkBoard } from "@/lib/work/board";
 import IndexShell, { IndexEmpty } from "@/components/chrome/IndexShell";
-import Rebus, { RebusEmoji, RebusLogo } from "@/components/index/Rebus";
+import AskPixelNote from "@/components/work/AskPixelNote";
+import Rebus, { RebusLogo } from "@/components/index/Rebus";
 import WorkGraph from "@/components/graph/WorkGraph";
 import WorkBoard from "@/components/work/WorkBoard";
 
@@ -12,23 +13,18 @@ const TITLE = "Work.";
  * The standfirst, written as a rebus: the marks are standing in for the words
  * rather than decorating them, which is why they carry real `alt` text.
  *
- * Deliberately shorter than the sentence it replaces. At this size a line of
- * prose would push the masthead's right column down past the fold, and the
- * point of the rebus is that it is read at a glance rather than parsed.
- *
- * The trailing clause is the one concession to the merge: the four marks name
- * the curated work, and the page now holds everything else as well, so it has
- * to say so or the graph looks like it has wandered off the brief.
+ * Three lines, never more — the masthead's ceiling is the band's floor, and
+ * `useMastheadFit` enforces the line count on top of the height budget. So
+ * the copy is what Vidush is doing *now* and one sentence of intent, and the
+ * rest of the work is left to the board to introduce itself.
  */
 const INTRO = (
   <Rebus>
-    A dating product for{" "}
-    <RebusLogo src="/logos/Kobble.svg" alt="Kobble" />, livelihoods for{" "}
-    <RebusLogo src="/logos/IFTC.svg" alt="In For The Cause" />, four client
-    briefs in four months at <RebusLogo src="/logos/PwC.svg" alt="PwC" />, and a
-    lavatory for an <RebusLogo src="/logos/IndianRailways.svg" alt="Indian Railways" />{" "}
-    <RebusEmoji label="locomotive">🚆</RebusEmoji>. Everything else I have made
-    is in here too.
+    Reinventing dating at{" "}
+    <RebusLogo src="/logos/Kobble.svg" alt="Kobble" /> and building brand
+    strategy for <RebusLogo src="/logos/IFTC.svg" alt="In For The Cause" />, an
+    NGO working with People with Disabilities. I&rsquo;m currently looking for
+    full time roles.
   </Rebus>
 );
 
@@ -55,7 +51,7 @@ export const metadata: Metadata = {
  * second index go. See `docs/INDEX_NAV_REDESIGN.md`.
  *
  * **Two views of that one pool, and the band swaps between them.** Collapsed it
- * is `WorkBoard` — three rows of domains, skills and software over a two-row
+ * is `WorkBoard` — three columns of domains, tools and skills over a two-row
  * rail of every project, where pointing at a requirement lights the work that
  * answers it. Expanded it is `WorkGraph`, the same data as a relational map.
  *
@@ -70,7 +66,10 @@ export const metadata: Metadata = {
  * and gives them a wider tile, and that is the whole of it.
  *
  * No `children`, so `IndexShell` renders no sheet: the masthead and the band
- * are one window, and the only thing below them is the site footer.
+ * are exactly one window, every project is in the band at once, and the only
+ * thing below them is the site footer. That is the owner's rule for this page
+ * — if the pool ever outgrows the width, the board's rail scrolls sideways,
+ * and the band never grows down. See `WorkBoard`.
  */
 export default function ProjectsIndexPage() {
   const entries = getEntries();
@@ -90,7 +89,7 @@ export default function ProjectsIndexPage() {
     <IndexShell
       title={TITLE}
       intro={INTRO}
-      note={pick ? <>Start with {pick.meta.title}&hellip;</> : null}
+      note={<AskPixelNote pickTitle={pick?.meta.title} />}
       background={<WorkBoard board={board} />}
       backgroundExpanded={<WorkGraph graph={graph} />}
       backgroundInteractive

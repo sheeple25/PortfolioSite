@@ -2,7 +2,9 @@
 
 Personal portfolio for Vidush Gupta, built with Next.js (App Router).
 
-**Work is the home page** — `/` redirects to `/projects`. Every project lives at
+**`/` is a one-viewport front door** — name, thesis line, Pixel on stage, and
+three doors (Work / Writing / About); the wordmark links back to it. The work
+index at `/projects` remains the canonical home of every project: each lives at
 `/projects/<slug>` whatever index lists it, and how each one is presented (a full
 case study, a card that slides over the index, or a link straight out) is two
 fields in one registry.

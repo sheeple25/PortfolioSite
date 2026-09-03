@@ -4,17 +4,18 @@ import { getWritingSummaries } from "@/lib/writing";
 import { formatDate } from "@/lib/format";
 import IndexShell, { IndexEmpty } from "@/components/chrome/IndexShell";
 
-const TITLE = "Writing.";
-const INTRO = "My personal musings on a variety of topics.";
+const TITLE = "Musings and ramblings.";
+const INTRO =
+  "I’ve been trying to pick up writing again recently, here are some of my early forays into picking the medium back up.";
 
 export const metadata: Metadata = {
   title: "Writing",
   description:
-    "Essays, manifestos and process notes on design, interfaces and the things they shape.",
+    "I’ve been trying to pick up writing again recently, here are some of my early forays into picking the medium back up.",
   openGraph: {
     title: "Writing",
     description:
-      "Essays, manifestos and process notes on design, interfaces and the things they shape.",
+      "I’ve been trying to pick up writing again recently, here are some of my early forays into picking the medium back up.",
     url: "/writing",
   },
 };

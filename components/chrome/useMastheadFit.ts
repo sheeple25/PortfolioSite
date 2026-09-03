@@ -41,13 +41,21 @@ import { useLayoutEffect, type RefObject } from "react";
  *
  * If even the widest column is too tall — a much longer standfirst than any
  * page currently has, or a very short window — the search falls back to
- * shrinking the type via `--index-intro-scale`, down to `MIN_FONT_SCALE`. That
- * branch does not fire on today's content at any size; it exists so that "the
- * standfirst never exceeds its box" is a guarantee rather than a description of
- * the current copy.
+ * shrinking the type via `--index-intro-scale`, down to `MIN_FONT_SCALE`. It
+ * exists so that "the standfirst never exceeds its box" is a guarantee rather
+ * than a description of the current copy.
  *
- * Pages with a sheet (`IndexShell` with `children`) are skipped: their header
- * is a full window with no floor to bust, so there is no box to fit.
+ * ## Three lines, whatever the box
+ *
+ * The box is one ceiling; `MAX_LINES` is the other, and the lower of the two
+ * wins. Vidush's rule for every index: a standfirst is three lines at most.
+ * A tall window would otherwise let a fourth line in without busting the
+ * floor, and a fourth line is where a standfirst stops being one. Unlike the
+ * height budget this applies on the stacked (one-column) layout too — there
+ * is no width to widen into there, so it goes straight to the type scale.
+ *
+ * Pages with a sheet (`IndexShell` with `children`) have no height ceiling,
+ * but the line ceiling still holds.
  */
 
 /**
@@ -57,6 +65,9 @@ import { useLayoutEffect, type RefObject } from "react";
  * two bad outcomes.
  */
 const MIN_FONT_SCALE = 0.82;
+
+/** The most lines a standfirst may run to, on any index, at any size. */
+const MAX_LINES = 3;
 
 /** Stop the width search once the bracket is this tight. Sub-pixel precision here buys nothing. */
 const WIDTH_EPSILON = 4;
@@ -118,36 +129,58 @@ function fit({ stage, masthead, title, intro }: Elements): void {
   masthead.style.removeProperty("--index-intro-scale");
 
   const ceiling = resolveCeiling(masthead);
-  if (ceiling <= 0) return;
+  const mastheadStyle = getComputedStyle(masthead);
 
   /*
-   * Below `60rem` the masthead stacks into one column and the standfirst
-   * already has the full width; there is no gap left to widen into, and the
-   * page is scrolling by then anyway. Read the track count rather than
-   * re-testing the media query, so the breakpoint lives in exactly one place.
+   * The line ceiling, in the standfirst's own resting metrics: `MAX_LINES`
+   * line boxes plus the padding the paragraph carries above its first one.
+   * Read after the dials were reset above, so a previous fit's scale doesn't
+   * shrink the budget it is measured against.
    */
-  const mastheadStyle = getComputedStyle(masthead);
-  const tracks = mastheadStyle.gridTemplateColumns.split(" ").filter(Boolean);
-  if (tracks.length < 2) return;
+  const introStyle = getComputedStyle(intro);
+  /* `/projects` sets its standfirst as a `Rebus`, which brings its own, larger
+     type inside the paragraph — so the line box to count is the child's,
+     where there is one, not the paragraph's. */
+  const lines = intro.firstElementChild instanceof HTMLElement
+    ? getComputedStyle(intro.firstElementChild)
+    : introStyle;
+  const lineBudget =
+    MAX_LINES * px(lines.lineHeight) +
+    px(introStyle.paddingTop) +
+    px(introStyle.paddingBottom);
 
   /*
    * The box: from the standfirst's own top edge down to the ceiling, less the
    * air the masthead holds under itself (`.masthead:last-child`, which is `0`
-   * on a page whose banner brings its own).
+   * on a page whose banner brings its own). A page with no ceiling (the sheet
+   * shape) has only the line budget.
    */
   const stageTop = stage.getBoundingClientRect().top;
   const introTop = intro.getBoundingClientRect().top;
-  const budget =
-    ceiling - (introTop - stageTop) - px(mastheadStyle.paddingBottom);
+  const heightBudget =
+    ceiling > 0
+      ? ceiling - (introTop - stageTop) - px(mastheadStyle.paddingBottom)
+      : Infinity;
 
   /*
-   * A non-positive budget means the masthead's own top padding has already
-   * eaten the whole ceiling — a window far shorter than any this layout
-   * targets. Leave it alone rather than trying to fit a paragraph into no
-   * height at all.
+   * A non-positive height budget means the masthead's own top padding has
+   * already eaten the whole ceiling — a window far shorter than any this
+   * layout targets. Leave it alone rather than trying to fit a paragraph into
+   * no height at all.
    */
-  if (budget <= 0) return;
+  if (heightBudget <= 0) return;
+  const budget = Math.min(heightBudget, lineBudget);
   if (intro.getBoundingClientRect().height <= budget) return;
+
+  /*
+   * Below `60rem` the masthead stacks into one column and the standfirst
+   * already has the full width; there is no gap left to widen into, so the
+   * width search is skipped and only the type scale is left. Read the track
+   * count rather than re-testing the media query, so the breakpoint lives in
+   * exactly one place.
+   */
+  const tracks = mastheadStyle.gridTemplateColumns.split(" ").filter(Boolean);
+  const stacked = tracks.length < 2;
 
   const heightAtWidth = (width: number): number => {
     masthead.style.setProperty("--index-intro-width", `${width}px`);
@@ -165,10 +198,12 @@ function fit({ stage, masthead, title, intro }: Elements): void {
     px(mastheadStyle.paddingLeft) -
     px(mastheadStyle.paddingRight);
   const resting = intro.getBoundingClientRect().width;
-  const widest = Math.max(
-    resting,
-    inner - title.getBoundingClientRect().width - px(mastheadStyle.columnGap),
-  );
+  const widest = stacked
+    ? resting
+    : Math.max(
+        resting,
+        inner - title.getBoundingClientRect().width - px(mastheadStyle.columnGap),
+      );
 
   /*
    * Probe the widest first. If that doesn't fit, no narrower width will either
@@ -200,7 +235,7 @@ function fit({ stage, masthead, title, intro }: Elements): void {
   }
 
   // Out of width. Keep the widest column and take the rest out of the type.
-  masthead.style.setProperty("--index-intro-width", `${widest}px`);
+  if (!stacked) masthead.style.setProperty("--index-intro-width", `${widest}px`);
 
   let low = MIN_FONT_SCALE;
   let high = 1;
